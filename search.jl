@@ -13,6 +13,7 @@ function single_search(para::Dict, disx, disy)
   weight = para["weight"]
   itr_dis = para["itr_dis"]
   allres = []
+  noise = para["noise"]
   tol = 1e-6
   
   sites = init_site(para)
@@ -28,7 +29,11 @@ function single_search(para::Dict, disx, disy)
       
       sweeps = Sweeps(sweepcnt)
       setmaxdim!(sweeps, sweepdim)
-      setnoise!(sweeps, 1E-5)
+
+      if noise
+        setnoise!(sweeps, 1E-5)
+      end 
+      
       setcutoff!(sweeps, 1E-10)
 
       _, psi = dmrg(H, psi0, sweeps)
@@ -75,7 +80,11 @@ function single_search(para::Dict, disx, disy)
     # used when adapting internal dimensions:
     sweeps = Sweeps(sweepcnt)
     setmaxdim!(sweeps, sweepdim)
-    setnoise!(sweeps, 1E-5)
+
+    if noise
+      setnoise!(sweeps, 1E-5)
+    end 
+
     setcutoff!(sweeps, 1E-10)
     #@show sweeps
 

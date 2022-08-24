@@ -24,6 +24,9 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   decay = para["decay"]
   self = para["self_nuc"]
 
+  # set e-e interaction range
+  range = para["range"]
+
   ampo = OpSum()
   for j=1:L-1
 
@@ -38,7 +41,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
 
   for j=1:L
     # E-E
-    for k=1:j-1
+    for k= max(1, j - range):j-1
 
       # delta function setting up the exchange between nearest neighbor
       ifexch = (1 -  ==(1, abs(j - k)) * exch )
@@ -83,6 +86,8 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
   self = para["self_nuc"]
   manual = para["manual"]
 
+  range = para["range"]
+
   if Lx > Ly
     println("By set up Lx has to be smaller")
     exit()
@@ -124,7 +129,7 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
       x1 = div(j - 1, Ly) + 1
       y1 = mod(j - 1, Ly) + 1
 
-      for k=1:j-1
+      for k=max(1, j- range):j-1
 
         x2 = div(k - 1, Ly) + 1
         y2 = mod(k - 1, Ly) + 1

@@ -5,9 +5,10 @@ if implement the 2D flattening manually
 """
 function main(;L=22, N=11, int_ee=1.0, int_ne=1.0, t=1.0, epsilon=[0.5, 0.5], exch=0.2, 
   decay=0.2, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
-  guess=true, manual=false, itr_dis=[1.0])
+  guess=true, manual=false, itr_dis=[1.0], range=1000, noise=true)
 
-  para = setpara(L, N, int_ee, int_ne, t, epsilon, exch, decay, self_nuc, disorder, sweepdim, sweepcnt, ex, weight, guess, manual, itr_dis)
+  para = setpara(L, N, int_ee, int_ne, t, epsilon, exch, decay, self_nuc, disorder, 
+  sweepdim, sweepcnt, ex, weight, guess, manual, itr_dis, range, noise)
 
   disx, disy = setdisorder(para["disorder"], para["L"])
 

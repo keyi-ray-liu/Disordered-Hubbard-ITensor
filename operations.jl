@@ -93,5 +93,5 @@ function truedisorder(lam, gen)
     cases, L = size(raw)
   end
 
-  main(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, disorder=true, weight=5.0)
+  main(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, disorder=true, weight=5.0, range=5)
 end
