@@ -1,5 +1,5 @@
 """Completes one iteration of searches based on the number of excited states. Will return states only when all energies are in ascending order."""
-function single_search(para::Dict, disx, disy)
+function single_search(para::Dict, disx, disy, lambda)
   # Create N fermion indices
 
   sweepdim = para["sweepdim"]
@@ -14,7 +14,7 @@ function single_search(para::Dict, disx, disy)
   itr_dis = para["itr_dis"]
   allres = []
   noise = para["noise"]
-  tol = 1e-6
+  tol = 1e-8
   
   sites = init_site(para)
 
@@ -36,7 +36,8 @@ function single_search(para::Dict, disx, disy)
       
       setcutoff!(sweeps, 1E-10)
 
-      _, psi = dmrg(H, psi0, sweeps)
+      #_, psi = dmrg(H, psi0, sweeps)
+      _, psi = shift_and_invert(H, psi0, sweeps)
 
       H = init_ham(para, para["L"], disx.* scale, disy.* scale, sites)
       psi0 = psi
@@ -50,6 +51,11 @@ function single_search(para::Dict, disx, disy)
     psi0 = init_state(para, sites, disx, disy)
   end 
 
+  
+  # we calculatethe H^dag H as it will be at the LHS of the linear equation
+  H2 = contract(H', H; cutoff=1e-12)
+  H2 = replaceprime(H2, 2 => 1)
+
 
   cur_ex = 1
   cnt = 1
@@ -62,22 +68,7 @@ function single_search(para::Dict, disx, disy)
     println("len energy: ", length(energies), "len state: ", length(states), "cur: ", cur_ex)
     println("energies so far", allres)
     println("variances so far", allvars)
-    # Input operator terms which define
-    # a Hamiltonian matrix, and convert
-    # these terms to an MPO tensor network
-    # (1D Hubbard Chain)
 
-    # returns an MPS object
-    
-
-    # returns an MPO object
-
-
-    #@show psi0
-    # Plan to do 20 passes or 'sweeps' of DMRG,
-    # setting maximum MPS internal dimensions
-    # for each sweep and maximum truncation cutoff
-    # used when adapting internal dimensions:
     sweeps = Sweeps(sweepcnt)
     setmaxdim!(sweeps, sweepdim)
 
@@ -88,44 +79,28 @@ function single_search(para::Dict, disx, disy)
     setcutoff!(sweeps, 1E-10)
     #@show sweeps
 
+    # metric is <phi | psi>
+    metric = 1
     # Run the DMRG algorithm, returning energy
-    # (dominant eigenvalue) and optimized MPS
+    while metric >= tol
 
-    if cur_ex == 1
-      energy, psi = dmrg(H, psi0, sweeps)
-      cur_ex += 1
-
-    else
-      energy, psi = dmrg(H, states, psi0, sweeps; weight) 
-
-      # check if cur energy is lower than previously achieved energy, if so, return to the point with lower energy (if not, start with current state as GS)
-      if abs(energy - energies[end]) > tol && energy < energies[end]
-
-        cur = 1
-
-        while cur <= length(energies)
-
-          if abs(energy - energies[cur]) > tol && energies[cur] < energy
-            cur += 1
-          else 
-            break
-          end 
-
-        end 
-
-        # reset the current array of states and energies, reset ex count
-        energies = energies[begin:cur-1]
-        states = states[begin:cur-1]
-        vars = vars[begin:cur-1]
-        cur_ex = cur
+      print(metric)
+      #energy, psi = dmrg(H, psi0, sweeps)
       
-      # else continue evaluation
-      else
-        cur_ex += 1
+      # both H2 and H are passed down. H2 is used fo the LHS, H is used for the RHS
+      psi = shift_and_invert(H, H2, psi0, sweeps, lambda; outputlevel=2)
+      
+      metric = 1 - inner(psi0, psi)
+      # new psi is obtained
+      psi0 = psi
+    
+    end 
+    
+    energy = inner( psi0', H, psi0) / inner( psi0', psi0)
+    lambda = energy
+    cur_ex += 1
 
-      end 
 
-    end
 
     var = variance(H, psi)
 

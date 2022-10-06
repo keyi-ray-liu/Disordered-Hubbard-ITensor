@@ -20,7 +20,8 @@ function main(;L=22, N=11, int_ee=1.0, int_ne=1.0, t=1.0, epsilon=[0.5, 0.5], ex
 
   # in this version, jobs are parallelized and BLAS is not 
   for case=1:cases
-    energy, states, allres, allvars, vars = single_search(para, disx[case, :], disy[case, :])
+    lambda = - 100.0
+    energy, states, allres, allvars, vars = single_search(para, disx[case, :], disy[case, :], lambda)
 
     if typeof(L) != Int
       suffix = string(L[1]) * "x" * string(L[2]) * "_" * string(case)

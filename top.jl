@@ -1,3 +1,9 @@
+# load variables specifically in linsolve
+using ITensors: AbstractMPS, MPO, MPS, linkind, siteinds, Sweeps, check_hascommoninds, orthocenter, AbstractProjMPO
+using ITensors: @debug_check, @timeit_debug, @printf
+using KrylovKit: eigsolve, linsolve
+import ITensors: permute, position!
+# now load the rest of the functions 
 using ITensors
 using DelimitedFiles
 using Suppressor
@@ -14,6 +20,8 @@ include("init_ham.jl")
 include("search.jl")
 include("correlation.jl")
 include("operations.jl")
+include("shift_and_invert.jl")
+include("projection.jl")
 
 """The top level function that controls workflow. Use operation mode to select code function"""
 function top()
@@ -34,7 +42,7 @@ function top()
     truedisorder( ARGS[2], ARGS[3] )
 
   elseif ARGS[1] == "4"
-    @time main(L=[3, 3], N=4, ex=20, int_ee=0.5, guess=false, sweepdim=200, sweepcnt=80)
+    @time main(L=12, N=6, ex=20, int_ee=0.5, guess=true, sweepdim=200, sweepcnt=80, noise=false)
 
   else
     println("not a valid operating mode")

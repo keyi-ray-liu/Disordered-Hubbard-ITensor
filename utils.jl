@@ -71,3 +71,36 @@ function variance(H::MPO, psi::MPS)
   return sqrt( abs(var))
 
 end 
+
+linsolvemeasure!(o::AbstractObserver; kwargs...) = nothing
+linsolvecheckdone!(o::AbstractObserver; kwargs...) = false
+
+function linsolvemeasure!(obs::DMRGObserver; kwargs...)
+  half_sweep = kwargs[:half_sweep]
+  b = kwargs[:bond]
+  psi = kwargs[:psi]
+  truncerr = truncerror(kwargs[:spec])
+
+  if half_sweep == 2
+    N = length(psi)
+
+    if b == (N - 1)
+      for o in ops(obs)
+        push!(measurements(obs)[o], zeros(N))
+      end
+      push!(truncerrors(obs), 0.0)
+    end
+
+    # when sweeping left the orthogonality center is located
+    # at site n=b after the bond update.
+    # We want to measure at n=b+1 because there the tensor has been
+    # already fully updated (by the right and left pass of the sweep).
+    wf = psi[b] * psi[b + 1]
+    measurelocalops!(obs, wf, b + 1)
+
+    if b == 1
+      measurelocalops!(obs, wf, b)
+    end
+    truncerr > truncerrors(obs)[end] && (truncerrors(obs)[end] = truncerr)
+  end
+end

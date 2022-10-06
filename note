@@ -1,0 +1,28 @@
+As of Sep 9,
+ in the main shift-and-invert function, removed all instances of energy related checks. This includes modifying the !measure function
+First iteration of trial runs. Strictly solving H|psi> = |phi>. Only calculates energy when the calculation converges.
+
+Program can get past linsolve,
+MethodError: Cannot `convert` an object of type Float64 to an object of type ITensor
+Noted on Krylov method: Input type linear map: AbstractMatrix <=> AbstractMPS
+
+Sep 12
+Cleaned the main loop (Two iterations: linsolve until convergeance tol, (inner iteration), H|psi> = |phi>, then repeat until largest eigenvalue obtained (outer loop))
+Compare to eigsolve, return Vector{Itensor}, correct code since linsolve only returns one object instead of vector 
+Measure! function type mismatch
+
+Sep 14
+Remove the original dependency on the DMRGobserver. As of now the code only works with no explicit 'observer' variable.
+Modified checkdone! and measure!. Now both does nothing when observer is not defined
+
+New error in the replacebond! function:
+ LoadError: ArgumentError: Trying to perform the eigendecomposition of a matrix containing NaNs or Infs
+Check symptoms: occurs at sweep 3
+
+ITensor logic: the main function takes in H, and psi, creates object ProjMPO PH, pass it to main work function
+
+position! function invokes makeL! and makeR!
+
+Sep 21
+test the behavior of position! functions. Since there are no explicit return behavior on makeL! and _makeL!, will modify
+Dim mismatch in linsolve. Test removing initial guess
