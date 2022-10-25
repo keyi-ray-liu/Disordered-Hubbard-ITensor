@@ -13,13 +13,14 @@ function init_site(para::Dict)
 end 
 
 
+
 """Generates the 1D hamiltonian MPO for the given system configuration"""
 function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites)
   # parameters 
   t = para["t"]
-  lambda_ee = para["int_ee"]
-  lambda_ne = para["int_ne"]
-  epsilon_ne, epsilon_ee = para["epsilon"]
+  λ_ee = para["int_ee"]
+  λ_ne = para["int_ne"]
+  ζ_ne, ζ_ee = para["ζ"]
   exch = para["exch"]
   decay = para["decay"]
   self = para["self_nuc"]
@@ -47,7 +48,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       ifexch = (1 -  ==(1, abs(j - k)) * exch )
       
       # add the ee interaction term one by one
-      ampo += 2 * lambda_ee * ifexch / ( dis(j, k, disx, disy) + epsilon_ee),"N",j,"N",k
+      ampo += 2 * λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee),"N",j,"N",k
     end
     
     # N-E
@@ -57,11 +58,11 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
     if self
       cursum = 0
     else
-      cursum = -lambda_ne / epsilon_ne
+      cursum = -λ_ne / ζ_ne
     end
 
     for l=1:L
-      cursum += lambda_ne / ( dis(j, l, disx, disy) + epsilon_ne)
+      cursum += λ_ne / ( dis(j, l, disx, disy) + ζ_ne)
     end
 
     ampo += -cursum, "N", j
@@ -78,9 +79,9 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
   Lx = L[1]
   Ly = L[2]
   t = para["t"]
-  lambda_ee = para["int_ee"]
-  lambda_ne = para["int_ne"]
-  epsilon_ne, epsilon_ee = para["epsilon"]
+  λ_ee = para["int_ee"]
+  λ_ne = para["int_ne"]
+  ζ_ne, ζ_ee = para["ζ"]
   exch = para["exch"]
   decay = para["decay"]
   self = para["self_nuc"]
@@ -137,7 +138,7 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
         ifexch = (1 -  ==(1, abs(x1 - x2) + abs(y1 - y2)) * exch )
         
         # add the ee interaction term one by one
-        ampo += 2 * lambda_ee * ifexch / ( dis(x1, y1, x2, y2, disx, disy) + epsilon_ee),"N",j,"N",k
+        ampo += 2 * λ_ee * ifexch / ( dis(x1, y1, x2, y2, disx, disy) + ζ_ee),"N",j,"N",k
 
         
       end
@@ -149,14 +150,14 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
       if self
         cursum = 0
       else
-        cursum = -lambda_ne / epsilon_ne
+        cursum = -λ_ne / ζ_ne
       end
 
       for l=1:L
 
         x2 = div(l - 1, Ly) + 1
         y2 = mod(l - 1, Ly) + 1
-        cursum += lambda_ne / ( dis(x1, y1, x2, y2, disx, disy) + epsilon_ne)
+        cursum += λ_ne / ( dis(x1, y1, x2, y2, disx, disy) + ζ_ne)
       end
 
       ampo += -cursum, "N", j
@@ -187,7 +188,7 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
         ifexch = (1 -  ==(1, abs(j - k)) * exch )
         
         # add the ee interaction term one by one
-        ampo += 2 * lambda_ee * ifexch / ( dis(j, k, disx, disy) + epsilon_ee),"N",j,"N",k
+        ampo += 2 * λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee),"N",j,"N",k
       end
       
       # N-E
@@ -197,11 +198,11 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
       if self
         cursum = 0
       else
-        cursum = -lambda_ne / epsilon_ne
+        cursum = -λ_ne / ζ_ne
       end
   
       for l=1:L
-        cursum += lambda_ne / ( dis(j, l, disx, disy) + epsilon_ne)
+        cursum += λ_ne / ( dis(j, l, disx, disy) + ζ_ne)
       end
   
       ampo += -cursum, "N", j

@@ -1,7 +1,7 @@
 """Set parameter dictionary for all future calculations"""
-function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, epsilon::Vector{Float64}, exch::Float64, 
+function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, ζ::Vector{Float64}, exch::Float64, 
   decay::Float64, self_nuc::Bool, disorder::Bool, sweepdim::Int, sweepcnt::Int, ex::Int, weight::Float64, 
-  guess::Bool, manual::Bool, itr_dis::Vector{Float64}, range::Int, noise::Bool)
+  guess::Bool, manual::Bool, itr_dis::Vector{Float64}, range::Int, noise::Bool, method::String, QM::Bool)
 
   # we set the basic parameters for the simulation
   para = Dict(
@@ -10,7 +10,7 @@ function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, epsilo
     "int_ee" => int_ee,
     "int_ne" => int_ne,
     "t" => t,
-    "epsilon" => epsilon,
+    "ζ" => ζ,
     "exch" => exch,
     "decay" => decay,
     "self_nuc" => self_nuc,
@@ -23,7 +23,9 @@ function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, epsilo
     "manual" => manual,
     "itr_dis" => itr_dis,
     "range" => range,
-    "noise" => noise
+    "noise" => noise,
+    "method" => method,
+    "QM" => QM
   )
    
   return para

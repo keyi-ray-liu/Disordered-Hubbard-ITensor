@@ -6,11 +6,12 @@ function init_state(para, sites, disx, disy)
   N = para["N"]
   guess = para["guess"]
   t = para["t"]
-  lambda_ne = para["int_ne"]
-  epsilon_ne, epsilon_ee = para["epsilon"]
+  λ_ne = para["int_ne"]
+  ζ_ne, ζ_ee = para["ζ"]
   decay = para["decay"]
   self = para["self_nuc"]
 
+  
   # if not guess, using random MPS as init state
   if !guess
     if typeof(L) != Int
@@ -46,11 +47,11 @@ function init_state(para, sites, disx, disy)
         if self
           cursum = 0
         else
-          cursum = -lambda_ne / epsilon_ne
+          cursum = -λ_ne / ζ_ne
         end
 
         for k=1:L
-          cursum += lambda_ne / ( dis(j, k, disx, disy) + epsilon_ne)
+          cursum += λ_ne / ( dis(j, k, disx, disy) + ζ_ne)
         end
 
         H[j, j] = -cursum

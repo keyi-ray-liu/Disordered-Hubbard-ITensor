@@ -1,5 +1,5 @@
 """Completes one iteration of searches based on the number of excited states. Will return states only when all energies are in ascending order."""
-function single_search(para::Dict, disx, disy, lambda)
+function single_search(para::Dict, disx, disy, λ)
   # Create N fermion indices
 
   sweepdim = para["sweepdim"]
@@ -14,15 +14,17 @@ function single_search(para::Dict, disx, disy, lambda)
   itr_dis = para["itr_dis"]
   allres = []
   noise = para["noise"]
+  method = para["method"]
   tol = 1e-8
   
   sites = init_site(para)
 
+  # if we gradually increasing the disorder strength
   if length(itr_dis) > 1
 
     # initial state with no disorder
     H = init_ham(para, para["L"], disx.* 0.0, disy.* 0.0, sites)
-    psi0 = init_state(para, sites, disx.*0.0, disy.*0.0)
+    ϕ = init_state(para, sites, disx.*0.0, disy.*0.0)
 
     # iteratively build up the GS guess wavefunction
     for scale in itr_dis
@@ -36,25 +38,29 @@ function single_search(para::Dict, disx, disy, lambda)
       
       setcutoff!(sweeps, 1E-10)
 
-      #_, psi = dmrg(H, psi0, sweeps)
-      _, psi = shift_and_invert(H, psi0, sweeps)
+      #_, ψ = dmrg(H, ϕ, sweeps)
+      _, ψ = shift_and_invert(H, ϕ, sweeps)
 
       H = init_ham(para, para["L"], disx.* scale, disy.* scale, sites)
-      psi0 = psi
+      ϕ = ψ
 
     end 
+
+
     
 
   else
     # init with no modification to disorder
     H = init_ham(para, para["L"], disx, disy, sites)
-    psi0 = init_state(para, sites, disx, disy)
+    ϕ = init_state(para, sites, disx, disy)
   end 
 
   
   # we calculatethe H^dag H as it will be at the LHS of the linear equation
-  H2 = contract(H', H; cutoff=1e-12)
-  H2 = replaceprime(H2, 2 => 1)
+
+  # Oct 12, experiment with official linsolve
+  #H2 = contract(H', H; cutoff=1e-12)
+  #H2 = replaceprime(H2, 2 => 1)
 
 
   cur_ex = 1
@@ -69,44 +75,119 @@ function single_search(para::Dict, disx, disy, lambda)
     println("energies so far", allres)
     println("variances so far", allvars)
 
-    sweeps = Sweeps(sweepcnt)
-    setmaxdim!(sweeps, sweepdim)
+    
+    # DMRG block
 
-    if noise
-      setnoise!(sweeps, 1E-5)
+    if method == "DMRG"
+
+      # DMRG parameters
+      sweeps = Sweeps(sweepcnt)
+      setmaxdim!(sweeps, sweepdim)
+
+      if noise
+        setnoise!(sweeps, 1E-5)
+      end 
+
+      setcutoff!(sweeps, 1E-10)
+
+      # DMRG method
+      # Run the DMRG algorithm, returning energy
+      # (dominant eigenvalue) and optimized MPS
+
+      if cur_ex == 1
+        energy, ψ = dmrg(H, ϕ, sweeps)
+        cur_ex += 1
+
+      else
+        energy, ψ = dmrg(H, states, ϕ, sweeps; weight) 
+
+        # check if cur energy is lower than previously achieved energy, if so, return to the point with lower energy (if not, start with current state as GS)
+        if abs(energy - energies[end]) > tol && energy < energies[end]
+
+          cur = 1
+
+          while cur <= length(energies)
+
+            if abs(energy - energies[cur]) > tol && energies[cur] < energy
+              cur += 1
+            else 
+              break
+            end 
+
+          end 
+
+          # reset the current array of states and energies, reset ex count
+          energies = energies[begin:cur-1]
+          states = states[begin:cur-1]
+          vars = vars[begin:cur-1]
+          cur_ex = cur
+        
+        # else continue evaluation
+        else
+          cur_ex += 1
+
+        end
+
+        # if this is new lowest state, we reset our calculation using ψ as GS
+        if cur_ex == 1
+
+          ϕ = ψ
+          cur_ex = 2
+
+        end 
+
+      end
+    # shift and invert block
+    elseif method == "SI"
+      # metric is <phi | ψ>
+      # metric = 1
+      itrcnt = 1
+      # Run the DMRG algorithm, returning energy
+
+      energy = λ
+      # infinity to start as the 'previous' energy
+      prev = Inf
+      #while metric >= tol
+
+      while itrcnt < 100
+
+
+        #rewrite shift_and_invert algorithm 
+        # now each time, we effectively find (H - λ) |ψ> = |ϕ>
+        ψ = shift_and_invert(H, ϕ, λ, sites, para)
+
+        
+        #metric = 1 - inner(ϕ, ψ)
+        #normalize!(ψ)
+        energy = inner( ψ', H, ψ) / inner( ψ', ψ)
+
+        println("Power iteration: ", itrcnt, "  Current energy: ", energy)
+        # new ψ is obtained
+
+        # if the energy converged break the current iteration and start the next
+        if abs(prev - energy) <= tol
+          break
+        end 
+
+        prev = energy
+        ϕ = copy(ψ)
+        itrcnt += 1
+
+      end 
+      
+      λ = energy
+
+    else
+      println( "Unrecognized method")
+      exit()
     end 
 
-    setcutoff!(sweeps, 1E-10)
-    #@show sweeps
-
-    # metric is <phi | psi>
-    metric = 1
-    # Run the DMRG algorithm, returning energy
-    while metric >= tol
-
-      print(metric)
-      #energy, psi = dmrg(H, psi0, sweeps)
-      
-      # both H2 and H are passed down. H2 is used fo the LHS, H is used for the RHS
-      psi = shift_and_invert(H, H2, psi0, sweeps, lambda; outputlevel=2)
-      
-      metric = 1 - inner(psi0, psi)
-      # new psi is obtained
-      psi0 = psi
-    
-    end 
-    
-    energy = inner( psi0', H, psi0) / inner( psi0', psi0)
-    lambda = energy
     cur_ex += 1
-
-
-
-    var = variance(H, psi)
+    var = variance(H, ψ)
 
     append!(allres, energy)
     append!(energies, energy)
-    append!(states, [psi])
+    append!(states, [ψ])
     append!(allvars, var)
     append!(vars, var)
   end 
