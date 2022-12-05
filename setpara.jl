@@ -1,9 +1,11 @@
 """Set parameter dictionary for all future calculations"""
 function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, ζ::Vector{Float64}, exch::Float64, 
   decay::Float64, self_nuc::Bool, disorder::Bool, sweepdim::Int, sweepcnt::Int, ex::Int, weight::Float64, 
-  guess::Bool, manual::Bool, itr_dis::Vector{Float64}, range::Int, noise::Bool, method::String, QM::Bool)
+  guess::Bool, manual::Bool, itr_dis::Vector{Float64}, range::Int, noise::Bool, method::String, QE::Int, 
+  xscale::Float64, QN::Bool)
 
   # we set the basic parameters for the simulation
+
   para = Dict(
     "L" => L,
     "N" => N,
@@ -25,7 +27,9 @@ function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, ζ::Ve
     "range" => range,
     "noise" => noise,
     "method" => method,
-    "QM" => QM
+    "QE" => QE,
+    "xscale" => xscale,
+    "QN" => QN
   )
    
   return para

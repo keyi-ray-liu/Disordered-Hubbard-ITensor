@@ -1,18 +1,3 @@
-"""return the sites indices for further use"""
-function init_site(para::Dict)
-  L = para["L"]
-
-  if typeof(L) == Int
-    sites = siteinds("Fermion", L, conserve_qns=true)
-
-  else
-    sites = siteinds("Fermion", L[1] * L[2], conserve_qns=true)
-
-  end 
-  return sites
-end 
-
-
 
 """Generates the 1D hamiltonian MPO for the given system configuration"""
 function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites)
@@ -24,23 +9,42 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   exch = para["exch"]
   decay = para["decay"]
   self = para["self_nuc"]
-
+  QE = para["QE"]
+  QN = para["QN"]
+  N = para["N"]
+  
   # set e-e interaction range
   range = para["range"]
-
+  # if QE > 0, then at least left emitter
+  head = (QE > 0)
   ampo = OpSum()
-  for j=1:L-1
+
+
+  # testblock
+  ###### ###### ###### ###### ###### ######
+
+  # if QE == 1
+  #   head = 0
+  #   L += 1
+  #   disx = vcat([0.0], disx)
+  #   disy = vcat([0.0], disy)
+  # end 
+
+  ######## ###### ###### ###### ###### ###### ######
+
+  # adjust the site based on if there are left emitter
+  for j=1  :L-1 
 
     r = dis(j, j + 1, disx, disy)
     hop = hopping(decay, r)
 
     #println(hop)
     # Hopping
-    ampo += -t * hop, "C",j,"Cdag",j+1
-    ampo += -t * hop, "C",j+1,"Cdag",j
+    ampo += -t * hop, "C",j + head,"Cdag",j+1 + head
+    ampo += -t * hop, "C",j+1 + head,"Cdag",j + head
   end
 
-  for j=1:L
+  for j=1 :L 
     # E-E
     for k= max(1, j - range):j-1
 
@@ -48,7 +52,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       ifexch = (1 -  ==(1, abs(j - k)) * exch )
       
       # add the ee interaction term one by one
-      ampo += 2 * λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee),"N",j,"N",k
+      ampo += λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee),"N",j + head,"N",k + head
     end
     
     # N-E
@@ -61,14 +65,53 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       cursum = -λ_ne / ζ_ne
     end
 
-    for l=1:L
+    for l=1 :L 
       cursum += λ_ne / ( dis(j, l, disx, disy) + ζ_ne)
     end
 
-    ampo += -cursum, "N", j
+    ampo += -cursum, "N", j + head
   end
 
-  H = MPO(ampo,sites)
+  # QE part
+  # left QE
+  if QE > 0
+
+    dp = 1.0
+    # calculates the dipole induced 1/r^3 potential
+    for left = 1 : L 
+      ampo  += - dp / dis(left, disx, disy) ^ 3, "N", 1, "N", left + 1
+    end 
+
+  end 
+
+  # right QE
+  if QE > 1
+    for right = 1 : L
+      ampo += - dp / ( L + 1 - dis(right, disx, disy)) ^ 3, "N", L + 2, "N", right + 1
+    end 
+
+  end 
+
+  # penalty terms for non-QN conserving hamiltonian
+  # in the form of (sum_i n_i - N) ^2
+  if !QN
+    Λ = 30.0
+
+    for s1= 1:L
+      # linear terms
+      ampo += - 2 * Λ * N, "N", s1 + head
+
+      # quadratic terms
+      for s2 =1:L
+        ampo += Λ, "N", s1 + head, "N", s2 + head
+      end 
+
+    end 
+
+  end 
+
+
+  H = MPO(ampo, sites)
 
   return H
 end
@@ -86,8 +129,13 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
   decay = para["decay"]
   self = para["self_nuc"]
   manual = para["manual"]
-
   range = para["range"]
+  QE = para["QE"]
+  xscale = para["xscale"]
+
+  if QE > 0
+    println("QE currently not supported on 2D sys")
+  end 
 
   if Lx > Ly
     println("By set up Lx has to be smaller")
@@ -115,7 +163,7 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
       y1 = trunc(Int, b.y1)
       y2 = trunc(Int, b.y2)
 
-      r = dis(x1, y1, x2, y2, disx, disy)
+      r = dis(x1, y1, x2, y2, disx, disy, xscale)
       hop = hopping(decay, r)
 
       #println(hop)
@@ -138,7 +186,7 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
         ifexch = (1 -  ==(1, abs(x1 - x2) + abs(y1 - y2)) * exch )
         
         # add the ee interaction term one by one
-        ampo += 2 * λ_ee * ifexch / ( dis(x1, y1, x2, y2, disx, disy) + ζ_ee),"N",j,"N",k
+        ampo += λ_ee * ifexch / ( dis(x1, y1, x2, y2, disx, disy, xscale) + ζ_ee),"N",j,"N",k
 
         
       end
@@ -157,7 +205,7 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
 
         x2 = div(l - 1, Ly) + 1
         y2 = mod(l - 1, Ly) + 1
-        cursum += λ_ne / ( dis(x1, y1, x2, y2, disx, disy) + ζ_ne)
+        cursum += λ_ne / ( dis(x1, y1, x2, y2, disx, disy, xscale) + ζ_ne)
       end
 
       ampo += -cursum, "N", j

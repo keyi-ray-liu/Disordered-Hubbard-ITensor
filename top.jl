@@ -1,5 +1,5 @@
 # load variables specifically in linsolve
-#using ITensors: AbstractMPS, MPO, MPS, linkind, siteinds, Sweeps, check_hascommoninds, orthocenter, AbstractProjMPO, ProjMPS
+using ITensors: linkind, siteinds, check_hascommoninds, OneITensor
 #using ITensors: @debug_check, @timeit_debug, @printf
 #using KrylovKit: eigsolve, linsolve
 #import ITensors: permute, position!
@@ -31,14 +31,14 @@ function top()
   test = true
 
   if test
-    main(L=12, N=6, ex=20, int_ee=1.0, guess=false, method="SI", sweepdim=200, sweepcnt=40, noise=false)
+    main(L=12, N=6, ex=20, int_ee=1.0, guess=false, method="DMRG", sweepdim=200, sweepcnt=200, noise=false, QE=0, QN=false)
 
   else
     if ARGS == []
-      println("must specify operating mode. 0: plasmon, 1: gscc, 2: scan stat, 3: true disorder stat, 4: single instance of main")
+      println("must specify operating mode. 0: plasmon (L, lam), 1: gscc, 2: scan stat, 3: true disorder stat, 4: single instance of main")
 
     elseif ARGS[1] == "0"
-      plasmonstat( ARGS[2])
+      plasmonstat( ARGS[2], ARGS[3])
 
     elseif ARGS[1] == "1"
       cal_observe()
@@ -50,7 +50,7 @@ function top()
       truedisorder( ARGS[2], ARGS[3] )
 
     elseif ARGS[1] == "4"
-      @time main(L=12, N=6, ex=20, int_ee=1.0, guess=false, sweepdim=200, sweepcnt=80, noise=false)
+      @time main(L=[3, 30], N=45, ex=20, int_ee=1.0, guess=false, sweepdim=2000, sweepcnt=100, noise=false)
 
     else
       println("not a valid operating mode")

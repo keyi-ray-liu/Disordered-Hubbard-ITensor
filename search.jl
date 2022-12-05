@@ -138,6 +138,10 @@ function single_search(para::Dict, disx, disy, λ)
 
       end
     # shift and invert block
+
+
+
+
     elseif method == "SI"
       # metric is <phi | ψ>
       # metric = 1
@@ -147,6 +151,7 @@ function single_search(para::Dict, disx, disy, λ)
       energy = λ
       # infinity to start as the 'previous' energy
       prev = Inf
+
       #while metric >= tol
 
       while itrcnt < 100
@@ -160,29 +165,41 @@ function single_search(para::Dict, disx, disy, λ)
         #metric = 1 - inner(ϕ, ψ)
         #normalize!(ψ)
         energy = inner( ψ', H, ψ) / inner( ψ', ψ)
-
-        println("Power iteration: ", itrcnt, "  Current energy: ", energy)
+        overlap = inner( ψ', ϕ)
+        
+        println("Power iteration: ", itrcnt, "  Current energy: ", energy, "WF overlap with RHS: ", overlap)
         # new ψ is obtained
 
         # if the energy converged break the current iteration and start the next
         if abs(prev - energy) <= tol
           break
         end 
-
+        
+        ϕ = ψ
         prev = energy
-        ϕ = copy(ψ)
         itrcnt += 1
 
       end 
       
+      cur_ex += 1
       λ = energy
+
+
+
+    elseif method == "DMRG-X"
+
+      # tentative application of DMRG X
+      energy, ψ = dmrgx(H, ϕ)
+      println("energy = ", energy)
+      ϕ = ψ
+
+      cur_ex += 1
 
     else
       println( "Unrecognized method")
       exit()
     end 
 
-    cur_ex += 1
     var = variance(H, ψ)
 
     append!(allres, energy)

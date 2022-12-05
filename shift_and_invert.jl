@@ -11,7 +11,7 @@ Use the density matrix renormalization group (shift_and_invert) algorithm
 to optimize a matrix product state (MPS) such that it is the
 eigenvector of lowest eigenvalue of a Hermitian matrix H,
 represented as a matrix product operator (MPO).
-The MPS `psi0` is used to initialize the MPS to be optimized.
+The MPS `ϕ0` is used to initialize the MPS to be optimized.
 
 The number of sweeps of thd shift_and_invert algorithm is controlled by
 passing the `nsweeps` keyword argument. The keyword arguments
@@ -54,3 +54,33 @@ function shift_and_invert(H::MPO, ϕ::MPS,  λ::Float64, sites, para::Dict)
 end
 
 
+"""
+Naive implementation of DMRG-X
+
+"""
+function dmrgx(H::MPO, ϕ0::MPS)
+
+  dmrg_x_kwargs = (
+    nsweeps=20, reverse_step=false, normalize=true, maxdim=20, cutoff=1e-10, outputlevel=0
+  )
+
+  ψ = mydmrg(ProjMPO(H), ϕ0; nsite=2, dmrg_x_kwargs...)
+
+  energy = inner( ψ', H, ψ)
+  return energy, ψ
+end 
+
+function mydmrg(PH, psi0::MPS; reverse_step=false, kwargs...)
+  t = Inf
+  return tdvp(my_solver, PH, t, psi0; reverse_step, kwargs...)
+end
+
+
+function my_solver(PH, t, psi0; kwargs...)
+  H = contract(PH, ITensor(1.0))
+  D, U = eigen(H; ishermitian=true)
+  u = uniqueind(U, H)
+  max_overlap, max_ind = findmax(abs, array(psi0 * U))
+  U_max = U * dag(onehot(u => max_ind))
+  return U_max, nothing
+end

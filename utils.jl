@@ -12,11 +12,16 @@ function dis(i::Int, j::Int, disx, disy)
 
 end
 
-"""Calculates 2D distance"""
-function dis(x1::Int, y1::Int, x2::Int, y2::Int, disx, disy)
+"""Calculates 1D distance to left QE"""
+function dis(i::Int, disx, disy)
+  return sqrt( ( disx[i] + i + 1) ^ 2 + (disy[i]) ^ 2)
+end 
+
+"""Calculates 2D distance, with potential scaling on x"""
+function dis(x1::Int, y1::Int, x2::Int, y2::Int, disx, disy, xscale)
 
   
-  x = disx[x1, y1] + x1 - disx[x2, y2] - x2
+  x = disx[x1, y1]- disx[x2, y2]  + (x1  - x2) * xscale
   y = disy[x1, y1] + y1 - disy[x2, y2] - y2
 
   

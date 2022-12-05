@@ -10,6 +10,7 @@ function init_state(para, sites, disx, disy)
   ζ_ne, ζ_ee = para["ζ"]
   decay = para["decay"]
   self = para["self_nuc"]
+  QE = para["QE"]
 
   
   # if not guess, using random MPS as init state
@@ -19,11 +20,16 @@ function init_state(para, sites, disx, disy)
     end 
 
     # Create an initial random matrix product state
+    QE1 = QE > 0 ? [ "Emp"] : []
     state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N])
+    QE2 = QE > 1 ? [ "Emp"] : []
+
+    state = vcat(QE1, state)
+    state = vcat(state, QE2)
     #@show state
-    psi0 = randomMPS(sites,state)
+    ψ0 = randomMPS(sites,state)
 
-
+    
   # use gaussianMPS to calculation an init free fermionic state
   else 
     
@@ -58,18 +64,49 @@ function init_state(para, sites, disx, disy)
 
       end 
 
-    _, u = eigen(H)
+      _, u = eigen(H)
 
-    # Get the Slater determinant
-    phi = u[:, 1:N]
+    
+      # Get the Slater determinant
+      ϕ = u[:, 1:N]
 
-    # Create an mps for the free fermion ground state
-    psi0 = slater_determinant_to_mps(sites, phi)
+      # Create an mps for the free fermion ground state
+      ψ0 = slater_determinant_to_mps(sites, ϕ)
 
     end 
 
 
   end 
 
-  return psi0
+  return ψ0
 end
+
+
+"""return the sites indices for further use, can add quantum emitters """
+function init_site(para::Dict)
+  L = para["L"]
+  QE = para["QE"]
+  QN = para["QN"]
+
+  if typeof(L) != Int
+    L = L[1] * L[2]
+  end 
+
+  sites = Vector{Index}(undef, L + QE)
+
+  #left QE
+  if QE > 0
+    sites[1] = siteind("Fermion"; addtags="n=1", conserve_qns =false)
+  end 
+
+  for mid = (QE>0) + 1: (QE>0) + L
+    sites[mid] =  siteind("Fermion"; addtags="n=$mid", conserve_qns =QN)
+  end 
+
+  if QE > 1
+    sites[end] =  siteind("Fermion"; addtags="n=$(L+QE)", conserve_qns =false)
+  end 
+
+  #println(length(sites))
+  return sites
+end 
