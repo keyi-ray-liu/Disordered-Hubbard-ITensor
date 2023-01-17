@@ -11,6 +11,7 @@ function init_state(para, sites, disx, disy)
   decay = para["decay"]
   self = para["self_nuc"]
   QE = para["QE"]
+  QN = para["QN"]
 
   
   # if not guess, using random MPS as init state
@@ -20,14 +21,22 @@ function init_state(para, sites, disx, disy)
     end 
 
     # Create an initial random matrix product state
-    QE1 = QE > 0 ? [ "Emp"] : []
-    state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N])
-    QE2 = QE > 1 ? [ "Emp"] : []
 
-    state = vcat(QE1, state)
-    state = vcat(state, QE2)
-    #@show state
-    ψ0 = randomMPS(sites,state)
+    # we have disabled QN and QE both to be true, so QN is solely for no QE situations
+    if QN
+      #QE1 = QE > 0 ? [ "Occ"] : []
+      state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N])
+      #QE2 = QE > 1 ? [ "Occ"] : []
+
+      #state = vcat(QE1, state)
+      #state = vcat(state, QE2)
+      #@show state
+      ψ0 = randomMPS(sites,state)
+
+    else
+      ψ0 = randomMPS(sites,L + QE)
+
+    end 
 
     
   # use gaussianMPS to calculation an init free fermionic state
@@ -94,18 +103,11 @@ function init_site(para::Dict)
 
   sites = Vector{Index}(undef, L + QE)
 
-  #left QE
-  if QE > 0
-    sites[1] = siteind("Fermion"; addtags="n=1", conserve_qns =false)
+  # currently we have a check for QN and QE. QN = false when QE > 0, so everything is streamlined
+  for s = 1: QE + L
+    sites[s] =  siteind("Fermion"; addtags="n=$s", conserve_qns =QN)
   end 
 
-  for mid = (QE>0) + 1: (QE>0) + L
-    sites[mid] =  siteind("Fermion"; addtags="n=$mid", conserve_qns =QN)
-  end 
-
-  if QE > 1
-    sites[end] =  siteind("Fermion"; addtags="n=$(L+QE)", conserve_qns =false)
-  end 
 
   #println(length(sites))
   return sites

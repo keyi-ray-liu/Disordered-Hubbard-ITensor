@@ -2,7 +2,7 @@
 function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, ζ::Vector{Float64}, exch::Float64, 
   decay::Float64, self_nuc::Bool, disorder::Bool, sweepdim::Int, sweepcnt::Int, ex::Int, weight::Float64, 
   guess::Bool, manual::Bool, itr_dis::Vector{Float64}, range::Int, noise::Bool, method::String, QE::Int, 
-  xscale::Float64, QN::Bool)
+  xscale::Float64, QN::Bool, ChargeNeutral::Int, QEen::Float64, dp::Float64)
 
   # we set the basic parameters for the simulation
 
@@ -29,9 +29,16 @@ function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, ζ::Ve
     "method" => method,
     "QE" => QE,
     "xscale" => xscale,
-    "QN" => QN
+    "QN" => QN,
+    "CN" => ChargeNeutral,
+    "QEen" => QEen,
+    "dp" => dp
   )
-   
+
+  if QE > 0 && QN
+    throw(ArgumentError("QN and QE condition not compatible"))
+  end 
+  
   return para
 end
 

@@ -1,4 +1,3 @@
-
 """Generates the 1D hamiltonian MPO for the given system configuration"""
 function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites)
   # parameters 
@@ -12,6 +11,9 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   QE = para["QE"]
   QN = para["QN"]
   N = para["N"]
+  CN = para["CN"]
+  QEen = para["QEen"]
+  dp = para["dp"]
   
   # set e-e interaction range
   range = para["range"]
@@ -19,6 +21,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   head = (QE > 0)
   ampo = OpSum()
 
+  λ_ne = λ_ne * CN / L
 
   # testblock
   ###### ###### ###### ###### ###### ######
@@ -72,25 +75,53 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
     ampo += -cursum, "N", j + head
   end
 
+  
   # QE part
   # left QE
   if QE > 0
 
-    dp = 1.0
-    # calculates the dipole induced 1/r^3 potential
+    # diagonal energy term
+
+    #ampo += QEen, "N", 1
+    
     for left = 1 : L 
-      ampo  += - dp / dis(left, disx, disy) ^ 3, "N", 1, "N", left + 1
+      
+      # calculates the dipole induced 1/r^3 potential
+
+      ampo += QEen / N, "N", 1, "N", left + 1
+      
+      r = dis(left, disx, disy)
+
+      for all = 1 : L
+
+        
+        #off-diagonal two level transition term
+        ampo  += - dp / r ^ 3, "x", 1, "N", left + 1, "N", all + 1
+        
+      end 
+      
     end 
 
   end 
 
   # right QE
   if QE > 1
+    ampo += QEen, "N", L + 2
+
     for right = 1 : L
-      ampo += - dp / ( L + 1 - dis(right, disx, disy)) ^ 3, "N", L + 2, "N", right + 1
+      
+
+      r = dis(right, disx, disy)
+
+      for all = 1: L
+        ampo += - dp / ( L + 1 - r) ^ 3, "x", L + 2, "N", right + 1, "N", all + 1
+        #ampo += - dp / ( L + 1 - r) ^ 3, "Cdag", L + 2, "N", right + 1, "N", all + 1
+
+      end 
     end 
 
   end 
+
 
   # penalty terms for non-QN conserving hamiltonian
   # in the form of (sum_i n_i - N) ^2
@@ -132,6 +163,7 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
   range = para["range"]
   QE = para["QE"]
   xscale = para["xscale"]
+  CN = para["CN"]
 
   if QE > 0
     println("QE currently not supported on 2D sys")
@@ -146,6 +178,7 @@ function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vecto
   disy = reshape(disy, (Lx, Ly))
   L = Lx * Ly
 
+  λ_ne = λ_ne * CN / L
   ampo = OpSum()
 
   if !manual

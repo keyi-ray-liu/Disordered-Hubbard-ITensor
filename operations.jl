@@ -104,3 +104,12 @@ function truedisorder(lam, gen)
 
   main(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, disorder=true, weight=5.0, range=5)
 end
+
+"""Function to call QE calculations"""
+function QE(num, energy)
+  num = parse(Int, num)
+  energy = parse(Float64, energy)
+
+  main(L=12, N=6, CN=6, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, sweepcnt=200, noise=false, QE=num, QN=false, QEen=energy, dp=0.0)
+
+end 

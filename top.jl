@@ -28,11 +28,13 @@ include("shift_and_invert.jl")
 function top()
 
   # test handle for more streamlined testing environment in julia REPL
+  #test = false
   test = true
 
   if test
-    main(L=12, N=6, ex=20, int_ee=1.0, guess=false, method="DMRG", sweepdim=200, sweepcnt=200, noise=false, QE=0, QN=false)
-
+    #main(L=60, N=29, CN=29, ex=20, int_ee=2.0, int_ne=2.0, guess=true, method="DMRG", sweepdim=500, sweepcnt=30, noise=false, QE=0, QN=true)
+    main(L=12, N=6, CN=6, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, sweepcnt=200, noise=false, QE=2, QN=false, QEen=-0.2, dp=0.0)
+    
   else
     if ARGS == []
       println("must specify operating mode. 0: plasmon (L, lam), 1: gscc, 2: scan stat, 3: true disorder stat, 4: single instance of main")
@@ -51,6 +53,10 @@ function top()
 
     elseif ARGS[1] == "4"
       @time main(L=[3, 30], N=45, ex=20, int_ee=1.0, guess=false, sweepdim=2000, sweepcnt=100, noise=false)
+
+    # testing QE
+    elseif ARGS[1] == "5"
+      QE(ARGS[2], ARGS[3])
 
     else
       println("not a valid operating mode")

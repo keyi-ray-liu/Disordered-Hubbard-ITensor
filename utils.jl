@@ -14,7 +14,7 @@ end
 
 """Calculates 1D distance to left QE"""
 function dis(i::Int, disx, disy)
-  return sqrt( ( disx[i] + i + 1) ^ 2 + (disy[i]) ^ 2)
+  return sqrt( ( disx[i] + i ) ^ 2 + (disy[i]) ^ 2)
 end 
 
 """Calculates 2D distance, with potential scaling on x"""
@@ -27,6 +27,11 @@ function dis(x1::Int, y1::Int, x2::Int, y2::Int, disx, disy, xscale)
   
   return sqrt( x^2 + y^2 )
 
+end
+
+function ITensors.op!(Op::ITensor, ::OpName"x", ::SiteType"Fermion", s::Index)
+  Op[s' => 2, s => 1] = 1.0
+  return Op[s' => 1, s => 2] = 1.0
 end
 
 """Parsing utility that grabs the max dim string"""
