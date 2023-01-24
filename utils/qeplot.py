@@ -1,9 +1,13 @@
 import numpy as np
 import matplotlib.pyplot as plt
 import os
+import sys
 
 
 fig, ax = plt.subplots()
+dirs = sys.argv[1]
+
+print(os.listdir(dirs))
 
 for f in os.listdir():
 
