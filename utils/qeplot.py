@@ -7,14 +7,15 @@ import sys
 fig, ax = plt.subplots()
 dirs = sys.argv[1]
 
-print(os.listdir(dirs))
+files = os.listdir(dirs)
+print(files)
 
-for f in os.listdir():
+for f in files:
 
     if f[0] == 'e':
 
         val = float(f[6:])
-        raw = np.loadtxt(f)
+        raw = np.loadtxt(dirs + '/' + f)
 
         raw = raw - raw[0]
 
