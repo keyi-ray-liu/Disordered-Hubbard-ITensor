@@ -12,6 +12,8 @@ for f in os.listdir():
         val = float(f[6:])
         raw = np.loadtxt(f)
 
+        raw = raw - raw[0]
+
         ax.scatter( [val] * int(raw.shape[0]), raw )
 
 plt.show()
