@@ -110,6 +110,6 @@ function QE(num, energy)
   num = parse(Int, num)
   energy = parse(Float64, energy)
 
-  main(L=12, N=6, CN=6, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, sweepcnt=200, noise=false, QE=num, QN=false, QEen=energy, dp=0.0)
-
+  main(L=12, N=6, CN=6, ex=30, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=300, sweepcnt=200, noise=false, QE=num, QN=false, QEen=energy, dp=1.0)
+  #main(L=60, N=30, CN=30, ex=30, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, sweepcnt=200, noise=false, QE=num, QN=false, QEen=energy, dp=1.0)
 end 
