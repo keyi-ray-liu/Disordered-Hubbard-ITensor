@@ -82,17 +82,11 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
 
     # diagonal energy term
 
-    #ampo += QEen, "N", 1
+    ampo += QEen, "N", 1
     
     for left = 1 : L 
       
-      # calculates the dipole induced 1/r^3 potential
-
-      ampo += QEen / N, "N", 1, "N", left + 1
-      
       r = dis(left, disx, disy)
-      
-
       for all = 1 : L
 
         # r0 determines the overall 'weight' of sites
