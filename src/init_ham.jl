@@ -91,12 +91,15 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       ampo += QEen / N, "N", 1, "N", left + 1
       
       r = dis(left, disx, disy)
+      
 
       for all = 1 : L
 
+        # r0 determines the overall 'weight' of sites
+        r0 = dis(all, disx, disy)
         
         #off-diagonal two level transition term
-        ampo  += - dp / r ^ 3, "x", 1, "N", left + 1, "N", all + 1
+        ampo  += - dp * r0 / r ^ 3, "x", 1, "N", left + 1, "N", all + 1
         
       end 
       
@@ -114,7 +117,9 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       r = dis(right, disx, disy)
 
       for all = 1: L
-        ampo += - dp / ( L + 1 - r) ^ 3, "x", L + 2, "N", right + 1, "N", all + 1
+
+        r0 = dis(right, disx, disy)
+        ampo += - dp * (L + 1 - r0) / ( L + 1 - r) ^ 3, "x", L + 2, "N", right + 1, "N", all + 1
         #ampo += - dp / ( L + 1 - r) ^ 3, "Cdag", L + 2, "N", right + 1, "N", all + 1
 
       end 
