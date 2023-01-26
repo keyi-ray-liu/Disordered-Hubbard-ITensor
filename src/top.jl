@@ -29,7 +29,7 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = true
+  test = false
 
   if test
     #main(L=60, N=29, CN=29, ex=20, int_ee=2.0, int_ne=2.0, guess=true, method="DMRG", sweepdim=500, sweepcnt=30, noise=false, QE=0, QN=true)
@@ -37,7 +37,7 @@ function top()
     
   else
     if ARGS == []
-      println("must specify operating mode. 0: plasmon (L, lam), 1: gscc, 2: scan stat, 3: true disorder stat, 4: single instance of main")
+      println("must specify operating mode. 0: plasmon (L, lam), 1: gscc, 2: scan stat, 3: true disorder stat, 4: single instance of main, 5: QE, 6: time-evolution")
 
     elseif ARGS[1] == "0"
       plasmonstat( ARGS[2], ARGS[3])
@@ -57,6 +57,9 @@ function top()
     # testing QE
     elseif ARGS[1] == "5"
       QE(ARGS[2], ARGS[3])
+    
+    elseif ARGS[1] == "6"
+      time_evolution()
 
     else
       println("not a valid operating mode")
