@@ -112,7 +112,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
 
       for all = 1: L
 
-        r0 = dis(right, disx, disy)
+        r0 = dis(all, disx, disy)
         ampo += - dp * (L + 1 - r0) / ( L + 1 - r) ^ 3, "x", L + 2, "N", right + 1, "N", all + 1
         #ampo += - dp / ( L + 1 - r) ^ 3, "Cdag", L + 2, "N", right + 1, "N", all + 1
 
