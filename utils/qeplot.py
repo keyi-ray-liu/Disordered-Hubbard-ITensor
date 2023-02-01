@@ -19,6 +19,6 @@ for f in files:
 
         raw = raw - raw[0]
 
-        ax.scatter( [val] * int(raw.shape[0]), raw )
+        ax.scatter( [val] * int(raw.shape[0]), raw, s=1 )
 
 plt.show()
