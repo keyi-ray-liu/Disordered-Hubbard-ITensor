@@ -19,6 +19,10 @@ for f in files:
 
         raw = raw - raw[0]
 
-        ax.scatter( [val] * int(raw.shape[0]), raw, s=1 )
+        ax.scatter( [val] * int(raw.shape[0]), raw, s=3 )
+
+ax.set_xlabel('QE energy')
+ax.set_ylabel('Energy level from GS')
+ax.set_title('Plotting energy level as function of QE energy, ' + dirs)
 
 plt.show()
