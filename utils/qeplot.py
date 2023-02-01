@@ -4,7 +4,7 @@ import os
 import sys
 
 
-fig, ax = plt.subplots()
+fig, ax = plt.subplots(figsize=(5, 10))
 dirs = sys.argv[1]
 
 files = os.listdir(dirs)
@@ -24,5 +24,6 @@ for f in files:
 ax.set_xlabel('QE energy')
 ax.set_ylabel('Energy level from GS')
 ax.set_title('Plotting energy level as function of QE energy, ' + dirs)
+fig.savefig( dirs + '.png')
 
 plt.show()
