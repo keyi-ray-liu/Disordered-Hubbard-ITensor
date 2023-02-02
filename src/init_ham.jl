@@ -97,6 +97,9 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
         
       end 
       
+      # the offset term, to set the 'center of mass'
+      # calculated as a uniform distribution:  L * N / 2
+      ampo +=  dp * L * N / ( 2 * r^3), "x", 1, "N", left + 1
     end 
 
   end 
@@ -117,6 +120,10 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
         #ampo += - dp / ( L + 1 - r) ^ 3, "Cdag", L + 2, "N", right + 1, "N", all + 1
 
       end 
+      # the offset term, to set the 'center of mass'
+      # calculated as a uniform distribution:  L * N / 2
+      ampo +=  dp * L * N / ( 2 * r^3), "x", L + 2, "N", right + 1
+
     end 
 
   end 
