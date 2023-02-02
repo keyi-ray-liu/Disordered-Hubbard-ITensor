@@ -6,7 +6,7 @@ if implement the 2D flattening manually
 function main(;L=22, N=11, int_ee=1.0, int_ne=1.0, t=1.0, ζ=[0.5, 0.5], exch=0.2, 
   decay=0.2, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
   guess=true, manual=false, itr_dis=[1.0], range=1000, noise=true, method="DMRG", QE=0, xscale=1.0, 
-  QN=true, CN=11, QEen=1.0, dp=1.0)
+  QN=true, CN=11, QEen=1.0, dp=0.0, output="Default")
 
   para = setpara(L, N, int_ee, int_ne, t, ζ, exch, decay, self_nuc, disorder, 
   sweepdim, sweepcnt, ex, weight, guess, manual, itr_dis, range, noise, method, QE, xscale,
@@ -40,7 +40,12 @@ function main(;L=22, N=11, int_ee=1.0, int_ne=1.0, t=1.0, ζ=[0.5, 0.5], exch=0.
     writedlm( idfile, case)
 
     # write wf
-    wf = h5open( prefix * "wf" * suffix * ".h5", "w")
+
+    if output == "Default" || cases > 1
+      wf = h5open( prefix * "wf" * suffix * ".h5", "w")
+    else
+      wf = h5open( output * ".h5", "w")
+    end 
 
     for (i, psi) in enumerate(states)
       write(wf, "psi" * string(i), psi)

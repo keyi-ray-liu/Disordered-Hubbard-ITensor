@@ -22,6 +22,7 @@ include("search.jl")
 include("correlation.jl")
 include("operations.jl")
 include("shift_and_invert.jl")
+include("timeevolve.jl")
 #include("projection.jl")
 
 """The top level function that controls workflow. Use operation mode to select code function"""
@@ -32,6 +33,8 @@ function top()
   test = false
 
   if test
+
+    println("TEST TEST TEST")
     #main(L=60, N=29, CN=29, ex=20, int_ee=2.0, int_ne=2.0, guess=true, method="DMRG", sweepdim=500, sweepcnt=30, noise=false, QE=0, QN=true)
     main(L=12, N=6, CN=6, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, sweepcnt=200, noise=false, QE=2, QN=false, QEen=-0.2, dp=0.0)
     
@@ -59,7 +62,7 @@ function top()
       QE(ARGS[2], ARGS[3])
     
     elseif ARGS[1] == "6"
-      time_evolution()
+      QE_dynamic()
 
     else
       println("not a valid operating mode")

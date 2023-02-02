@@ -110,6 +110,46 @@ function QE(num, energy)
   num = parse(Int, num)
   energy = parse(Float64, energy)
 
-  main(L=12, N=6, CN=6, ex=30, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=300, sweepcnt=200, noise=false, QE=num, QN=false, QEen=energy, dp=1.0)
-  #main(L=60, N=30, CN=30, ex=30, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, sweepcnt=200, noise=false, QE=num, QN=false, QEen=energy, dp=1.0)
+  L = 12
+  N = 6
+  CN = 6
+  ex = 30
+  guess = false
+  dim = 300
+  cnt = 300
+  noise = false
+  QN = false
+  dp = 0.0075
+
+  main(L=L, N=N, CN=CN, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num, QN=QN, QEen=energy, dp=dp)
+  #main(L=60, N=30, CN=30, ex=30, guess=false, sweepdim=500, sweepcnt=200, noise=false, QE=num, QN=false, QEen=energy, dp=1.0)
+end 
+
+function QE_dynamic()
+
+  L = 12
+  N = 6
+  CN = 6
+  dim = 300
+  cnt = 300
+  dp = 0.0075
+  τ = 0.1
+  t = 5
+
+  workdir = getworkdir()
+  target = "target"
+
+  if !isfile(workdir * target * ".h5")
+    # if there no target file, we perform a single GS search
+    main(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, output = target)
+  end 
+  
+  # read the GS
+  wf = h5open( workdir * target * ".h5", "r")
+  ψ = read(wf, "psi1", MPS)
+
+
+  time_evolve(ψ; L=L, N=N, CN=CN, QE=num, QEen=energy, dp=dp, t=t, τ=τ)
+  
+  
 end 
