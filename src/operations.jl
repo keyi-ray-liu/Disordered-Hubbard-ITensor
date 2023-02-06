@@ -149,7 +149,7 @@ function QE_dynamic()
   ψ = read(wf, "psi1", MPS)
 
 
-  time_evolve(ψ; L=L, N=N, CN=CN, QE=num, QEen=energy, dp=dp, t=t, τ=τ)
+  time_evolve(ψ; L=L, N=N, CN=CN, QE=num, QEen=energy, dp=dp, time=t, τ=τ)
   
   
 end 
