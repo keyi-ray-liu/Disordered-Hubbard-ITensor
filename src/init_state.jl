@@ -112,3 +112,24 @@ function init_site(para::Dict)
   #println(length(sites))
   return sites
 end 
+
+
+"""Preparing the state for the TE, if needed"""
+function TE_stateprep(ψ, QE)
+
+  if QE == 0
+    println("No QE, initial state as read")
+    
+  elseif QE == 1
+    println(length(ψ))
+
+  elseif QE == 2
+    println(length(ψ))
+
+  else
+    throw(ArgumentError("invalid QE number"))
+  end 
+
+  return ψ
+
+end 
