@@ -35,8 +35,9 @@ function top()
   if test
 
     println("TEST TEST TEST")
+    #QE_dynamic()
     #main(L=60, N=29, CN=29, ex=20, int_ee=2.0, int_ne=2.0, guess=true, method="DMRG", sweepdim=500, sweepcnt=30, noise=false, QE=0, QN=true)
-    main(L=12, N=6, CN=6, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, sweepcnt=200, noise=false, QE=2, QN=false, QEen=-0.2, dp=0.0)
+    main(L=12, N=6, CN=6, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, sweepcnt=200, noise=false, QE=2, QN=true, QEen=-0.5, dp=0.02)
     
   else
     if ARGS == []

@@ -44,7 +44,7 @@ function main(;L=22, N=11, int_ee=1.0, int_ne=1.0, t=1.0, ζ=[0.5, 0.5], exch=0.
     if output == "Default" || cases > 1
       wf = h5open( prefix * "wf" * suffix * ".h5", "w")
     else
-      wf = h5open( output * ".h5", "w")
+      wf = h5open( prefix * output * ".h5", "w")
     end 
 
     for (i, psi) in enumerate(states)

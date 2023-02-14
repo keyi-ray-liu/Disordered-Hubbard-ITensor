@@ -135,13 +135,16 @@ function QE_dynamic()
   dp = 0.0075
   τ = 0.1
   t = 5
+  QE = 2
+  energy = 0.5
 
   workdir = getworkdir()
   target = "target"
 
   if !isfile(workdir * target * ".h5")
     # if there no target file, we perform a single GS search
-    main(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, output = target)
+    # single search assume no QE GS
+    main(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, output = target, QE=0)
   end 
   
   # read the GS
@@ -149,7 +152,7 @@ function QE_dynamic()
   ψ = read(wf, "psi1", MPS)
 
 
-  time_evolve(ψ; L=L, N=N, CN=CN, QE=num, QEen=energy, dp=dp, time=t, τ=τ)
+  time_evolve(ψ; L=L, N=N, CN=CN, QE=QE, QEen=energy, dp=dp, time=t, τ=τ)
   
   
 end 

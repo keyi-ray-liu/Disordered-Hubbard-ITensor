@@ -34,6 +34,13 @@ function ITensors.op!(Op::ITensor, ::OpName"x", ::SiteType"Fermion", s::Index)
   return Op[s' => 1, s => 2] = 1.0
 end
 
+"""push gate"""
+function gatefy(gates, factor, g, τ)
+
+  G = exp( - im * τ / factor * g)
+  push!(gates, G)
+end 
+
 """Parsing utility that grabs the max dim string"""
 function stringmaxproc(output, tol)
   maxsweep = 0

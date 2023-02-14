@@ -22,17 +22,26 @@ function init_state(para, sites, disx, disy)
 
     # Create an initial random matrix product state
 
-    # we have disabled QN and QE both to be true, so QN is solely for no QE situations
+    # QN and QE conditions if QN, explicit initiating conditions
     if QN
-      #QE1 = QE > 0 ? [ "Occ"] : []
-      state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N])
-      #QE2 = QE > 1 ? [ "Occ"] : []
 
-      #state = vcat(QE1, state)
-      #state = vcat(state, QE2)
+      AUX1 = QE > 0 ? ["Emp"] : []
+      QE1 = QE > 0 ? [ "Occ"] : []
+    
+      state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N])
+
+      QE2 = QE > 1 ? [ "Occ"] : []
+      AUX2 = QE > 1 ? ["Emp"] : []
+
+      state = vcat(QE1, state)
+      state = vcat(AUX1, state)
+      state = vcat(state, QE2)
+      state = vcat(state, AUX2)
+
       #@show state
       ψ0 = randomMPS(sites,state)
 
+    # random MPS if QN is false, making sure no 'stuck' situation
     else
       ψ0 = randomMPS(sites,L + QE)
 
@@ -101,14 +110,16 @@ function init_site(para::Dict)
     L = L[1] * L[2]
   end 
 
-  sites = Vector{Index}(undef, L + QE)
+  # experimental feature, QN AND QE
+  # if we have both, then need AUX sites
+  sites = Vector{Index}(undef, L + QE * (QN + 1))
 
-  # currently we have a check for QN and QE. QN = false when QE > 0, so everything is streamlined
-  for s = 1: QE + L
+  # determines the number of total sites. IF QE and QN, then we have 2 sites for each QE, else 1
+  for s = 1: QE * (QN + 1) + L
     sites[s] =  siteind("Fermion"; addtags="n=$s", conserve_qns =QN)
   end 
 
-
+  
   #println(length(sites))
   return sites
 end 
@@ -119,7 +130,7 @@ function TE_stateprep(ψ, QE)
 
   if QE == 0
     println("No QE, initial state as read")
-    
+
   elseif QE == 1
     println(length(ψ))
 

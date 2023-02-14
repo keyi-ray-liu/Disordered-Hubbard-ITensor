@@ -1,5 +1,5 @@
 """worker function perfomring time evolution"""
-function time_evolve(ψ; t=1.0, L=12, N=6, CN=6, λ_ne=1.0, λ_ee=1.0, QE=2, QN=false, QEen=0.4, dp=0.25, time=5, τ=0.1, disorder=false, range=1000, self=false, cutoff=1E-8)
+function time_evolve(ψ; t=1.0, L=12, N=6, CN=6, decay=0.2, λ_ne=1.0, ζ=[0.5, 0.5], λ_ee=1.0, QE=2, exch =0.2, QN=false, QEen=0.4, dp=0.25, time=5, τ=0.1, disorder=false, range=1000, self=false, cutoff=1E-8)
 
     if QE == 0
         throw(ArgumentError("Dynamics have to include quantum emitters"))
@@ -9,24 +9,26 @@ function time_evolve(ψ; t=1.0, L=12, N=6, CN=6, λ_ne=1.0, λ_ee=1.0, QE=2, QN=
     end 
 
     head = (QE > 0)
+    ζ_ne, ζ_ee = ζ
 
     # get disorder (if no then zeros) 
     disx, disy = setdisorder(disorder, L)
 
-    sites =  siteinds("Fermion", N + QE; conserve_qns=true)
+    sites =  siteinds("Fermion", L + QE; conserve_qns=QN)
     gates = ITensor[]
     
+    λ_ne = λ_ne * CN / L
 
     # two-site hopping gates
 
-    factor = 2 
+    factor = 2.0
     for j in 1:(L - 1)
 
         r = dis(j, j + 1, disx, disy)
         hop = hopping(decay, r)
 
         s1 = sites[j + head ]
-        s2 = siste[j + head + 1]
+        s2 = sites[j + head + 1]
         hj =
           - t * hop * op("C", s1) * op("Cdag", s2) +
           - t * hop * op("C", s2) * op("Cdag", s1)
@@ -36,10 +38,9 @@ function time_evolve(ψ; t=1.0, L=12, N=6, CN=6, λ_ne=1.0, λ_ee=1.0, QE=2, QN=
 
     # add three site dp gates:
     if QE > 0
-
+        s0 = sites[1]
         for left = 1 : L 
             
-            s0 = sites[1]
             s1 = sites[left + head]
 
             r = dis(left, disx, disy)
@@ -64,10 +65,11 @@ function time_evolve(ψ; t=1.0, L=12, N=6, CN=6, λ_ne=1.0, λ_ee=1.0, QE=2, QN=
     end 
 
     if QE > 1
-
+        s0 = sites[L + 2]
+        
         for right = 1 : L 
             
-            s0 = sites[L + 2]
+            
             s1 = sites[right + head]
 
             r = dis(right, disx, disy)
@@ -94,13 +96,13 @@ function time_evolve(ψ; t=1.0, L=12, N=6, CN=6, λ_ne=1.0, λ_ee=1.0, QE=2, QN=
 
     # reverse gates
     append!(gates, reverse(gates))
+
+
+
     # two-site gate end
-
-
-
     # add one-site TE gates
 
-    factor = 1
+    factor = 1.0
     for j=1 :L 
 
         s1 = sites[j + head]
@@ -163,8 +165,9 @@ function time_evolve(ψ; t=1.0, L=12, N=6, CN=6, λ_ne=1.0, λ_ee=1.0, QE=2, QN=
             for j =1:L
                 
                 s2 = sites[j + head]
-                lii = Λ * op("N", s1) * op("N", s2)
-                gatefy(gates, factor, lii, τ)
+                lij = Λ * op("N", s1) * op("N", s2)
+
+                gatefy(gates, factor, lij, τ)
 
             end 
     
@@ -177,10 +180,11 @@ function time_evolve(ψ; t=1.0, L=12, N=6, CN=6, λ_ne=1.0, λ_ee=1.0, QE=2, QN=
     # further preparation of the initial state, if needed
     ψ = TE_stateprep(ψ, QE)
 
+    print("length of ψ is:" , size(ψ))
+
     for dt in 0.0:τ:time
         #Sz = expect(psi, "Sz"; sites=c)
         println("$dt")
-        dt = time && break
     
         ψ = apply(gates, ψ; cutoff)
         normalize!(ψ)

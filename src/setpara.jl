@@ -36,7 +36,8 @@ function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, ζ::Ve
   )
 
   if QE > 0 && QN
-    throw(ArgumentError("QN and QE condition not compatible"))
+    #throw(ArgumentError("QN and QE condition not compatible"))
+    println("warning, QN and QE both != 0. Experimental feature")
   end 
   
   return para

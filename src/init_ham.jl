@@ -17,23 +17,17 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   
   # set e-e interaction range
   range = para["range"]
-  # if QE > 0, then at least left emitter
-  head = (QE > 0)
+  # if QE > 0, then at least left emitter, and if QN, we account for the AUX site
+
+  # head denotes the position of QE1: 0 if QE == 0, 1 if QE but not QN, 2 if QE and QN
+  head = (QE > 0) * (QN + 1)
+
+  print("head position is now at", head)
   ampo = OpSum()
 
   λ_ne = λ_ne * CN / L
 
-  # testblock
-  ###### ###### ###### ###### ###### ######
-
-  # if QE == 1
-  #   head = 0
-  #   L += 1
-  #   disx = vcat([0.0], disx)
-  #   disy = vcat([0.0], disy)
-  # end 
-
-  ######## ###### ###### ###### ###### ###### ######
+  ############################ begin chain hamiltonian ###################################
 
   # adjust the site based on if there are left emitter
   for j=1  :L-1 
@@ -75,15 +69,16 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
     ampo += -cursum, "N", j + head
   end
 
-  
+  # ##################### end chain hamiltonian ###################################
+  ##################### begin QE hamiltonian ###################################
   # QE part
   # left QE
   if QE > 0
 
     # diagonal energy term
-
-    ampo += QEen, "N", 1
+    ampo += QEen, "N", head
     
+    # dipole
     for left = 1 : L 
       
       r = dis(left, disx, disy)
@@ -93,20 +88,29 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
         r0 = dis(all, disx, disy)
         
         #off-diagonal two level transition term
-        ampo  += - dp * r0 / r ^ 3, "x", 1, "N", left + 1, "N", all + 1
-        
+        # if no QN, symmetry breaking term
+        if !QN
+          ampo  += - dp * r0 / r ^ 3, "x", head, "N", left + head, "N", all + head
+
+        # AUX symmetry perserving term
+        # c1c+2 + c2c+1
+        else
+          ampo  += - dp * r0 / r ^ 3, "C", 1, "Cdag", head, "N", left + head, "N", all + head
+          ampo  += - dp * r0 / r ^ 3, "C", head, "Cdag", 1, "N", left + head, "N", all + head
+        end 
+
       end 
       
       # the offset term, to set the 'center of mass'
       # calculated as a uniform distribution:  L * N / 2
-      ampo +=  dp * L * N / ( 2 * r^3), "x", 1, "N", left + 1
+      #ampo +=  dp * L * N / ( 2 * r^3), "x", head, "N", left + head
     end 
 
   end 
 
   # right QE
   if QE > 1
-    ampo += QEen, "N", L + 2
+    ampo += QEen, "N", L + head + 1
 
     for right = 1 : L
       
@@ -116,22 +120,33 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       for all = 1: L
 
         r0 = dis(all, disx, disy)
-        ampo += - dp * (L + 1 - r0) / ( L + 1 - r) ^ 3, "x", L + 2, "N", right + 1, "N", all + 1
+
+        if !QN
+          ampo += - dp * (L + 1 - r0) / ( L + 1 - r) ^ 3, "x", L + head + 1, "N", right + head, "N", all + head
         #ampo += - dp / ( L + 1 - r) ^ 3, "Cdag", L + 2, "N", right + 1, "N", all + 1
 
+        else
+          ampo += - dp * (L + 1 - r0) / ( L + 1 - r) ^ 3, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head, "N", all + head
+          ampo += - dp * (L + 1 - r0) / ( L + 1 - r) ^ 3, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head, "N", all + head
+        end 
+
       end 
+
       # the offset term, to set the 'center of mass'
       # calculated as a uniform distribution:  L * N / 2
-      ampo +=  dp * L * N / ( 2 * r^3), "x", L + 2, "N", right + 1
+      #ampo +=  dp * L * N / ( 2 * r^3), "x", L + head + 1, "N", right + head
 
     end 
 
   end 
 
+  ############################################## end QE hamiltonian ##########################################
+  ######################### begin penalty ####################################
 
   # penalty terms for non-QN conserving hamiltonian
   # in the form of (sum_i n_i - N) ^2
-  if !QN
+  # if not QN, enforce
+  if !QN 
     Λ = 30.0
 
     for s1= 1:L
@@ -147,6 +162,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
 
   end 
 
+  ########################### end penalty ###################################
 
   H = MPO(ampo, sites)
 
