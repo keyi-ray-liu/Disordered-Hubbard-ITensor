@@ -112,16 +112,16 @@ function QE(num, energy)
   num = parse(Int, num)
   energy = parse(Float64, energy)
 
-  L = 12
-  N = 6
-  CN = 6
+  L = 60
+  N = 30
+  CN = 30
   ex = 30
   guess = false
   dim = 300
-  cnt = 300
+  cnt = 50
   noise = false
   QN = false
-  dps = 0.0075
+  dps = 1.0
   ζ = 0.5
   offset = 1.0
   

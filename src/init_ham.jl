@@ -83,7 +83,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
     ζ_dp_left = ζ_dp[1]
     # diagonal energy term
     ampo += QEen, "N", head
-    
+    cavg = CN / L 
     # dipole
     for left = 1 : L 
       
@@ -110,17 +110,17 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       # end 
 
       if !QN
-        ampo  +=  dp_left / r_dp , "x", head, "N", left + head
+        ampo  +=  dp_left * r  / r_dp , "x", head, "N", left + head
         # centering
-        ampo  += -dp_left * N / L / r_dp,  "x", head
+        ampo  += -dp_left * r *  cavg / r_dp,  "x", head
 
       else
-        ampo  +=  dp_left / r_dp, "C", 1, "Cdag", head, "N", left + head
-        ampo  +=  dp_left / r_dp, "C", head, "Cdag", 1, "N", left + head
+        ampo  +=  dp_left * r / r_dp, "C", 1, "Cdag", head, "N", left + head
+        ampo  +=  dp_left * r / r_dp, "C", head, "Cdag", 1, "N", left + head
         
         # centering
-        ampo  +=   - dp_left * N / L / r_dp, "C", 1, "Cdag", head
-        ampo  +=   - dp_left * N / L / r_dp, "C", head, "Cdag", 1
+        ampo  +=   - dp_left * r * cavg / r_dp, "C", 1, "Cdag", head
+        ampo  +=   - dp_left * r * cavg / r_dp, "C", head, "Cdag", 1
 
       end 
 
@@ -142,8 +142,8 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
     for right = 1 : L
       
 
-      r = dis(right, QEoffset, disx, disy)
-      r_dp = ( L - 1 + QE * (QEoffset + 1) - r) ^ 3 + ζ_dp_right
+      r = ( L - 1 + QE * (QEoffset + 1) -  dis(right, QEoffset, disx, disy))  
+      r_dp = r ^ 3 + ζ_dp_right
 
       # for all = 1: L
 
@@ -162,15 +162,15 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
 
 
       if  !QN
-        ampo +=  dp_right  / r_dp, "x", L + head + 1, "N", right + head
-        ampo +=  - dp_right * N / L / r_dp, "x", L + head + 1
+        ampo +=  dp_right * r / r_dp, "x", L + head + 1, "N", right + head
+        ampo +=  - dp_right * r * cavg / r_dp, "x", L + head + 1
 
       else
-        ampo +=  dp_right / r_dp, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head
-        ampo +=  dp_right / r_dp, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head
+        ampo +=  dp_right * r / r_dp, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head
+        ampo +=  dp_right * r / r_dp, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head
 
-        ampo +=  - dp_right * N / L / r_dp, "C", L + head + 2, "Cdag", L + head + 1
-        ampo +=  - dp_right * N / L / r_dp, "C", L + head + 1, "Cdag", L + head + 2
+        ampo +=  - dp_right * r * cavg / r_dp, "C", L + head + 2, "Cdag", L + head + 1
+        ampo +=  - dp_right * r * cavg / r_dp, "C", L + head + 1, "Cdag", L + head + 2
       end 
       # the offset term, to set the 'center of mass'
       # calculated as a uniform distribution:  L * N / 2

@@ -17,6 +17,7 @@ function dis(i::Int, QEoffset::Float64, disx, disy)
   return sqrt( ( disx[i] + i + QEoffset ) ^ 2 + (disy[i]) ^ 2)
 end 
 
+
 """Calculates 2D distance, with potential scaling on x"""
 function dis(x1::Int, y1::Int, x2::Int, y2::Int, disx, disy, xscale)
 
