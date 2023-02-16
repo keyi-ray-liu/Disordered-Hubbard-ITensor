@@ -143,7 +143,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       
 
       r = dis(right, QEoffset, disx, disy)
-      r_dp = ( L + 1 - r) ^ 3 + ζ_dp_right
+      r_dp = ( L -1 * QE * (offset + 1) - r) ^ 3 + ζ_dp_right
 
       # for all = 1: L
 
