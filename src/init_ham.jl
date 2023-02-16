@@ -112,15 +112,15 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       if !QN
         ampo  +=  dp_left / r_dp , "x", head, "N", left + head
         # centering
-        ampo  += -dp_left * N / r_dp,  "x", head
+        ampo  += -dp_left * N / L / r_dp,  "x", head
 
       else
         ampo  +=  dp_left / r_dp, "C", 1, "Cdag", head, "N", left + head
         ampo  +=  dp_left / r_dp, "C", head, "Cdag", 1, "N", left + head
         
         # centering
-        ampo  +=   - dp_left * N / r_dp, "C", 1, "Cdag", head
-        ampo  +=   - dp_left * N / r_dp, "C", head, "Cdag", 1
+        ampo  +=   - dp_left * N / L / r_dp, "C", 1, "Cdag", head
+        ampo  +=   - dp_left * N / L / r_dp, "C", head, "Cdag", 1
 
       end 
 
@@ -163,14 +163,14 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
 
       if  !QN
         ampo +=  dp_right  / r_dp, "x", L + head + 1, "N", right + head
-        ampo +=  - dp_right * N / r_dp, "x", L + head + 1
+        ampo +=  - dp_right * N / L / r_dp, "x", L + head + 1
 
       else
         ampo +=  dp_right / r_dp, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head
         ampo +=  dp_right / r_dp, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head
 
-        ampo +=  - dp_right * N / r_dp, "C", L + head + 2, "Cdag", L + head + 1
-        ampo +=  - dp_right * N / r_dp, "C", L + head + 1, "Cdag", L + head + 2
+        ampo +=  - dp_right * N / L / r_dp, "C", L + head + 2, "Cdag", L + head + 1
+        ampo +=  - dp_right * N / L / r_dp, "C", L + head + 1, "Cdag", L + head + 2
       end 
       # the offset term, to set the 'center of mass'
       # calculated as a uniform distribution:  L * N / 2
