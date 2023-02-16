@@ -14,6 +14,8 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   CN = para["CN"]
   QEen = para["QEen"]
   dp = para["dp"]
+  ζ_dp = para["ζ_dp"]
+  QEoffset = para["QEoffset"]
   
   # set e-e interaction range
   range = para["range"]
@@ -27,6 +29,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
 
   λ_ne = λ_ne * CN / L
 
+  
   ############################ begin chain hamiltonian ###################################
 
   # adjust the site based on if there are left emitter
@@ -75,28 +78,33 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   # left QE
   if QE > 0
 
+    # we had the check of dp length with QE
+    dp_left = dp[1]
+    ζ_dp_left = ζ_dp[1]
     # diagonal energy term
     ampo += QEen, "N", head
     
     # dipole
     for left = 1 : L 
       
-      r = dis(left, disx, disy)
+      r = dis(left, QEoffset, disx, disy)
+      r_dp = r ^ 3 + ζ_dp_left
+
       for all = 1 : L
 
         # r0 determines the overall 'weight' of sites
-        r0 = dis(all, disx, disy)
+        r0 = dis(all, QEoffset, disx, disy)
         
         #off-diagonal two level transition term
         # if no QN, symmetry breaking term
         if !QN
-          ampo  += - dp * r0 / r ^ 3, "x", head, "N", left + head, "N", all + head
+          ampo  +=  dp_left * r0 / r_dp , "x", head, "N", left + head, "N", all + head
 
         # AUX symmetry perserving term
         # c1c+2 + c2c+1
         else
-          ampo  += - dp * r0 / r ^ 3, "C", 1, "Cdag", head, "N", left + head, "N", all + head
-          ampo  += - dp * r0 / r ^ 3, "C", head, "Cdag", 1, "N", left + head, "N", all + head
+          ampo  +=  dp_left * r0 / r_dp, "C", 1, "Cdag", head, "N", left + head, "N", all + head
+          ampo  +=  dp_left * r0 / r_dp, "C", head, "Cdag", 1, "N", left + head, "N", all + head
         end 
 
       end 
@@ -112,22 +120,26 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   if QE > 1
     ampo += QEen, "N", L + head + 1
 
+    dp_right = dp[2]
+    ζ_dp_right = ζ_dp[2]
+
     for right = 1 : L
       
 
-      r = dis(right, disx, disy)
+      r = dis(right, QEoffset, disx, disy)
+      r_dp = ( L + 1 - r) ^ 3 + ζ_dp_right
 
       for all = 1: L
 
-        r0 = dis(all, disx, disy)
-
+        r0 = dis(all, QEoffset, disx, disy)
+        
         if !QN
-          ampo += - dp * (L + 1 - r0) / ( L + 1 - r) ^ 3, "x", L + head + 1, "N", right + head, "N", all + head
+          ampo +=  dp_right * (L + 1 - r0) / r_dp, "x", L + head + 1, "N", right + head, "N", all + head
         #ampo += - dp / ( L + 1 - r) ^ 3, "Cdag", L + 2, "N", right + 1, "N", all + 1
 
         else
-          ampo += - dp * (L + 1 - r0) / ( L + 1 - r) ^ 3, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head, "N", all + head
-          ampo += - dp * (L + 1 - r0) / ( L + 1 - r) ^ 3, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head, "N", all + head
+          ampo +=  dp_right * (L + 1 - r0) / r_dp, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head, "N", all + head
+          ampo +=  dp_right * (L + 1 - r0) / r_dp, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head, "N", all + head
         end 
 
       end 

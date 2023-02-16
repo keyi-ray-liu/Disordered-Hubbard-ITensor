@@ -13,8 +13,8 @@ function dis(i::Int, j::Int, disx, disy)
 end
 
 """Calculates 1D distance to left QE"""
-function dis(i::Int, disx, disy)
-  return sqrt( ( disx[i] + i ) ^ 2 + (disy[i]) ^ 2)
+function dis(i::Int, QEoffset::Float64, disx, disy)
+  return sqrt( ( disx[i] + i + QEoffset ) ^ 2 + (disy[i]) ^ 2)
 end 
 
 """Calculates 2D distance, with potential scaling on x"""

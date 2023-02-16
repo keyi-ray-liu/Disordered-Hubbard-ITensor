@@ -3,7 +3,8 @@ function getmaxsweep(;L=12, tol=1e-11)
   maxsweepdim = 500
 
   output = @capture_out begin
-    main(L=L, N=Int(L//2), sweepdim=maxsweepdim)
+    paras = setpara(L=L, N=Int(L//2), sweepdim=maxsweepdim)
+    main(paras)
   end
 
   maxsweep = stringmaxproc(output, tol)
@@ -24,8 +25,8 @@ function plasmonstat(L, lam)
 
   lam = parse(Float64, lam)
   L = parse(Int, L)
-  
-  main(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, weight=5.0)
+  paras = setpara(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, weight=5.0)
+  main(paras)
 
 
 end
@@ -102,7 +103,8 @@ function truedisorder(lam, gen)
     cases, L = size(raw)
   end
 
-  main(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, disorder=true, weight=5.0, range=5)
+  paras = setpara(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, disorder=true, weight=5.0, range=5)
+  main(paras)
 end
 
 """Function to call QE calculations"""
@@ -119,10 +121,23 @@ function QE(num, energy)
   cnt = 300
   noise = false
   QN = false
-  dp = 0.0075
+  dps = 0.0075
+  ζ = 0.5
+  offset = 1.0
+  
+  if num == 1
+    dp = dps * [1.0]
+    ζ_dp = ζ * [1.0]
 
-  main(L=L, N=N, CN=CN, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num, QN=QN, QEen=energy, dp=dp)
-  #main(L=60, N=30, CN=30, ex=30, guess=false, sweepdim=500, sweepcnt=200, noise=false, QE=num, QN=false, QEen=energy, dp=1.0)
+  elseif num == 2
+    dp = dps * [1.0, -1.0]
+    ζ_dp = ζ * [1.0, 1.0]
+  end 
+
+  paras = setpara(L=L, N=N, CN=CN, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num, QN=QN, 
+  QEen=energy, dp=dp, ζ_dp=ζ_dp, QEoffset=offset)
+  main(paras)
+
 end 
 
 function QE_dynamic()
@@ -144,7 +159,8 @@ function QE_dynamic()
   if !isfile(workdir * target * ".h5")
     # if there no target file, we perform a single GS search
     # single search assume no QE GS
-    main(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, output = target, QE=0)
+    paras = setpara(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, output = target, QE=0)
+    main(paras)
   end 
   
   # read the GS

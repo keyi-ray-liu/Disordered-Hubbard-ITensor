@@ -1,8 +1,8 @@
 """Set parameter dictionary for all future calculations"""
-function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, ζ::Vector{Float64}, exch::Float64, 
-  decay::Float64, self_nuc::Bool, disorder::Bool, sweepdim::Int, sweepcnt::Int, ex::Int, weight::Float64, 
-  guess::Bool, manual::Bool, itr_dis::Vector{Float64}, range::Int, noise::Bool, method::String, QE::Int, 
-  xscale::Float64, QN::Bool, ChargeNeutral::Int, QEen::Float64, dp::Float64)
+function setpara(;L=22, N=11, int_ee=1.0, int_ne=1.0, t=1.0, ζ=[0.5, 0.5], exch=0.2, 
+  decay=0.2, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
+  guess=true, manual=false, itr_dis=[1.0], range=1000, noise=true, method="DMRG", QE=0, xscale=1.0, 
+  QN=true, CN=11, QEen=1.0, dp=[], ζ_dp = [], QEoffset = 0.0, output="Default")
 
   # we set the basic parameters for the simulation
 
@@ -30,14 +30,16 @@ function setpara(L, N::Int, int_ee::Float64, int_ne::Float64, t::Float64, ζ::Ve
     "QE" => QE,
     "xscale" => xscale,
     "QN" => QN,
-    "CN" => ChargeNeutral,
+    "CN" => CN,
     "QEen" => QEen,
-    "dp" => dp
+    "dp" => dp,
+    "ζ_dp" => ζ_dp,
+    "QEoffset" => QEoffset,
+    "output" => output
   )
 
-  if QE > 0 && QN
-    #throw(ArgumentError("QN and QE condition not compatible"))
-    println("warning, QN and QE both != 0. Experimental feature")
+  if length(dp) != QE || length(ζ_dp) != QE
+    throw(ArgumentError("dp parameter(s) and QE number mismatch"))
   end 
   
   return para

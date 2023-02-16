@@ -3,17 +3,11 @@ Most are self-explanatory, self_nuc determines a constant shift in the final ene
 guess determines if use a guess initial wf instead of a random one, manual indicates 
 if implement the 2D flattening manually
 """
-function main(;L=22, N=11, int_ee=1.0, int_ne=1.0, t=1.0, ζ=[0.5, 0.5], exch=0.2, 
-  decay=0.2, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
-  guess=true, manual=false, itr_dis=[1.0], range=1000, noise=true, method="DMRG", QE=0, xscale=1.0, 
-  QN=true, CN=11, QEen=1.0, dp=0.0, output="Default")
-
-  para = setpara(L, N, int_ee, int_ne, t, ζ, exch, decay, self_nuc, disorder, 
-  sweepdim, sweepcnt, ex, weight, guess, manual, itr_dis, range, noise, method, QE, xscale,
-  QN, CN, QEen, dp)
+function main(para)
 
   disx, disy = setdisorder(para["disorder"], para["L"])
-
+  output = para["output"]
+  L = para["L"]
   # disable threading in BLAS, so that jobs are multithreaded
 
   prefix = getworkdir()

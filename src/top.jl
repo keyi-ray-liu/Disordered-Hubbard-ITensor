@@ -36,8 +36,9 @@ function top()
 
     println("TEST TEST TEST")
     #QE_dynamic()
-    #main(L=60, N=29, CN=29, ex=20, int_ee=2.0, int_ne=2.0, guess=true, method="DMRG", sweepdim=500, sweepcnt=30, noise=false, QE=0, QN=true)
-    main(L=12, N=6, CN=6, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, sweepcnt=200, noise=false, QE=2, QN=true, QEen=-0.5, dp=0.02)
+    paras = setpara(L=12, N=6, CN=6, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, 
+    sweepcnt=200, noise=false, QE=2, QN=true, QEen=0.5, dp=0.01 * [1.0, -1.0], ζ_dp = [0.5, 0.5], QEoffset=1.0)
+    main(paras)
     
   else
     if ARGS == []
@@ -56,7 +57,8 @@ function top()
       truedisorder( ARGS[2], ARGS[3] )
 
     elseif ARGS[1] == "4"
-      @time main(L=[3, 30], N=45, ex=20, int_ee=1.0, guess=false, sweepdim=2000, sweepcnt=100, noise=false)
+      paras = setpara(L=[3, 30], N=45, ex=20, int_ee=1.0, guess=false, sweepdim=2000, sweepcnt=100, noise=false)
+      @time main(paras)
 
     # testing QE
     elseif ARGS[1] == "5"
