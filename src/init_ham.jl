@@ -90,25 +90,41 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       r = dis(left, QEoffset, disx, disy)
       r_dp = r ^ 3 + ζ_dp_left
 
-      for all = 1 : L
+      # for all = 1 : L
 
-        # r0 determines the overall 'weight' of sites
-        r0 = dis(all, QEoffset, disx, disy)
+      #   # r0 determines the overall 'weight' of sites
+      #   r0 = dis(all, QEoffset, disx, disy)
         
-        #off-diagonal two level transition term
-        # if no QN, symmetry breaking term
-        if !QN
-          ampo  +=  dp_left * r0 / r_dp , "x", head, "N", left + head, "N", all + head
+      #   #off-diagonal two level transition term
+      #   # if no QN, symmetry breaking term
+      #   if !QN
+      #     ampo  +=  dp_left * r0 / r_dp , "x", head, "N", left + head, "N", all + head
 
-        # AUX symmetry perserving term
-        # c1c+2 + c2c+1
-        else
-          ampo  +=  dp_left * r0 / r_dp, "C", 1, "Cdag", head, "N", left + head, "N", all + head
-          ampo  +=  dp_left * r0 / r_dp, "C", head, "Cdag", 1, "N", left + head, "N", all + head
-        end 
+      #   # AUX symmetry perserving term
+      #   # c1c+2 + c2c+1
+      #   else
+      #     ampo  +=  dp_left * r0 / r_dp, "C", 1, "Cdag", head, "N", left + head, "N", all + head
+      #     ampo  +=  dp_left * r0 / r_dp, "C", head, "Cdag", 1, "N", left + head, "N", all + head
+      #   end 
+
+      # end 
+
+      if !QN
+        ampo  +=  dp_left / r_dp , "x", head, "N", left + head
+        # centering
+        ampo  += -dp_left * N / r_dp,  "x", head
+
+      else
+        ampo  +=  dp_left / r_dp, "C", 1, "Cdag", head, "N", left + head
+        ampo  +=  dp_left / r_dp, "C", head, "Cdag", 1, "N", left + head
+        
+        # centering
+        ampo  +=   - dp_left * N / r_dp, "C", 1, "Cdag", head
+        ampo  +=   - dp_left * N / r_dp, "C", head, "Cdag", 1
 
       end 
-      
+
+
       # the offset term, to set the 'center of mass'
       # calculated as a uniform distribution:  L * N / 2
       #ampo +=  dp * L * N / ( 2 * r^3), "x", head, "N", left + head
@@ -129,21 +145,33 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       r = dis(right, QEoffset, disx, disy)
       r_dp = ( L + 1 - r) ^ 3 + ζ_dp_right
 
-      for all = 1: L
+      # for all = 1: L
 
-        r0 = dis(all, QEoffset, disx, disy)
+      #   r0 = dis(all, QEoffset, disx, disy)
         
-        if !QN
-          ampo +=  dp_right * (L + 1 - r0) / r_dp, "x", L + head + 1, "N", right + head, "N", all + head
-        #ampo += - dp / ( L + 1 - r) ^ 3, "Cdag", L + 2, "N", right + 1, "N", all + 1
+      #   if !QN
+      #     ampo +=  dp_right * (L + 1 - r0) / r_dp, "x", L + head + 1, "N", right + head, "N", all + head
+      #   #ampo += - dp / ( L + 1 - r) ^ 3, "Cdag", L + 2, "N", right + 1, "N", all + 1
 
-        else
-          ampo +=  dp_right * (L + 1 - r0) / r_dp, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head, "N", all + head
-          ampo +=  dp_right * (L + 1 - r0) / r_dp, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head, "N", all + head
-        end 
+      #   else
+      #     ampo +=  dp_right * (L + 1 - r0) / r_dp, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head, "N", all + head
+      #     ampo +=  dp_right * (L + 1 - r0) / r_dp, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head, "N", all + head
+      #   end 
 
+      # end 
+
+
+      if  !QN
+        ampo +=  dp_right  / r_dp, "x", L + head + 1, "N", right + head
+        ampo +=  - dp_right * N / r_dp, "x", L + head + 1
+
+      else
+        ampo +=  dp_right / r_dp, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head
+        ampo +=  dp_right / r_dp, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head
+
+        ampo +=  - dp_right * N / r_dp, "C", L + head + 2, "Cdag", L + head + 1
+        ampo +=  - dp_right * N / r_dp, "C", L + head + 1, "Cdag", L + head + 2
       end 
-
       # the offset term, to set the 'center of mass'
       # calculated as a uniform distribution:  L * N / 2
       #ampo +=  dp * L * N / ( 2 * r^3), "x", L + head + 1, "N", right + head

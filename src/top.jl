@@ -37,7 +37,7 @@ function top()
     println("TEST TEST TEST")
     #QE_dynamic()
     paras = setpara(L=12, N=6, CN=6, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=500, 
-    sweepcnt=200, noise=false, QE=2, QN=true, QEen=0.5, dp=0.01 * [1.0, -1.0], ζ_dp = [0.5, 0.5], QEoffset=1.0)
+    sweepcnt=200, noise=false, QE=2, QN=true, QEen=0.6, dp= 1.0 * [1.0, -1.0], ζ_dp = [0.5, 0.5], QEoffset=1.0)
     main(paras)
     
   else
