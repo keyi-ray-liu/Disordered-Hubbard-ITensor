@@ -239,7 +239,7 @@ function time_evolve(ψ, sites, paras, time, τ)
         normalize!(ψ)
     end
 
-    print(occs)
+    writedlm(getworkdir() * "expN", occs)
 
 
 end 
