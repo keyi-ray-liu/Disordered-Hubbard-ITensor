@@ -1,5 +1,5 @@
 """Completes one iteration of searches based on the number of excited states. Will return states only when all energies are in ascending order."""
-function single_search(para::Dict, disx, disy, λ)
+function single_search(para::Dict, sites, disx, disy, λ)
   # Create N fermion indices
 
   sweepdim = para["sweepdim"]
@@ -17,7 +17,7 @@ function single_search(para::Dict, disx, disy, λ)
   method = para["method"]
   tol = 1e-8
   
-  sites = init_site(para)
+  
 
   # if we gradually increasing the disorder strength
   if length(itr_dis) > 1

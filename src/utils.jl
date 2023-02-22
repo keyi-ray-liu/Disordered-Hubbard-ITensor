@@ -36,7 +36,7 @@ function ITensors.op!(Op::ITensor, ::OpName"x", ::SiteType"Fermion", s::Index)
 end
 
 """push gate"""
-function gatefy(gates, factor, g, τ)
+function gatefy!(gates, factor, g, τ)
 
   G = exp( - im * τ / factor * g)
   push!(gates, G)

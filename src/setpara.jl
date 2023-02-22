@@ -1,8 +1,9 @@
 """Set parameter dictionary for all future calculations"""
-function setpara(;L=22, N=11, int_ee=1.0, int_ne=1.0, t=1.0, ζ=[0.5, 0.5], exch=0.2, 
+function setpara(;L=22, N=11, int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5, 0.5], exch=0.2, 
   decay=0.2, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
-  guess=true, manual=false, itr_dis=[1.0], range=1000, noise=true, method="DMRG", QE=0, xscale=1.0, 
-  QN=true, CN=11, QEen=1.0, dp=[], ζ_dp = [], QEoffset = 0.0, output="Default")
+  guess=false, manual=false, itr_dis=[1.0], range=1000, noise=true, method="DMRG", QE=0, xscale=1.0, 
+  QN=true, CN=11, QEen=1.0, dp=[], ζ_dp = [], QEoffset = 0.0, output="Default", headoverride=0, 
+  cutoff=1E-8)
 
   # we set the basic parameters for the simulation
 
@@ -35,7 +36,9 @@ function setpara(;L=22, N=11, int_ee=1.0, int_ne=1.0, t=1.0, ζ=[0.5, 0.5], exch
     "dp" => dp,
     "ζ_dp" => ζ_dp,
     "QEoffset" => QEoffset,
-    "output" => output
+    "output" => output,
+    "headoverride" => headoverride,
+    "cutoff" => cutoff 
   )
 
   if length(dp) != QE || length(ζ_dp) != QE

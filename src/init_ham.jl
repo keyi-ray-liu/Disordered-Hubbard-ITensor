@@ -16,13 +16,15 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   dp = para["dp"]
   ζ_dp = para["ζ_dp"]
   QEoffset = para["QEoffset"]
+  headoverride = para["headoverride"]
   
   # set e-e interaction range
   range = para["range"]
   # if QE > 0, then at least left emitter, and if QN, we account for the AUX site
 
   # head denotes the position of QE1: 0 if QE == 0, 1 if QE but not QN, 2 if QE and QN
-  head = (QE > 0) * (QN + 1)
+  # we add a head override function for the situation where we need 'empty' site indices
+  head = headoverride > 0 ? headoverride : (QE > 0) * (QN + 1) 
 
   print("head position is now at", head)
   ampo = OpSum()

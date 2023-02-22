@@ -120,7 +120,7 @@ function QE(num, energy)
   dim = 300
   cnt = 50
   noise = false
-  QN = false
+  QN = true
   dps = 1.0
   ζ = 0.5
   offset = 1.0
@@ -145,13 +145,25 @@ function QE_dynamic()
   L = 12
   N = 6
   CN = 6
-  dim = 300
-  cnt = 300
-  dp = 0.0075
+  dim = 100
+  cnt = 20
+  dps = 1.0
   τ = 0.1
-  t = 5
+  time = 2
   QE = 2
+  ζ = 0.5
   energy = 0.5
+  offset = 1.0
+  QN = true
+
+  if QE == 1
+    dp = dps * [1.0]
+    ζ_dp = ζ * [1.0]
+
+  elseif QE == 2
+    dp = dps * [1.0, -1.0]
+    ζ_dp = ζ * [1.0, 1.0]
+  end 
 
   workdir = getworkdir()
   target = "target"
@@ -159,16 +171,26 @@ function QE_dynamic()
   if !isfile(workdir * target * ".h5")
     # if there no target file, we perform a single GS search
     # single search assume no QE GS
-    paras = setpara(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, output = target, QE=0)
+    paras = setpara(L=L, N=N, CN=CN, ex=1, sweepdim=dim, sweepcnt=cnt, output = target, QE=0, QN=QN, headoverride= (QE > 0) * (QN + 1) )
     main(paras)
   end 
   
+  paras = setpara(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, QEen = energy, QE=QE, QN=QN, dp=dp, ζ_dp=ζ_dp, QEoffset=offset)
   # read the GS
-  wf = h5open( workdir * target * ".h5", "r")
-  ψ = read(wf, "psi1", MPS)
+  #wf = h5open( workdir * target * ".h5", "r")
+  #ψ = read(wf, "psi1", MPS)
 
+  #sites = siteinds(ψ)
+  #ψ = TE_stateprep(ψ, paras, sites)
 
-  time_evolve(ψ; L=L, N=N, CN=CN, QE=QE, QEen=energy, dp=dp, time=t, τ=τ)
+  # further preparation of the initial state, if needed
+  
+
+  ψ, sites = TE_stateprep(paras)
+  println("length of ψ is:" , length(ψ))
+  println("length of sites", length(sites))
+
+  time_evolve(ψ, sites, paras, time, τ)
   
   
 end 
