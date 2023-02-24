@@ -224,6 +224,7 @@ function time_evolve(ψ, sites, paras, time, τ)
     # one site gate end
 
     occs = []
+    states = []
 
     for dt in 0.0:τ:time
         #Sz = expect(psi, "Sz"; sites=c)
@@ -237,9 +238,22 @@ function time_evolve(ψ, sites, paras, time, τ)
     
         ψ = apply(gates, ψ; cutoff)
         normalize!(ψ)
+
+        append!(states, [ψ])
     end
 
-    writedlm(getworkdir() * "expN", occs)
+    # write outputs
 
+    prefix = getworkdir()
+    writedlm( prefix * "expN", occs)
+
+    wf = h5open( prefix * "timewf.h5", "w")
+    for (i, psi) in enumerate(states)
+        write(wf, "psi" * string(i), psi)
+    end
+
+    close(wf)
+
+    return nothing
 
 end 
