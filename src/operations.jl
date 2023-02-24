@@ -149,7 +149,7 @@ function QE_dynamic()
   cnt = 20
   dps = 1.0
   τ = 0.1
-  time = 2
+  time = 0.2
   QE = 2
   ζ = 0.5
   energy = 0.5
@@ -177,16 +177,15 @@ function QE_dynamic()
   
   paras = setpara(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, QEen = energy, QE=QE, QN=QN, dp=dp, ζ_dp=ζ_dp, QEoffset=offset)
   # read the GS
-  #wf = h5open( workdir * target * ".h5", "r")
-  #ψ = read(wf, "psi1", MPS)
+  wf = h5open( workdir * target * ".h5", "r")
+  ψ = read(wf, "psi1", MPS)
 
-  #sites = siteinds(ψ)
-  #ψ = TE_stateprep(ψ, paras, sites)
-
-  # further preparation of the initial state, if needed
+  sites = siteinds(ψ)
   
+  # further preparation of the initial state, if needed
+  #ψ, sites = TE_stateprep(ψ, paras, sites)
+  #ψ, sites = TE_stateprep(paras)
 
-  ψ, sites = TE_stateprep(paras)
   println("length of ψ is:" , length(ψ))
   println("length of sites", length(sites))
 

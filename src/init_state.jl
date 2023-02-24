@@ -13,6 +13,7 @@ function init_state(para, sites, disx, disy)
   QE = para["QE"]
   QN = para["QN"]
   headoverride = para["headoverride"]
+  mode = para["dynamode"]
 
   
   # if not guess, using random MPS as init state
@@ -42,7 +43,24 @@ function init_state(para, sites, disx, disy)
 
       else
 
-        front = back = ["Emp" for n=1: headoverride]
+        if mode == "both"
+          front = ["Emp", "Occ"]
+          back = ["Occ", "Emp"]
+
+        elseif mode == "left"
+          front = back = ["Emp", "Occ"]
+
+        elseif mode == "right"
+          front = back = ["Occ", "Emp"]
+
+        elseif mode == "empty"
+          front  = ["Occ", "Emp"]
+          back = ["Emp", "Occ"]
+
+        else
+          front = back = ["Emp" for n=1:headoverride]
+        end 
+
         state = vcat(front, state)
         state = vcat(state, back)
 
@@ -149,8 +167,9 @@ function TE_stateprep(ψ, paras, sites)
 
   if QE == 0
     println("No QE, initial state as read")
+  end 
 
-  elseif QE == 1
+  if QE > 0
 
     # if no QN, we add one 'ON' site as the left QE
     if !QN
@@ -162,10 +181,15 @@ function TE_stateprep(ψ, paras, sites)
 
     end 
 
-    state = randomMPS( sites[1:QN + 1], state)
-    ψ[1: QN + 1] = state
+    ϕ = randomMPS( sites[1:QN + 1], state)
 
-  elseif QE == 2
+    print("ϕ:::\n\n\n\n", ϕ[1:QN+1])
+    print("ψ:::\n\n\n\n",  ψ[1:QN + 1])
+    ψ[1: QN + 1] = ϕ
+
+  end 
+
+  if QE > 1
     
     if !QN
       state = ["Occ"]
@@ -176,8 +200,9 @@ function TE_stateprep(ψ, paras, sites)
 
     state = randomMPS( sites[L + QN + 2: L + QN + 3 ], state)
     ψ[L + QN + 2: L+ QN + 3] = state
+  end 
 
-  else
+  if QE > 2
     throw(ArgumentError("invalid QE number"))
   end 
 
@@ -186,7 +211,7 @@ function TE_stateprep(ψ, paras, sites)
     println(typeof(ψ[i]))
   end 
 
-  return ψ
+  return ψ, sites
 
 end 
 
@@ -218,6 +243,5 @@ function TE_stateprep(para)
     ψ = randomMPS(sites,L + QE)
   end 
 
-  
   return ψ, sites
 end 
