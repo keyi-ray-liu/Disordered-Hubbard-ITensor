@@ -78,7 +78,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   ##################### begin QE hamiltonian ###################################
   # QE part
   # left QE
-  if QE > 0
+  if QE > 0 && headoverride == 0
 
     # we had the check of dp length with QE
     dp_left = dp[1]
@@ -135,7 +135,7 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   end 
 
   # right QE
-  if QE > 1
+  if QE > 1 && headoverride == 0
     ampo += QEen, "N", L + head + 1
 
     dp_right = dp[2]
