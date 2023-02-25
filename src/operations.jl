@@ -174,7 +174,8 @@ function QE_dynamic()
   if !isfile(workdir * target * ".h5")
     # if there no target file, we perform a single GS search
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
-    paras = setpara(L=L, N=N, CN=CN, ex=1, sweepdim=dim, sweepcnt=cnt, output = target, QE=QE, QN=QN, headoverride= (QE > 0) * (QN + 1), dynamode=dynamode)
+    paras = setpara(L=L, N=N, CN=CN, ex=1, sweepdim=dim, sweepcnt=cnt, output = target, QE=QE, QN=QN, headoverride= (QE > 0) * (QN + 1),
+    dp = dp, ζ_dp = ζ_dp, dynamode=dynamode)
     main(paras)
   end 
   
