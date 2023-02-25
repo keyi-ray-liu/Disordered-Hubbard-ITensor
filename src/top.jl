@@ -30,7 +30,7 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = false
+  test = true
 
   if test
 

@@ -144,19 +144,20 @@ end
 """Calculating QE dynamics using TEBD"""
 function QE_dynamic()
 
-  L = 12
-  N = 6
-  CN = 6
-  dim = 100
-  cnt = 20
+  L = 60
+  N = 30
+  CN = 30
+  dim = 300
+  cnt = 50
   dps = 1.0
   τ = 0.1
-  time = 0.2
+  time = 15
   QE = 2
   ζ = 0.5
   energy = 0.5
   offset = 1.0
   QN = true
+  dynamode = "both"
 
   if QE == 1
     dp = dps * [1.0]
@@ -173,7 +174,7 @@ function QE_dynamic()
   if !isfile(workdir * target * ".h5")
     # if there no target file, we perform a single GS search
     # single search assume no QE GS
-    paras = setpara(L=L, N=N, CN=CN, ex=1, sweepdim=dim, sweepcnt=cnt, output = target, QE=0, QN=QN, headoverride= (QE > 0) * (QN + 1) )
+    paras = setpara(L=L, N=N, CN=CN, ex=1, sweepdim=dim, sweepcnt=cnt, output = target, QE=0, QN=QN, headoverride= (QE > 0) * (QN + 1), dynamode=dynamode)
     main(paras)
   end 
   
