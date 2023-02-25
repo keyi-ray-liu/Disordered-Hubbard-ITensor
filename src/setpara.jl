@@ -3,7 +3,7 @@ function setpara(;L=22, N=11, int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5, 0.5], exch
   decay=0.2, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
   guess=false, manual=false, itr_dis=[1.0], range=1000, noise=true, method="DMRG", QE=0, xscale=1.0, 
   QN=true, CN=11, QEen=1.0, dp=[], ζ_dp = [], QEoffset = 0.0, output="Default", headoverride=0, 
-  dynamode="both", cutoff=1E-8)
+  dynamode="none", cutoff=1E-8)
 
   # we set the basic parameters for the simulation
 
@@ -43,7 +43,11 @@ function setpara(;L=22, N=11, int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5, 0.5], exch
   )
 
   if length(dp) != QE || length(ζ_dp) != QE
-    throw(ArgumentError("dp parameter(s) and QE number mismatch"))
+    error("dp parameter(s) and QE number mismatch")
+  end 
+
+  if dynamode != "none" && headoverride != 2
+    error("Wrong head override number")
   end 
   
   writedlm("parameters", para)

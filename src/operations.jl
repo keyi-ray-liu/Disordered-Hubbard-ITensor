@@ -107,7 +107,7 @@ function truedisorder(lam, gen)
   main(paras)
 end
 
-"""Function to call QE calculations"""
+"""Statically solve the QE system"""
 function QE(num, energy)
   num = parse(Int, num)
   energy = parse(Float64, energy)
@@ -124,6 +124,7 @@ function QE(num, energy)
   dps = 1.0
   ζ = 0.5
   offset = 1.0
+
   
   if num == 1
     dp = dps * [1.0]
@@ -135,11 +136,12 @@ function QE(num, energy)
   end 
 
   paras = setpara(L=L, N=N, CN=CN, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num, QN=QN, 
-  QEen=energy, dp=dp, ζ_dp=ζ_dp, QEoffset=offset)
+  QEen=energy, dp=dp, ζ_dp=ζ_dp, QEoffset=offset, headoverride=0)
   main(paras)
 
 end 
 
+"""Calculating QE dynamics using TEBD"""
 function QE_dynamic()
 
   L = 12
@@ -192,4 +194,12 @@ function QE_dynamic()
   time_evolve(ψ, sites, paras, time, τ)
   
   
+end 
+
+
+function QE_dynamic_eigen()
+
+  dirs = getworkdir()
+
+
 end 

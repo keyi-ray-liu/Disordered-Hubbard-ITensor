@@ -44,21 +44,27 @@ function init_state(para, sites, disx, disy)
       else
 
         if mode == "both"
-          front = ["Emp", "Occ"]
-          back = ["Occ", "Emp"]
+          front =  ["Emp", "Occ"] 
+          back =  QE > 1 ? ["Occ", "Emp"] : []
 
         elseif mode == "left"
-          front = back = ["Emp", "Occ"]
+          front = ["Emp", "Occ"]
+          back = QE > 1 ? front : []
 
         elseif mode == "right"
-          front = back = ["Occ", "Emp"]
+          front = ["Occ", "Emp"]
+          back = QE > 1 ? front : []
 
         elseif mode == "empty"
           front  = ["Occ", "Emp"]
-          back = ["Emp", "Occ"]
+          back = QE > 1 ? ["Emp", "Occ"] : []
+
+        elseif mode == "none"
+          front =  ["Emp" for n=1:headoverride] 
+          back = QE > 1 ? front : []
 
         else
-          front = back = ["Emp" for n=1:headoverride]
+          error("Unrecognized dyna mode")
         end 
 
         state = vcat(front, state)
