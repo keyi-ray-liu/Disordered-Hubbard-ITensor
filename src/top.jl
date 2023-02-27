@@ -31,6 +31,12 @@ function top()
   # test handle for more streamlined testing environment in julia REPL
   #test = false
   test = true
+  disable_blas = true
+
+  if disable_blas
+    BLAS.set_num_threads(1)
+    ITensors.Strided.set_num_threads(1)
+  end 
 
   if test
 
