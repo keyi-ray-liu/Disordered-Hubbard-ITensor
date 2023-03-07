@@ -73,6 +73,9 @@ function top()
     elseif ARGS[1] == "6"
       QE_dynamic()
 
+    elseif ARGS[1] == "7"
+      temp_occ()
+      
     else
       println("not a valid operating mode")
     

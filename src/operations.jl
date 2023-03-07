@@ -205,3 +205,23 @@ function QE_dynamic_eigen()
 
 
 end 
+
+
+"""calculates the occ for the available t slices"""
+function temp_occ()
+  workdir = getworkdir()
+  times = 12.4
+
+  res = []
+
+  for t=in 0.0:0.1:times
+    wf = h5open(workdir * string(t) * ".h5", "r")
+    ψ = read( wf, "psi", MPS)
+    close(wf)
+
+    occ = expect(ψ, "N")
+    append!(res, [occ])
+  end 
+
+  writedlm(workdir * "occ", res)
+end 
