@@ -1,5 +1,5 @@
 """worker function perfomring time evolution"""
-function time_evolve(ψ, sites, paras, time, τ)
+function time_evolve(ψ, sites, paras, start, fin, τ)
 
     QE = paras["QE"]
     ζ_ne, ζ_ee = paras["ζ"]
@@ -19,6 +19,7 @@ function time_evolve(ψ, sites, paras, time, τ)
     self = paras["self_nuc"]
     QEen = paras["QEen"]
     cutoff = paras["cutoff"]
+    maxdim = paras["sweepdim"]
 
     if QE == 0
         throw(ArgumentError("Dynamics have to include quantum emitters"))
@@ -223,21 +224,16 @@ function time_evolve(ψ, sites, paras, time, τ)
 
     # one site gate end
 
-    occs = []
     prefix = getworkdir()
 
 
-    for dt in 0.0:τ:time
+    for dt in start:τ:fin
         #Sz = expect(psi, "Sz"; sites=c)
 
         # testing the occupation on the whole chain plus emitter
-    
-        occ = expect(ψ, "N")
-        append!(occs, [occ])
-
         println("$dt")
     
-        ψ = apply(gates, ψ; cutoff)
+        ψ = apply(gates, ψ; cutoff=cutoff, maxdim = maxdim)
         normalize!(ψ)
 
         wf = h5open( prefix * "t" * string(dt) * ".h5", "w")
@@ -245,11 +241,6 @@ function time_evolve(ψ, sites, paras, time, τ)
         close(wf)
         
     end
-
-    # write outputs
-
-    writedlm( prefix * "expN", occs)
-
 
 
     return nothing

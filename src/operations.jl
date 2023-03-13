@@ -151,7 +151,8 @@ function QE_dynamic()
   cnt = 50
   dps = 1.0
   τ = 0.1
-  time = 15
+  start = 13.5
+  fin = 20.0
   QE = 2
   ζ = 0.5
   energy = 0.5
@@ -193,7 +194,7 @@ function QE_dynamic()
   println("length of ψ is:" , length(ψ))
   println("length of sites", length(sites))
 
-  time_evolve(ψ, sites, paras, time, τ)
+  time_evolve(ψ, sites, paras, start, fin, τ)
   
   
 end 
@@ -208,14 +209,18 @@ end
 
 
 """calculates the occ for the available t slices"""
+"""Select time range to work"""
 function temp_occ()
   workdir = getworkdir()
-  times = 12.4
+
+  start = 0.0
+  steps = 0.1 
+  fin = 13.4
 
   res = []
 
-  for t=in 0.0:0.1:times
-    wf = h5open(workdir * string(t) * ".h5", "r")
+  for t in start:steps:fin
+    wf = h5open(workdir * "t" * string(t) * ".h5", "r")
     ψ = read( wf, "psi", MPS)
     close(wf)
 
