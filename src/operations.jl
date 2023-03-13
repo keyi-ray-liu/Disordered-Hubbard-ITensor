@@ -228,6 +228,7 @@ function temp_occ()
     ψ = read( wf, "psi", MPS)
     close(wf)
 
+    println(checkmaxbond(ψ))
     occ = expect(ψ, "N")
     append!(res, [occ])
   end 

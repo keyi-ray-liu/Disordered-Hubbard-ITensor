@@ -30,6 +30,20 @@ function dis(x1::Int, y1::Int, x2::Int, y2::Int, disx, disy, xscale)
 
 end
 
+""" check max bond dim of MPS """
+function checkmaxbond(ψ)
+
+  s = length(ψ)
+  maxbond = 0
+
+  for i = 1:s
+    maxbond = max( maxbond, maximum(size(ψ[i])))
+  end 
+
+  return maxbond
+end 
+
+""" defines X operator"""
 function ITensors.op!(Op::ITensor, ::OpName"x", ::SiteType"Fermion", s::Index)
   Op[s' => 2, s => 1] = 1.0
   return Op[s' => 1, s => 2] = 1.0
