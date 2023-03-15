@@ -164,64 +164,7 @@ function init_site(para::Dict)
 end 
 
 
-"""Preparing the state for the TE, if needed"""
-function TE_stateprep(ψ, paras, sites)
-
-  QE = paras["QE"]
-  QN = paras["QN"]
-  L = paras["L"]
-
-  if QE == 0
-    println("No QE, initial state as read")
-  end 
-
-  if QE > 0
-
-    # if no QN, we add one 'ON' site as the left QE
-    if !QN
-      state = ["Occ"]
-
-    # if QN, we attach two sites to the chain, with the QE site initiated as 'ON'
-    else
-      state = ["Emp", "Occ"]
-
-    end 
-
-    ϕ = randomMPS( sites[1:QN + 1], state)
-
-    print("ϕ:::\n\n\n\n", ϕ[1:QN+1])
-    print("ψ:::\n\n\n\n",  ψ[1:QN + 1])
-    ψ[1: QN + 1] = ϕ
-
-  end 
-
-  if QE > 1
-    
-    if !QN
-      state = ["Occ"]
-
-    else
-      state = ["Occ", "Emp"]
-    end 
-
-    state = randomMPS( sites[L + QN + 2: L + QN + 3 ], state)
-    ψ[L + QN + 2: L+ QN + 3] = state
-  end 
-
-  if QE > 2
-    throw(ArgumentError("invalid QE number"))
-  end 
-
-
-  for i in eachindex(ψ)
-    println(typeof(ψ[i]))
-  end 
-
-  return ψ, sites
-
-end 
-
-
+"""preparing a product state for TE"""
 function TE_stateprep(para)
 
   sites = init_site(para)

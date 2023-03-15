@@ -159,6 +159,7 @@ function QE_dynamic()
   offset = 1.0
   QN = true
   dynamode = "both"
+  prod = true
 
   if QE == 1
     dp = dps * [1.0]
@@ -172,7 +173,7 @@ function QE_dynamic()
   workdir = getworkdir()
   target = "target"
 
-  if !isfile(workdir * target * ".h5") || start == 0.0
+  if !prod && (!isfile(workdir * target * ".h5") || start == 0.0)
     # if there no target file, we perform a single GS search
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
     paras = setpara(L=L, N=N, CN=CN, ex=1, sweepdim=dim, sweepcnt=cnt, output = target, QE=QE, QN=QN, headoverride= (QE > 0) * (QN + 1),
@@ -181,17 +182,24 @@ function QE_dynamic()
   end 
   
   paras = setpara(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, QEen = energy, QE=QE, QN=QN, dp=dp, ζ_dp=ζ_dp, QEoffset=offset)
-  # read the GS
-  wf = h5open( workdir * target * ".h5", "r")
+  # process wf
 
-  if start == 0.0
-    ψ = read(wf, "psi1", MPS)
-  else 
-    ψ = read(wf, "psi", MPS)
+  if !prod
+
+    wf = h5open( workdir * target * ".h5", "r")
+
+    if start == 0.0
+      ψ = read(wf, "psi1", MPS)
+    else 
+      ψ = read(wf, "psi", MPS)
+    end 
+
+    sites = siteinds(ψ)
+  else
+    ψ, sites = TE_stateprep(paras)
+
   end 
 
-  sites = siteinds(ψ)
-  
   # further preparation of the initial state, if needed
   #ψ, sites = TE_stateprep(ψ, paras, sites)
   #ψ, sites = TE_stateprep(paras)
