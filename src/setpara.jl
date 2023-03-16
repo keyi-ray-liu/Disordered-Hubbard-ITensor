@@ -1,4 +1,4 @@
-"""Set parameter dictionary for all future calculations"""
+"""Set parameter dictionary for all future calculations, without loading"""
 function setpara(;L=22, N=11, int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5, 0.5], exch=0.2, 
   decay=0.2, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
   guess=false, manual=false, itr_dis=[1.0], range=1000, noise=true, method="DMRG", QE=0, xscale=1.0, 

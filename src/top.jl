@@ -30,7 +30,7 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = true
+  test = false
   disable_blas = true
 
   if disable_blas
@@ -75,7 +75,10 @@ function top()
 
     elseif ARGS[1] == "7"
       temp_occ()
-      
+
+    elseif ARGS[1] == "8"
+      cal_overlap()
+
     else
       println("not a valid operating mode")
     

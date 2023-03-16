@@ -155,7 +155,7 @@ function QE_dynamic()
   fin = 20.0
   QE = 2
   ζ = 0.5
-  energy = 0.5
+  energy = 0.15
   offset = 1.0
   QN = true
   dynamode = "both"
@@ -220,6 +220,47 @@ function QE_dynamic_eigen()
 
 end 
 
+
+function cal_overlap()
+
+  workdir = getworkdir()
+  baseline = h5open(workdir * "QE.h5", "r")
+
+  start = 0.0
+  fin = 13.4
+  step = 0.1
+
+  states = sort(keys(baseline), by= x -> parse(Int, x[4:end]))
+
+  print(states)
+  ex = length(states)
+  exwf = Vector{MPS}(undef, ex)
+
+  for (i, key) in enumerate(states)
+    exwf[i] = read(baseline, key, MPS)
+  end 
+
+  close(baseline)
+
+  L = start:step:fin
+
+  overlap = zeros((length(L), ex))
+
+  for (i, t) in enumerate(L)
+
+    TE = h5open(workdir * "t" * string(t) *".h5", "r")
+    ψ = read( TE, "psi", MPS)
+    close(TE)
+
+    for (j, wf) in enumreate(exwf)
+
+      overlap[i, j] = inner(ψ, wf)
+    end 
+  end 
+
+  wrtiedlm( workdir * "overlap", overlap)
+
+end 
 
 """calculates the occ for the available t slices"""
 function temp_occ()
