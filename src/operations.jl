@@ -264,7 +264,7 @@ function cal_overlap()
 
       cur = inner(ψ', wf)
       cur *= exp( -im * energy[j] * (t + step))
-      
+
       overlap[i, j] = cur
       overlapnorm[i, j] = abs(cur)
 
@@ -285,16 +285,23 @@ function temp_occ()
   fin = 13.4
 
   res = []
+  bonds = []
 
-  for t in start:steps:fin
+  T = start:steps:fin
+
+  for t in T
     wf = h5open(workdir * "t" * string(t) * ".h5", "r")
     ψ = read( wf, "psi", MPS)
     close(wf)
 
-    println(checkmaxbond(ψ))
+    bond = checkmaxbond(ψ)
     occ = expect(ψ, "N")
+
+    append!(bonds, bond)
     append!(res, [occ])
   end 
 
+  writedlm(workdir *"time", T)
   writedlm(workdir * "occ", res)
+  writedlm(workdir * "bonddim", bonds)
 end 
