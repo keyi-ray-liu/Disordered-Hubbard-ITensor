@@ -225,6 +225,8 @@ function cal_overlap()
 
   workdir = getworkdir()
   baseline = h5open(workdir * "QE.h5", "r")
+  energy = readdlm( workdir * "energy")
+
 
   start = 0.0
   fin = 13.4
@@ -234,6 +236,11 @@ function cal_overlap()
 
   print(states)
   ex = length(states)
+
+  if ex != length(energy)
+    error("# of energies do not match # of eigenstates")
+  end 
+
   exwf = Vector{MPS}(undef, ex)
 
   for (i, key) in enumerate(states)
@@ -244,7 +251,8 @@ function cal_overlap()
 
   L = start:step:fin
 
-  overlap = zeros((length(L), ex))
+  overlap = Array{ComplexF64}(undef, (length(L), ex))
+  overlapnorm = zeros((length(L), ex))
 
   for (i, t) in enumerate(L)
 
@@ -252,13 +260,19 @@ function cal_overlap()
     ψ = read( TE, "psi", MPS)
     close(TE)
 
-    for (j, wf) in enumreate(exwf)
+    for (j, wf) in enumerate(exwf)
 
-      overlap[i, j] = inner(ψ, wf)
+      cur = inner(ψ', wf)
+      cur *= exp( -im * energy[j] * (t + step))
+      
+      overlap[i, j] = cur
+      overlapnorm[i, j] = abs(cur)
+
     end 
   end 
 
-  wrtiedlm( workdir * "overlap", overlap)
+  writedlm( workdir * "overlap", overlap)
+  writedlm( workdir * "overlapnorm", overlapnorm)
 
 end 
 
