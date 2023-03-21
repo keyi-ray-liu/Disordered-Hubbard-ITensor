@@ -160,6 +160,9 @@ function QE_dynamic()
   QN = true
   dynamode = "both"
   prod = true
+  TEmethod = "TDVP"
+  TEdim = 300
+  TEcutoff = 1E-8
 
   if QE == 1
     dp = dps * [1.0]
@@ -181,7 +184,8 @@ function QE_dynamic()
     main(paras)
   end 
   
-  paras = setpara(L=L, N=N, CN=CN, sweepdim=dim, sweepcnt=cnt, QEen = energy, QE=QE, QN=QN, dp=dp, ζ_dp=ζ_dp, QEoffset=offset)
+  paras = setpara(L=L, N=N, CN=CN, QEen = energy, QE=QE, QN=QN, dp=dp, ζ_dp=ζ_dp, QEoffset=offset, 
+  TEcutoff=TEcutoff, TEdim=TEdim, TEmethod=TEmethod)
   # process wf
 
   if !prod
@@ -229,7 +233,7 @@ function cal_overlap()
 
 
   start = 0.0
-  fin = 13.4
+  fin = 20.0
   step = 0.1
 
   states = sort(keys(baseline), by= x -> parse(Int, x[4:end]))

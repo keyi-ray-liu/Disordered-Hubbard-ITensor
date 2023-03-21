@@ -18,8 +18,9 @@ function time_evolve(ψ, sites, paras, start, fin, τ)
     range = paras["range"]
     self = paras["self_nuc"]
     QEen = paras["QEen"]
-    cutoff = paras["cutoff"]
-    maxdim = paras["sweepdim"]
+    cutoff = paras["TEcutoff"]
+    maxdim = paras["TEdim"]
+    method = para["TEmethod"]
 
     if QE == 0
         throw(ArgumentError("Dynamics have to include quantum emitters"))
