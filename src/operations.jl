@@ -185,7 +185,7 @@ function QE_dynamic()
   end 
   
   paras = setpara(L=L, N=N, CN=CN, QEen = energy, QE=QE, QN=QN, dp=dp, ζ_dp=ζ_dp, QEoffset=offset, 
-  TEcutoff=TEcutoff, TEdim=TEdim, TEmethod=TEmethod)
+  TEcutoff=TEcutoff, TEdim=TEdim, TEmethod=TEmethod, prod=prod)
   # process wf
 
   if !prod
@@ -199,6 +199,7 @@ function QE_dynamic()
     end 
 
     sites = siteinds(ψ)
+
   else
     ψ, sites = TE_stateprep(paras)
 
@@ -271,6 +272,7 @@ function cal_overlap()
 
       overlap[i, j] = cur
       overlapnorm[i, j] = abs(cur)
+      println(i, j, " done")
 
     end 
   end 
@@ -300,7 +302,7 @@ function temp_occ()
 
     bond = checkmaxbond(ψ)
     occ = expect(ψ, "N")
-
+    println(t)
     append!(bonds, bond)
     append!(res, [occ])
   end 
