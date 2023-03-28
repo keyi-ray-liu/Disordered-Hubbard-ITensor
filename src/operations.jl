@@ -176,7 +176,7 @@ function QE_dynamic()
   workdir = getworkdir()
   target = "target"
 
-  if !prod && (!isfile(workdir * target * ".h5") || start == 0.0)
+  if !prod && (!isfile(workdir * target * ".h5") || start == 0.1)
     # if there no target file, we perform a single GS search
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
     paras = setpara(L=L, N=N, CN=CN, ex=1, sweepdim=dim, sweepcnt=cnt, output = target, QE=QE, QN=QN, headoverride= (QE > 0) * (QN + 1),
@@ -192,7 +192,7 @@ function QE_dynamic()
 
     wf = h5open( workdir * target * ".h5", "r")
 
-    if start == 0.0
+    if start == 0.1
       ψ = read(wf, "psi1", MPS)
     else 
       ψ = read(wf, "psi", MPS)
@@ -233,7 +233,7 @@ function cal_overlap()
   energy = readdlm( workdir * "energy")
 
 
-  start = 0.0
+  start = 0.1
   fin = 20.0
   step = 0.1
 
@@ -286,7 +286,7 @@ end
 function temp_occ()
   workdir = getworkdir()
 
-  start = 0.0
+  start = 0.1
   steps = 0.1 
   fin = 13.4
 

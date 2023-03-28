@@ -30,7 +30,7 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = false
+  test = true
   disable_blas = true
 
   if disable_blas
@@ -42,9 +42,12 @@ function top()
 
     println("TEST TEST TEST")
     QE_dynamic()
-    #paras = setpara(L=60, N=30, CN=30, ex=20, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=300, 
-    #sweepcnt=50, noise=false, QE=2, QN=true, QEen=0.6, dp= 1.0 * [1.0, -1.0], ζ_dp = [0.5, 0.5], QEoffset=1.0)
-    #main(paras)
+    # paras = setpara(L=12, N=6, CN=6, ex=3, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=100, 
+    # sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEoffset=1.0)
+
+    # main(paras)
+
+
     
   else
     if ARGS == []

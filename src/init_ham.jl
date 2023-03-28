@@ -1,38 +1,8 @@
-"""Generates the 1D hamiltonian MPO for the given system configuration"""
-function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites)
-  # parameters 
+"""Hopping term"""
+function add_hopping!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+
   t = para["t"]
-  λ_ee = para["int_ee"]
-  λ_ne = para["int_ne"]
-  ζ_ne, ζ_ee = para["ζ"]
-  exch = para["exch"]
   decay = para["decay"]
-  self = para["self_nuc"]
-  QE = para["QE"]
-  QN = para["QN"]
-  N = para["N"]
-  CN = para["CN"]
-  QEen = para["QEen"]
-  dp = para["dp"]
-  ζ_dp = para["ζ_dp"]
-  QEoffset = para["QEoffset"]
-  headoverride = para["headoverride"]
-  
-  # set e-e interaction range
-  range = para["range"]
-  # if QE > 0, then at least left emitter, and if QN, we account for the AUX site
-
-  # head denotes the position of QE1: 0 if QE == 0, 1 if QE but not QN, 2 if QE and QN
-  # we add a head override function for the situation where we need 'empty' site indices
-  head = headoverride > 0 ? headoverride : (QE > 0) * (QN + 1) 
-
-  print("head position is now at", head)
-  ampo = OpSum()
-
-  λ_ne = λ_ne * CN / L
-
-  
-  ############################ begin chain hamiltonian ###################################
 
   # adjust the site based on if there are left emitter
   for j=1  :L-1 
@@ -42,20 +12,83 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
 
     #println(hop)
     # Hopping
-    ampo += -t * hop, "C",j + head,"Cdag",j+1 + head
-    ampo += -t * hop, "C",j+1 + head,"Cdag",j + head
+    p1 = j + head
+    p2 = j + head + 1
+    s1 = sites[p1]
+    s2 = sites[p2]
+
+    if !if_gate
+      res += -t * hop, "C", p1 ,"Cdag",p2
+      res += -t * hop, "C", p2 ,"Cdag",p1
+
+    else 
+      hj =
+      - t * hop * op("C", s1) * op("Cdag", s2) +
+      - t * hop * op("C", s2) * op("Cdag", s1)
+
+      gatefy!(res, factor, hj, τ)
+
+    end 
+
   end
+
+  return res
+end 
+
+"""E-E interaction term"""
+function add_ee!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+
+  λ_ee = para["int_ee"]
+  ζ_ee = para["ζ"][2]
+  exch = para["exch"]
+  range = para["range"]
 
   for j=1 :L 
     # E-E
+    p1 = j + head
+    s1 = sites[p1]
+
     for k= max(1, j - range):j-1
 
       # delta function setting up the exchange between nearest neighbor
+      p2 = k + head
+      s2 = sites[p2]
+
       ifexch = (1 -  ==(1, abs(j - k)) * exch )
       
+      if !if_gate
       # add the ee interaction term one by one
-      ampo += λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee),"N",j + head,"N",k + head
+        res += λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee),"N",p1 ,"N", p2
+
+      else
+        eejk  = λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee) * op("N", s1) * op("N", s2)
+        gatefy!(res, factor, eejk, τ)
+
+      end 
+
     end
+
+  end 
+
+  return res
+
+end 
+
+
+"""N-E interaction term"""
+function add_ne!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+
+  λ_ne = para["int_ne"]
+  ζ_ne = para["ζ"][1]
+  self = para["self_nuc"]
+  CN = para["CN"]
+
+  λ_ne = λ_ne * CN / L
+
+  for j=1 :L 
+
+    p1 = j + head
+    s1 = sites[p1]
     
     # N-E
 
@@ -71,115 +104,211 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
       cursum += λ_ne / ( dis(j, l, disx, disy) + ζ_ne)
     end
 
-    ampo += -cursum, "N", j + head
+    if !if_gate
+      res += -cursum, "N", p1
+
+    else 
+      nej = -cursum * op("N", s1)
+      gatefy!(res, factor, nej, τ)
+    end 
+
   end
+
+  return res
+
+end 
+
+"""add QE terms"""
+function add_qe!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1, which=1)
+
+  QEen = para["QEen"]
+  dp = para["dp"]
+  ζ_dp = para["ζ_dp"]
+  QEoffset = para["QEoffset"]
+  CN = para["CN"]
+  QN = para["QN"]
+  QE = para["QE"]
+
+
+  # we had the check of dp length with QE
+  dp = dp[which]
+  ζ_dp = ζ_dp[which]
+
+  if which == 1
+    paux = 1
+    pqe = head 
+
+  elseif which == 2
+
+    paux = L + head * 2
+    pqe = L + head + 1
+  end 
+
+  saux = sites[paux]
+  sqe = sites[pqe]
+
+  # diagonal energy term
+
+  if !if_gate
+    res += QEen, "N", pqe
+
+  else 
+    g = QEen * op("N", sqe) 
+    gatefy!(res, factor, g, τ)
+
+  end 
+
+  cavg = CN / L 
+  # dipole
+  for i = 1 : L 
+    
+    if which == 1
+      r = dis(i, QEoffset, disx, disy)
+
+    elseif which == 2
+      r = L - 1 + QE * (QEoffset + 1) - dis(i, QEoffset, disx, disy)
+    end 
+
+    r_dp = r ^ 3 + ζ_dp
+
+    p1 = i + head
+    s1 = sites[p1]
+
+
+    if !if_gate
+      if !QN
+        res  +=  dp * r  / r_dp , "x", pqe, "N", p1
+        # centering
+        res  += -dp * r *  cavg / r_dp,  "x", pqe
+
+      else
+        res  +=  dp * r / r_dp, "C", paux, "Cdag", pqe, "N", p1
+        res  +=  dp * r / r_dp, "C", pqe, "Cdag", paux, "N", p1
+        
+        # centering
+        res  +=   - dp * r * cavg / r_dp, "C", paux, "Cdag", pqe
+        res  +=   - dp * r * cavg / r_dp, "C", pqe, "Cdag", paux
+
+      end 
+
+    else
+
+      if !QN
+        dpla = dp * r  / r_dp * op( "x", sqe) * op("N", s1)
+        dpl = -dp * r *  cavg / r_dp * op( "x", sqe)
+
+      else
+
+        #two level with AUX site
+        dpla = dp * r / r_dp  * op( "C", saux) * op("Cdag", sqe) * op("N", s1) + 
+                dp * r / r_dp  * op( "C", sqe) * op("Cdag", saux) * op("N", s1)
+
+        # the offset term, to set the 'center of mass'
+        # calculated as a uniform distribution:  L * N / 2
+        dpl =  - dp * r * cavg / r_dp *  op("C", saux) * op( "Cdag", sqe)  
+                - dp * r * cavg / r_dp *  op("C", sqe) * op( "Cdag", saux) 
+
+      end 
+
+      gatefy!(gates, factor, dpla, τ)
+      gatefy!(gates, factor, dpl, τ)
+    end 
+
+
+
+    # the offset term, to set the 'center of mass'
+    # calculated as a uniform distribution:  L * N / 2
+    #res +=  dp * L * N / ( 2 * r^3), "x", head, "N", left + head
+  end 
+
+  return res
+
+end 
+
+"""add QN terms if necessary"""
+function add_qn!(res, para::Dict, L::Int, sites; if_gate=false, head=0, factor=2, τ=0.1, Λ=30)
+  N = para["N"]
+
+  for i= 1:L
+
+    p1 = i + head
+    s1 = sites[p1]
+    # linear terms
+
+    if !if_gate
+      res += - 2 * Λ * N, "N", s1 + head
+    else
+      li = - 2 * Λ * N * op( "N", s1)
+      gatefy!(res, factor, li, τ)
+    end 
+      
+
+    # quadratic terms
+    for j =1:L
+
+      p2 = j + head
+      s2 = sites[p2]
+
+      if !if_gate
+        res += Λ, "N", p1, "N", p2
+      else
+
+        if s1 != s2
+          lij = Λ * op("N", s1) * op("N", s2)
+        end 
+        gatefy!(res, factor, lij, τ)
+
+      end 
+    end 
+
+  end 
+
+  return res
+
+end 
+
+
+"""Generates the 1D hamiltonian MPO for the given system configuration"""
+function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false)
+  # parameters 
+
+  factor= para["TEBDfactor"]
+  τ = para["τ"]
+  QE = para["QE"]
+  QN = para["QN"]
+  headoverride = para["headoverride"]
+  
+  # if QE > 0, then at least left emitter, and if QN, we account for the AUX site
+
+  # head denotes the position of QE1: 0 if QE == 0, 1 if QE but not QN, 2 if QE and QN
+  # we add a head override function for the situation where we need 'empty' site indices
+  head = headoverride > 0 ? headoverride : (QE > 0) * (QN + 1) 
+  println("head position is now at", head)
+
+  if !if_gate
+    res = OpSum()
+  else
+    res = ITensor[]
+  end 
+
+  
+  ############################ begin chain hamiltonian ###################################
+  res = add_hopping!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+  res = add_ee!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+  res = add_ne!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+
 
   # ##################### end chain hamiltonian ###################################
   ##################### begin QE hamiltonian ###################################
   # QE part
   # left QE
   if QE > 0 && headoverride == 0
-
-    # we had the check of dp length with QE
-    dp_left = dp[1]
-    ζ_dp_left = ζ_dp[1]
-    # diagonal energy term
-    ampo += QEen, "N", head
-    cavg = CN / L 
-    # dipole
-    for left = 1 : L 
-      
-      r = dis(left, QEoffset, disx, disy)
-      r_dp = r ^ 3 + ζ_dp_left
-
-      # for all = 1 : L
-
-      #   # r0 determines the overall 'weight' of sites
-      #   r0 = dis(all, QEoffset, disx, disy)
-        
-      #   #off-diagonal two level transition term
-      #   # if no QN, symmetry breaking term
-      #   if !QN
-      #     ampo  +=  dp_left * r0 / r_dp , "x", head, "N", left + head, "N", all + head
-
-      #   # AUX symmetry perserving term
-      #   # c1c+2 + c2c+1
-      #   else
-      #     ampo  +=  dp_left * r0 / r_dp, "C", 1, "Cdag", head, "N", left + head, "N", all + head
-      #     ampo  +=  dp_left * r0 / r_dp, "C", head, "Cdag", 1, "N", left + head, "N", all + head
-      #   end 
-
-      # end 
-
-      if !QN
-        ampo  +=  dp_left * r  / r_dp , "x", head, "N", left + head
-        # centering
-        ampo  += -dp_left * r *  cavg / r_dp,  "x", head
-
-      else
-        ampo  +=  dp_left * r / r_dp, "C", 1, "Cdag", head, "N", left + head
-        ampo  +=  dp_left * r / r_dp, "C", head, "Cdag", 1, "N", left + head
-        
-        # centering
-        ampo  +=   - dp_left * r * cavg / r_dp, "C", 1, "Cdag", head
-        ampo  +=   - dp_left * r * cavg / r_dp, "C", head, "Cdag", 1
-
-      end 
-
-
-      # the offset term, to set the 'center of mass'
-      # calculated as a uniform distribution:  L * N / 2
-      #ampo +=  dp * L * N / ( 2 * r^3), "x", head, "N", left + head
-    end 
-
+    res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=1)
   end 
 
   # right QE
   if QE > 1 && headoverride == 0
-    ampo += QEen, "N", L + head + 1
-
-    dp_right = dp[2]
-    ζ_dp_right = ζ_dp[2]
-
-    for right = 1 : L
-      
-
-      r = ( L - 1 + QE * (QEoffset + 1) -  dis(right, QEoffset, disx, disy))  
-      r_dp = r ^ 3 + ζ_dp_right
-
-      # for all = 1: L
-
-      #   r0 = dis(all, QEoffset, disx, disy)
-        
-      #   if !QN
-      #     ampo +=  dp_right * (L + 1 - r0) / r_dp, "x", L + head + 1, "N", right + head, "N", all + head
-      #   #ampo += - dp / ( L + 1 - r) ^ 3, "Cdag", L + 2, "N", right + 1, "N", all + 1
-
-      #   else
-      #     ampo +=  dp_right * (L + 1 - r0) / r_dp, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head, "N", all + head
-      #     ampo +=  dp_right * (L + 1 - r0) / r_dp, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head, "N", all + head
-      #   end 
-
-      # end 
-
-
-      if  !QN
-        ampo +=  dp_right * r / r_dp, "x", L + head + 1, "N", right + head
-        ampo +=  - dp_right * r * cavg / r_dp, "x", L + head + 1
-
-      else
-        ampo +=  dp_right * r / r_dp, "C", L + head + 2, "Cdag", L + head + 1, "N", right + head
-        ampo +=  dp_right * r / r_dp, "C", L + head + 1, "Cdag", L + head + 2, "N", right + head
-
-        ampo +=  - dp_right * r * cavg / r_dp, "C", L + head + 2, "Cdag", L + head + 1
-        ampo +=  - dp_right * r * cavg / r_dp, "C", L + head + 1, "Cdag", L + head + 2
-      end 
-      # the offset term, to set the 'center of mass'
-      # calculated as a uniform distribution:  L * N / 2
-      #ampo +=  dp * L * N / ( 2 * r^3), "x", L + head + 1, "N", right + head
-
-    end 
-
+    res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=2)
   end 
 
   ############################################## end QE hamiltonian ##########################################
@@ -189,26 +318,20 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   # in the form of (sum_i n_i - N) ^2
   # if not QN, enforce
   if !QN 
-    Λ = 30.0
-
-    for s1= 1:L
-      # linear terms
-      ampo += - 2 * Λ * N, "N", s1 + head
-
-      # quadratic terms
-      for s2 =1:L
-        ampo += Λ, "N", s1 + head, "N", s2 + head
-      end 
-
-    end 
+    res = add_qn!(res, para, L, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
 
   end 
 
   ########################### end penalty ###################################
 
-  H = MPO(ampo, sites)
+  if !if_gate
+    H = MPO(res, sites)
+    return H
 
-  return H
+  else
+    return res
+
+  end 
 end
 
 """Generates a 2D system hamiltonian. Has the option to use the built-in lattice setup or manual setup"""
