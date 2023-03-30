@@ -329,6 +329,8 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
     return H
 
   else
+    # reverse gates
+    append!(res, reverse(res))
     return res
 
   end 

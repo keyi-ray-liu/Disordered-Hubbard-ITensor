@@ -29,9 +29,7 @@ function time_evolve(ψ, sites, paras, start, fin, τ)
 
         gates = init_ham(paras, L, disx, disy, sites, if_gate=true)
         H = init_ham(paras, L, disx, disy, sites )
-        # reverse gates
-        append!(gates, reverse(gates))
-
+        
 
         for dt in start:τ:fin
             #Sz = expect(psi, "Sz"; sites=c)
