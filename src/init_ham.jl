@@ -319,7 +319,6 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   # if not QN, enforce
   if !QN 
     res = add_qn!(res, para, L, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
-
   end 
 
   ########################### end penalty ###################################
@@ -330,7 +329,10 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
 
   else
     # reverse gates
-    append!(res, reverse(res))
+    if factor == 2
+      append!(res, reverse(res))
+    end 
+    
     return res
 
   end 
