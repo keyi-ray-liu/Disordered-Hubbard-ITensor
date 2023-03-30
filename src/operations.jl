@@ -160,9 +160,9 @@ function QE_dynamic()
   QN = true
   dynamode = "both"
   prod = false
-  TEmethod = "TEBD"
+  TEmethod = "TDVP"
   TEdim = 300
-  TEcutoff = 1E-12
+  TEcutoff = 1E-8
 
   if QE == 1
     dp = dps * [1.0]

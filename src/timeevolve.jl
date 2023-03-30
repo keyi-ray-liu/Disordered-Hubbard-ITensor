@@ -28,6 +28,7 @@ function time_evolve(ψ, sites, paras, start, fin, τ)
 
 
         gates = init_ham(paras, L, disx, disy, sites, if_gate=true)
+        H = init_ham(paras, L, disx, disy, sites )
         # reverse gates
         append!(gates, reverse(gates))
 
@@ -39,7 +40,11 @@ function time_evolve(ψ, sites, paras, start, fin, τ)
             println("$method time : $dt")
         
             ψ = apply(gates, ψ; cutoff=cutoff, maxdim = maxdim)
+            
             normalize!(ψ)
+            var = variance(H, ψ)
+
+            println("variance of the state: $var")
 
             wf = h5open( prefix * "t$method" * string(dt) * ".h5", "w")
             write(wf, "psi", ψ)
@@ -58,7 +63,14 @@ function time_evolve(ψ, sites, paras, start, fin, τ)
         for dt in start:τ:fin
 
             println("$method time : $dt")
-            ψ = tdvp(H, -1im * τ, ψ; nsweeps=1, cutoff, nsite=1)
+            ψ1 = tdvp(H, ψ, -1.0im * dt; nsweeps=1, cutoff, nsite=1)
+
+            println( "inner", abs(inner(ψ1, ψ)))
+            ψ = ψ1
+
+            var = variance(H, ψ)
+            println("variance of the state: $var")
+
 
             wf = h5open( prefix * "t$method" * string(dt) * ".h5", "w")
             write(wf, "psi", ψ)
