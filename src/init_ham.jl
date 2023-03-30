@@ -210,8 +210,8 @@ function add_qe!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Fl
 
       end 
 
-      gatefy!(gates, factor, dpla, τ)
-      gatefy!(gates, factor, dpl, τ)
+      gatefy!(res, factor, dpla, τ)
+      gatefy!(res, factor, dpl, τ)
     end 
 
 

@@ -77,7 +77,7 @@ function top()
       QE_dynamic()
 
     elseif ARGS[1] == "7"
-      temp_occ()
+      temp_occ(ARGS[2])
 
     elseif ARGS[1] == "8"
       cal_overlap()

@@ -144,25 +144,25 @@ end
 """Calculating QE dynamics using TEBD"""
 function QE_dynamic()
 
-  L = 60
-  N = 30
-  CN = 30
+  L = 12
+  N = 6
+  CN = 6
   dim = 300
   cnt = 50
   dps = 1.0
   τ = 0.1
-  start = 13.5
-  fin = 20.0
+  start = 0.1
+  fin = 10.0
   QE = 2
   ζ = 0.5
-  energy = 0.15
+  energy = 0.5
   offset = 1.0
   QN = true
   dynamode = "both"
-  prod = true
-  TEmethod = "TDVP"
+  prod = false
+  TEmethod = "TEBD"
   TEdim = 300
-  TEcutoff = 1E-8
+  TEcutoff = 1E-12
 
   if QE == 1
     dp = dps * [1.0]
@@ -283,12 +283,21 @@ function cal_overlap()
 end 
 
 """calculates the occ for the available t slices"""
-function temp_occ()
+function temp_occ(num)
   workdir = getworkdir()
+  control = parse(Int, num)
 
   start = 0.1
   steps = 0.1 
   fin = 13.4
+
+  if control == 1
+    method = "TEBD"
+
+  elseif control == 2
+    method = "TDVP"
+
+  end 
 
   res = []
   bonds = []
@@ -296,7 +305,7 @@ function temp_occ()
   T = start:steps:fin
 
   for t in T
-    wf = h5open(workdir * "t" * string(t) * ".h5", "r")
+    wf = h5open(workdir * "t$method" * string(t) * ".h5", "r")
     ψ = read( wf, "psi", MPS)
     close(wf)
 

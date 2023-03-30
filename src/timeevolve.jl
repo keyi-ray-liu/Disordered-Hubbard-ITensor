@@ -1,11 +1,12 @@
 """worker function perfomring time evolution"""
 function time_evolve(ψ, sites, paras, start, fin, τ)
 
-
+    QE = paras["QE"]
+    L = paras["L"]
     cutoff = paras["TEcutoff"]
     maxdim = paras["TEdim"]
     method = paras["TEmethod"]
-    disorder = para["disorder"]
+    disorder = paras["disorder"]
     
 
     if QE == 0
@@ -19,6 +20,10 @@ function time_evolve(ψ, sites, paras, start, fin, τ)
     prefix = getworkdir()
     disx, disy = setdisorder(disorder, L)
 
+    #currently only support one case
+    disx = disx[1, :]
+    disy = disy[1, :]
+
     if method == "TEBD"
 
 
@@ -31,12 +36,12 @@ function time_evolve(ψ, sites, paras, start, fin, τ)
             #Sz = expect(psi, "Sz"; sites=c)
 
             # testing the occupation on the whole chain plus emitter
-            println("$dt")
+            println("$method time : $dt")
         
             ψ = apply(gates, ψ; cutoff=cutoff, maxdim = maxdim)
             normalize!(ψ)
 
-            wf = h5open( prefix * "t" * string(dt) * ".h5", "w")
+            wf = h5open( prefix * "t$method" * string(dt) * ".h5", "w")
             write(wf, "psi", ψ)
             close(wf)
             
@@ -48,7 +53,18 @@ function time_evolve(ψ, sites, paras, start, fin, τ)
 
         # same as DMRG, we set up H first
         H = init_ham( paras, L, disx, disy, sites)
-        tdvp(H, ψ, t* 2im)
+        #forward evolution
+
+        for dt in start:τ:fin
+
+            println("$method time : $dt")
+            ψ = tdvp(H, -1im * τ, ψ; nsweeps=1, cutoff, nsite=1)
+
+            wf = h5open( prefix * "t$method" * string(dt) * ".h5", "w")
+            write(wf, "psi", ψ)
+            close(wf)
+
+        end 
 
     end 
 
