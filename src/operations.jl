@@ -123,7 +123,7 @@ function QE(num, energy)
   QN = true
   dps = 1.0
   ζ = 0.5
-  offset = 1.0
+  loc = 1.0
 
   
   if num == 1
@@ -136,7 +136,7 @@ function QE(num, energy)
   end 
 
   paras = setpara(L=L, N=N, CN=CN, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num, QN=QN, 
-  QEen=energy, dp=dp, ζ_dp=ζ_dp, QEoffset=offset, headoverride=0)
+  QEen=energy, dp=dp, ζ_dp=ζ_dp, QEloc=loc, headoverride=0)
   main(paras)
 
 end 
@@ -144,24 +144,24 @@ end
 """Calculating QE dynamics using TEBD"""
 function QE_dynamic()
 
-  L = 12
-  N = 6
-  CN = 6
-  dim = 300
-  cnt = 50
+  L = [2, 30]
+  N = 30
+  CN = 30
+  dim = 1000
+  cnt = 60
   dps = 1.0
   τ = 0.1
   start = 0.1
-  fin = 10.0
+  fin = 15.0
   QE = 2
   ζ = 0.5
   energy = 0.5
-  offset = 1.0
+  loc = [ [0.5, -2], [0.5, 31]]
   QN = true
   dynamode = "both"
   prod = false
-  TEmethod = "TDVP"
-  TEdim = 300
+  TEmethod = "TEBD"
+  TEdim = 150
   TEcutoff = 1E-8
 
   if QE == 1
@@ -184,7 +184,7 @@ function QE_dynamic()
     main(paras)
   end 
   
-  paras = setpara(L=L, N=N, CN=CN, QEen = energy, QE=QE, QN=QN, dp=dp, ζ_dp=ζ_dp, QEoffset=offset, 
+  paras = setpara(L=L, N=N, CN=CN, QEen = energy, QE=QE, QN=QN, dp=dp, ζ_dp=ζ_dp, QEloc=loc, 
   TEcutoff=TEcutoff, TEdim=TEdim, TEmethod=TEmethod, prod=prod)
   # process wf
 
@@ -289,7 +289,7 @@ function temp_occ(num)
 
   start = 0.1
   steps = 0.1 
-  fin = 13.4
+  fin = 10.0
 
   if control == 1
     method = "TEBD"

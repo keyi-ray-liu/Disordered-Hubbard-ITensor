@@ -1,32 +1,42 @@
 """Hopping term"""
-function add_hopping!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
   t = para["t"]
   decay = para["decay"]
+  Ltotal = prod(L)
+  scales = para["scales"]
 
-  # adjust the site based on if there are left emitter
-  for j=1  :L-1 
+  # iterate through all sites to get NN
+  for j=1  : Ltotal
 
-    r = dis(j, j + 1, disx, disy)
-    hop = hopping(decay, r)
+    nns = get_nn(j, L)
 
-    #println(hop)
-    # Hopping
-    p1 = j + head
-    p2 = j + head + 1
-    s1 = sites[p1]
-    s2 = sites[p2]
+    
+    for nn in nns
+      
+      r = dis(j, nn, L, scales, disx, disy)
+      hop = hopping(decay, r)
 
-    if !if_gate
-      res += -t * hop, "C", p1 ,"Cdag",p2
-      res += -t * hop, "C", p2 ,"Cdag",p1
+      #println( "$j, $nn, $hop")
+      
+      # Hopping
+      p1 = j + head
+      p2 = nn + head 
+      s1 = sites[p1]
+      s2 = sites[p2]
 
-    else 
-      hj =
-      - t * hop * op("C", s1) * op("Cdag", s2) +
-      - t * hop * op("C", s2) * op("Cdag", s1)
+      if !if_gate
+        res += -t * hop, "C", p1 ,"Cdag",p2
+        res += -t * hop, "C", p2 ,"Cdag",p1
 
-      gatefy!(res, factor, hj, τ)
+      else 
+        hj =
+        - t * hop * op("C", s1) * op("Cdag", s2) +
+        - t * hop * op("C", s2) * op("Cdag", s1)
+
+        gatefy!(res, factor, hj, τ)
+
+      end 
 
     end 
 
@@ -36,14 +46,17 @@ function add_hopping!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vect
 end 
 
 """E-E interaction term"""
-function add_ee!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
   λ_ee = para["int_ee"]
   ζ_ee = para["ζ"][2]
   exch = para["exch"]
   range = para["range"]
+  scales = para["scales"]
 
-  for j=1 :L 
+  Ltotal = prod(L)
+
+  for j=1 :Ltotal
     # E-E
     p1 = j + head
     s1 = sites[p1]
@@ -54,14 +67,18 @@ function add_ee!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Fl
       p2 = k + head
       s2 = sites[p2]
 
-      ifexch = (1 -  ==(1, abs(j - k)) * exch )
+      # because k < j, we check if j is in the nn of k
+
+      ifexch = (1 -  (j in get_nn(k, L)) * exch )
+      r = dis(j, k, L, scales, disx, disy)
       
+      #println("EE interaction: $j, $k, $ifexch, $r")
       if !if_gate
       # add the ee interaction term one by one
-        res += λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee),"N",p1 ,"N", p2
+        res += λ_ee * ifexch / (  r + ζ_ee),"N",p1 ,"N", p2
 
       else
-        eejk  = λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee) * op("N", s1) * op("N", s2)
+        eejk  = λ_ee * ifexch / ( r + ζ_ee) * op("N", s1) * op("N", s2)
         gatefy!(res, factor, eejk, τ)
 
       end 
@@ -74,18 +91,19 @@ function add_ee!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Fl
 
 end 
 
-
 """N-E interaction term"""
-function add_ne!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
   λ_ne = para["int_ne"]
   ζ_ne = para["ζ"][1]
   self = para["self_nuc"]
   CN = para["CN"]
+  Ltotal = prod(L)
+  scales = para["scales"]
 
-  λ_ne = λ_ne * CN / L
+  λ_ne = λ_ne * CN / Ltotal
 
-  for j=1 :L 
+  for j=1 :Ltotal
 
     p1 = j + head
     s1 = sites[p1]
@@ -100,8 +118,11 @@ function add_ne!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Fl
       cursum = -λ_ne / ζ_ne
     end
 
-    for l=1 :L 
-      cursum += λ_ne / ( dis(j, l, disx, disy) + ζ_ne)
+    for l=1 :Ltotal
+
+      r = dis(j, l, L, scales, disx, disy)
+      println("NE interaction: $j, $l, $r")
+      cursum += λ_ne / ( r + ζ_ne)
     end
 
     if !if_gate
@@ -119,16 +140,17 @@ function add_ne!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Fl
 end 
 
 """add QE terms"""
-function add_qe!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1, which=1)
+function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1, which=1)
 
   QEen = para["QEen"]
   dp = para["dp"]
   ζ_dp = para["ζ_dp"]
-  QEoffset = para["QEoffset"]
   CN = para["CN"]
   QN = para["QN"]
-  QE = para["QE"]
+  QEloc = para["QEloc"]
+  scales = para["scales"]
 
+  Ltotal = prod(L)
 
   # we had the check of dp length with QE
   dp = dp[which]
@@ -140,8 +162,8 @@ function add_qe!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Fl
 
   elseif which == 2
 
-    paux = L + head * 2
-    pqe = L + head + 1
+    paux = Ltotal + head * 2
+    pqe = Ltotal + head + 1
   end 
 
   saux = sites[paux]
@@ -158,16 +180,11 @@ function add_qe!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Fl
 
   end 
 
-  cavg = CN / L 
+  cavg = CN / Ltotal
   # dipole
-  for i = 1 : L 
+  for i = 1 : Ltotal
     
-    if which == 1
-      r = dis(i, QEoffset, disx, disy)
-
-    elseif which == 2
-      r = L - 1 + QE * (QEoffset + 1) - dis(i, QEoffset, disx, disy)
-    end 
+    r = dis(i, QEloc[which], L, scales, disx, disy)
 
     r_dp = r ^ 3 + ζ_dp
 
@@ -226,10 +243,11 @@ function add_qe!(res, para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Fl
 end 
 
 """add QN terms if necessary"""
-function add_qn!(res, para::Dict, L::Int, sites; if_gate=false, head=0, factor=2, τ=0.1, Λ=30)
+function add_qn!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, head=0, factor=2, τ=0.1, Λ=30)
   N = para["N"]
+  Ltotal = prod(L)
 
-  for i= 1:L
+  for i= 1:Ltotal
 
     p1 = i + head
     s1 = sites[p1]
@@ -244,7 +262,7 @@ function add_qn!(res, para::Dict, L::Int, sites; if_gate=false, head=0, factor=2
       
 
     # quadratic terms
-    for j =1:L
+    for j =1:Ltotal
 
       p2 = j + head
       s2 = sites[p2]
@@ -268,8 +286,8 @@ function add_qn!(res, para::Dict, L::Int, sites; if_gate=false, head=0, factor=2
 end 
 
 
-"""Generates the 1D hamiltonian MPO for the given system configuration"""
-function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false)
+"""Generates the hamiltonian MPO for the given system configuration, both 1D and higher geometry"""
+function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false)
   # parameters 
 
   factor= para["TEBDfactor"]
@@ -338,150 +356,4 @@ function init_ham(para::Dict, L::Int, disx::Vector{Float64}, disy::Vector{Float6
   end 
 end
 
-"""Generates a 2D system hamiltonian. Has the option to use the built-in lattice setup or manual setup"""
-function init_ham(para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites)
-  # parameters 
-  Lx = L[1]
-  Ly = L[2]
-  t = para["t"]
-  λ_ee = para["int_ee"]
-  λ_ne = para["int_ne"]
-  ζ_ne, ζ_ee = para["ζ"]
-  exch = para["exch"]
-  decay = para["decay"]
-  self = para["self_nuc"]
-  manual = para["manual"]
-  range = para["range"]
-  QE = para["QE"]
-  xscale = para["xscale"]
-  CN = para["CN"]
 
-  if QE > 0
-    println("QE currently not supported on 2D sys")
-  end 
-
-  if Lx > Ly
-    println("By set up Lx has to be smaller")
-    exit()
-  end 
-
-  disx = reshape(disx, (Lx, Ly))
-  disy = reshape(disy, (Lx, Ly))
-  L = Lx * Ly
-
-  λ_ne = λ_ne * CN / L
-  ampo = OpSum()
-
-  if !manual
-    lattice = square_lattice(Lx, Ly; yperiodic = false)
-
-    # important, lattice is a collection of bonds, so horizontal bonds: # = ( Nx - 1) * Ny, vertical bonds: # = (Ny - 1) * Nx
-    # when we add terms to the DMRG H, we add them individually by the bond
-
-    # hopping part
-    # we use the bonds to encode hopping
-    for b in lattice
-
-      x1 = trunc(Int, b.x1)
-      x2 = trunc(Int, b.x2)
-      y1 = trunc(Int, b.y1)
-      y2 = trunc(Int, b.y2)
-
-      r = dis(x1, y1, x2, y2, disx, disy, xscale)
-      hop = hopping(decay, r)
-
-      #println(hop)
-      # Hopping
-      ampo += -t * hop, "C",b.s1,"Cdag",b.s2
-      ampo += -t * hop, "C",b.s2,"Cdag",b.s1
-    end
-
-    # for the Coulombb interaction, it's more straightforward to use the number of the sites directly
-    for j=1:L
-      # E-E
-      x1 = div(j - 1, Ly) + 1
-      y1 = mod(j - 1, Ly) + 1
-
-      for k=max(1, j- range):j-1
-
-        x2 = div(k - 1, Ly) + 1
-        y2 = mod(k - 1, Ly) + 1
-        # delta function setting up the exchange between nearest neighbor
-        ifexch = (1 -  ==(1, abs(x1 - x2) + abs(y1 - y2)) * exch )
-        
-        # add the ee interaction term one by one
-        ampo += λ_ee * ifexch / ( dis(x1, y1, x2, y2, disx, disy, xscale) + ζ_ee),"N",j,"N",k
-
-        
-      end
-      
-      # N-E
-
-      # check if self self_nuc
-
-      if self
-        cursum = 0
-      else
-        cursum = -λ_ne / ζ_ne
-      end
-
-      for l=1:L
-
-        x2 = div(l - 1, Ly) + 1
-        y2 = mod(l - 1, Ly) + 1
-        cursum += λ_ne / ( dis(x1, y1, x2, y2, disx, disy, xscale) + ζ_ne)
-      end
-
-      ampo += -cursum, "N", j
-    end
-
-  else 
-
-    # we always hop down along the long side so that to minimize the range of the hopping
-    # by setup Lx <= Ly
-    # hopping terms
-
-    for j=1:L-1
-
-      r = dis(j, j + 1, disx, disy)
-      hop = hopping(decay, r)
-  
-      #println(hop)
-      # Hopping
-      ampo += -t * hop, "C",j,"Cdag",j+1
-      ampo += -t * hop, "C",j+1,"Cdag",j
-    end
-  
-    for j=1:L
-      # E-E
-      for k=1:j-1
-  
-        # delta function setting up the exchange between nearest neighbor
-        ifexch = (1 -  ==(1, abs(j - k)) * exch )
-        
-        # add the ee interaction term one by one
-        ampo += 2 * λ_ee * ifexch / ( dis(j, k, disx, disy) + ζ_ee),"N",j,"N",k
-      end
-      
-      # N-E
-  
-      # check if self self_nuc
-  
-      if self
-        cursum = 0
-      else
-        cursum = -λ_ne / ζ_ne
-      end
-  
-      for l=1:L
-        cursum += λ_ne / ( dis(j, l, disx, disy) + ζ_ne)
-      end
-  
-      ampo += -cursum, "N", j
-    end
-
-  end 
-
-  H = MPO(ampo,sites)
-  return H
-end

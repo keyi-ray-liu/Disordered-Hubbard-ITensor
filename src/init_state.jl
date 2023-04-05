@@ -18,16 +18,14 @@ function init_state(para, sites, disx, disy)
   
   # if not guess, using random MPS as init state
   if !guess
-    if typeof(L) != Int
-      L = L[1] * L[2]
-    end 
+    Ltotal = prod(L)
 
     # Create an initial random matrix product state
 
     # QN and QE conditions if QN, explicit initiating conditions
     if QN
 
-      state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N]) 
+      state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:Ltotal -N]) 
 
       if headoverride == 0
 
@@ -78,7 +76,7 @@ function init_state(para, sites, disx, disy)
     # random MPS if QN is false, making sure no 'stuck' situation
     else
 
-      ψ0 = randomMPS(sites,L + (headoverride > 0 ? headoverride : QE))
+      ψ0 = randomMPS(sites, Ltotal + (headoverride > 0 ? headoverride : QE))
 
     end 
 
@@ -142,9 +140,7 @@ function init_site(para::Dict)
   QN = para["QN"]
   headoverride = para["headoverride"]
 
-  if typeof(L) != Int
-    L = L[1] * L[2]
-  end 
+  Ltotal = prod(L)
 
   # set however many extra sites regarding the condition
   # experimental feature, QN AND QE
@@ -153,7 +149,7 @@ function init_site(para::Dict)
   extras = headoverride > 0 ? 2 * headoverride :  QE * (QN + 1)
 
   #sites = Vector{Index}(undef, L + extras)
-  sites = siteinds("Fermion", L + extras; conserve_qns =QN)
+  sites = siteinds("Fermion", Ltotal + extras; conserve_qns =QN)
   # determines the number of total sites. IF QE and QN, then we have 2 sites for each QE, else 1
   # for s = 1: L + extras
   #   sites[s] =  siteind("Fermion"; addtags="n=$s", conserve_qns =QN)
@@ -173,8 +169,10 @@ function TE_stateprep(para)
   QE = para["QE"]
   QN = para["QN"]
 
+  Ltotal = prod(L)
+
   if QN
-    state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N]) 
+    state = append!([ "Occ" for n=1:N] , ["Emp" for n=1: Ltotal -N]) 
 
     AUX1 = QE > 0 ? ["Emp"] : []
     QE1 = QE > 0 ? [ "Occ"] : []
@@ -189,7 +187,7 @@ function TE_stateprep(para)
     ψ = randomMPS(sites,state)
 
   else 
-    ψ = randomMPS(sites,L + QE)
+    ψ = randomMPS(sites,Ltotal + QE)
   end 
 
   return ψ, sites

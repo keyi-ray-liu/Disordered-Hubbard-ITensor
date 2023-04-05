@@ -26,11 +26,7 @@ function main(para)
     println("type of sites", typeof(sites))
     energy, states, allres, allvars, vars= single_search(para, sites, disx[case, :], disy[case, :], λ)
 
-    if typeof(L) != Int
-      suffix = string(L[1]) * "x" * string(L[2]) * "_" * string(case)
-    else
-      suffix = string(L) * "_" * string(case)
-    end 
+    suffix = string(L) * "_" * string(case)
     
     writedlm( prefix * "ex" *  suffix, energy)
     writedlm( prefix * "var" *  suffix, vars)

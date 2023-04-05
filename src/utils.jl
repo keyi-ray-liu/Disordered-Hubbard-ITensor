@@ -5,30 +5,124 @@ function hopping(decay::Float64, r::Float64)
   return exp( -(r - 1)/decay)
 end
 
-"""Calculates 1D distance"""
-function dis(i::Int, j::Int, disx, disy)
+"""generates the locations of the NN down the flattened array direction"""
+function get_nn(site::Int, L::Vector{Int})
+  nn = Int[]
 
-  return sqrt( ( disx[i] + i - disx[j] - j) ^ 2 + (disy[i] - disy[j]) ^ 2 )
+  # get the size of the whole system
+  total = prod(L)
+  # for each dimension, generates a nearest neighbor down the flattened array, if possible
 
-end
+  # we attempt to always make the smallest hopping possible, by sorting the L array
+  if L != sort(L)
+    error("for optimal performance, the input dimensions must be sorted. adjust QE position accordingly")
+  end 
 
-"""Calculates 1D distance to left QE"""
-function dis(i::Int, QEoffset::Float64, disx, disy)
-  return sqrt( ( disx[i] + i + QEoffset ) ^ 2 + (disy[i]) ^ 2)
+  curstride = 1
+  next = curstride 
+
+  for dim in L
+    
+    next *= dim
+    if site + curstride <= total && site % next != 0
+      append!(nn, site + curstride)
+    end 
+
+    curstride = next
+  end 
+
+  return nn
 end 
 
+"""Calculates distance between site i and site j given the geometry of L"""
+function dis(i::Int, j::Int, L::Vector{Int}, scales::Vector{Float64}, args...)
 
-"""Calculates 2D distance, with potential scaling on x"""
-function dis(x1::Int, y1::Int, x2::Int, y2::Int, disx, disy, xscale)
+  # preprocess for better consistent // operation
+  disorder = args
+  i -= 1
+  j -= 1
 
-  
-  x = disx[x1, y1]- disx[x2, y2]  + (x1  - x2) * xscale
-  y = disy[x1, y1] + y1 - disy[x2, y2] - y2
+  curstride = 1
+  nextstride = L[1]
+  r2 = 0
 
-  
-  return sqrt( x^2 + y^2 )
+  for d = 1: max(length(L), length(disorder))
+
+    # if enough terms in L, get coordinates
+    if d <= length(L)
+      ci = div( i % nextstride, curstride)
+      cj = div( j % nextstride, curstride)
+
+      diffsite = ci - cj
+
+      curstride = nextstride
+      if d < length(L)
+        nextstride *= L[d + 1]
+      end 
+
+    else
+      diffsite = 0
+    end 
+
+    # if enough terms in disorder, get disorder
+    if d <= length(disorder)
+      diffdis = disorder[d][i + 1] - disorder[d][ j + 1]
+    else
+      diffdis = 0
+    end 
+
+    scale = d <= length(scales) ? scales[d]  : 1.0
+    
+    r2 += ((diffsite + diffdis) * scale )^2
+  end 
+
+  return sqrt(r2)
 
 end
+
+"""Calculates distance to QE at location"""
+function dis(i::Int, QEloc::Vector{Float64}, L::Vector{Int}, scales::Vector{Float64}, args...)
+  
+    # preprocess for better consistent // operation
+    disorder = args
+    i -= 1
+  
+    curstride = 1
+    nextstride = L[1]
+    r2 = 0
+  
+    for d = 1: max(length(L), length(disorder))
+  
+      # if enough terms in L, get coordinates
+      if d <= length(L)
+        ci = div( i % nextstride, curstride)
+        
+        diffsite = ci - (d <= length(QEloc) ? QEloc[d] : 0)
+  
+        curstride = nextstride
+        if d < length(L)
+          nextstride *= L[d + 1]
+        end 
+  
+      else
+        diffsite = 0
+      end 
+  
+      # if enough terms in disorder, get disorder
+      if d <= length(disorder)
+        diffdis = disorder[d][i + 1] 
+      else
+        diffdis = 0
+      end 
+  
+      scale = d <= length(scales) ? scales[d]  : 1.0
+      
+      r2 += ((diffsite + diffdis) * scale )^2
+    end 
+
+    return sqrt(r2)
+end 
+
 
 """ check max bond dim of MPS """
 function checkmaxbond(ψ)
@@ -136,3 +230,4 @@ function linsolvemeasure!(obs::DMRGObserver; kwargs...)
     truncerr > truncerrors(obs)[end] && (truncerrors(obs)[end] = truncerr)
   end
 end
+

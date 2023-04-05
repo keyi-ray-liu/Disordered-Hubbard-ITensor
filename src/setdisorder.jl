@@ -1,5 +1,5 @@
 """Set the disorder in the system. Disorder has to be otherwise pre-generated, or set to 0"""
-function setdisorder(disflag::Bool, L)
+function setdisorder(disflag::Bool, L::Vector{Int})
 
   if disflag
 
@@ -13,16 +13,7 @@ function setdisorder(disflag::Bool, L)
 
   else
     
-    if typeof(L) == Int
-
-      disx = zeros((1, L))
-      disy = zeros((1, L))
-
-    else
-
-      disx = zeros((1, L[1] * L[2]))
-      disy = zeros((1, L[1] * L[2]))
-    end 
+    disx = disy = zeros(1, prod(L))
   
   end 
 
