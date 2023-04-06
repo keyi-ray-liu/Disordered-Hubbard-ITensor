@@ -79,6 +79,123 @@ function check()
   print( lefts == reverse!(rights))
 end 
 
+function get_nn(site::Int, L::Vector{Int})
+  nn = Int[]
+
+  # get the size of the whole system
+  total = prod(L)
+  # for each dimension, generates a nearest neighbor down the flattened array, if possible
+
+  # we attempt to always make the smallest hopping possible, by sorting the L array
+  Lsort = sort(L)
+
+  curstride = 1
+  next = curstride 
+
+  for dim in Lsort
+    
+    next *= dim
+    if site + curstride <= total && site % next != 0
+      append!(nn, site + curstride)
+    end 
+
+    curstride = next
+  end 
+
+  println("$site, $nn")
+  return nn
+end 
+
+function dis(i::Int, j::Int, L::Vector{Int}, scales, args...)
+
+  # preprocess for better consistent operation
+  disorder = args
+  i -= 1
+  j -= 1
+
+ 
+  curstride = 1
+  nextstride = L[1]
+  r2 = 0
+
+  for d = 1: max(length(L), length(disorder))
+
+    # if enough terms in L, get coordinates
+    if d <= length(L)
+      ci = div( i % nextstride, curstride)
+      cj = div( j % nextstride, curstride)
+
+      diffsite = ci - cj
+
+      curstride = nextstride
+      if d < length(L)
+        nextstride *= L[d + 1]
+      end 
+      
+    else
+      diffsite = 0
+    end 
+
+    # if enough terms in disorder, get disorder
+    if d <= length(disorder)
+      diffdis = disorder[d][i + 1 ] - disorder[d][ j + 1 ]
+    else
+      diffdis = 0
+    end 
+
+    scale = d <= length(scales) ? scales[d]  : 1.0
+    
+    r2 += ((diffsite + diffdis) * scale )^2
+  end 
+
+
+  return sqrt(r2)
+
+end
+
+function print_nn()
+
+  L = [2, 30]
+  t = prod(L)
+
+  for i = 1: t
+    get_nn(i, L)
+  end 
+end 
 #testlin()
-load()
+#load()
 #check()
+
+function print_dis()
+
+  L = [2, 12]
+  tot = prod(L)
+  d = zeros(tot)
+  for i = 1: tot
+    for j =i + 1:  tot
+
+      res = dis(i, j, L, [2.0], d, d)
+      println("$i, $j, $res")
+
+    end 
+  end 
+
+
+end 
+
+function checknn()
+  L = [15]
+  t = prod(L)
+
+  for i = 1:t
+    for j =1:i-1
+
+      println( "$i, $j, ", 1 - 0.2 * ( i in get_nn(j, L)))
+    end 
+  end 
+end 
+
+print_nn()
+#print_dis()
+
+#checknn()

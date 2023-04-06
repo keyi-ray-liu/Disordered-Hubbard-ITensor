@@ -23,6 +23,7 @@ include("correlation.jl")
 include("operations.jl")
 include("shift_and_invert.jl")
 include("timeevolve.jl")
+include("ham_helper.jl")
 #include("projection.jl")
 
 """The top level function that controls workflow. Use operation mode to select code function"""
@@ -41,9 +42,9 @@ function top()
   if test
 
     println("TEST TEST TEST")
-    #QE_dynamic()
-    paras = setpara(L=12, N=6, CN=6, ex=3, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=100, 
-    sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEloc = [[-2.0], [13.0]])
+    QE_dynamic()
+    #paras = setpara(L=12, N=6, CN=6, ex=3, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=100, 
+    #sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEloc = [[-2.0], [13.0]])
     #sweepcnt=40, noise=false, QE=0, QN=true, QEen=0.0, dp= [] , ζ_dp = [] , QEloc = [])
 
     main(paras)
