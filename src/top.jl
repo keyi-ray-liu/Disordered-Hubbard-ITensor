@@ -42,12 +42,12 @@ function top()
   if test
 
     println("TEST TEST TEST")
-    QE_dynamic()
+    NF("0.1")
+    #QE_dynamic()
     #paras = setpara(L=12, N=6, CN=6, ex=3, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=100, 
     #sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEloc = [[-2.0], [13.0]])
     #sweepcnt=40, noise=false, QE=0, QN=true, QEen=0.0, dp= [] , ζ_dp = [] , QEloc = [])
-
-    main(paras)
+    #main(paras)
 
 
     
@@ -67,9 +67,9 @@ function top()
     elseif ARGS[1] == "3"
       truedisorder( ARGS[2], ARGS[3] )
 
+    # test NF
     elseif ARGS[1] == "4"
-      paras = setpara(L=[3, 30], N=45, ex=20, int_ee=1.0, guess=false, sweepdim=2000, sweepcnt=100, noise=false)
-      @time main(paras)
+      NF(ARGS[2])
 
     # testing QE
     elseif ARGS[1] == "5"

@@ -5,13 +5,24 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
   decay = para["decay"]
   Ltotal = prod(L)
   scales = para["scales"]
+  type = para["type"]
 
   # iterate through all sites to get NN
+
+  if type == "Fermion"
+    operators = [ ["C", "Cdag"]]
+
+  elseif type == "Electron"
+    operators = [ ["Cup", "Cdagup"], ["Cdn", "Cdagdn"]]
+
+  end 
+
   for j=1  : Ltotal
 
     nns = get_nn(j, L)
 
-    
+    println("site $j, NN $nns")
+
     for nn in nns
       
       r = dis(j, nn, L, scales, disx, disy)
@@ -25,16 +36,22 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
       s1 = sites[p1]
       s2 = sites[p2]
 
-      if !if_gate
-        res += -t * hop, "C", p1 ,"Cdag",p2
-        res += -t * hop, "C", p2 ,"Cdag",p1
+      for operator in operators
 
-      else 
-        hj =
-        - t * hop * op("C", s1) * op("Cdag", s2) +
-        - t * hop * op("C", s2) * op("Cdag", s1)
+        op1, op2 = operator 
 
-        gatefy!(res, factor, hj, τ)
+        if !if_gate
+          res += -t * hop, op1, p1 ,op2, p2
+          res += -t * hop, op1, p2 ,op2, p1
+
+        else 
+          hj =
+          - t * hop * op(op1, s1) * op(op2, s2) +
+          - t * hop * op(op1, s2) * op(op2, s1)
+
+          gatefy!(res, factor, hj, τ)
+
+        end 
 
       end 
 
@@ -56,6 +73,14 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
 
   Ltotal = prod(L)
 
+  if type == "Fermion"
+    ops = "N"
+
+  elseif type == "Electron"
+    ops = "Ntot"
+
+  end 
+
   for j=1 :Ltotal
     # E-E
     p1 = j + head
@@ -75,10 +100,10 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
       #println("EE interaction: $j, $k, $ifexch, $r")
       if !if_gate
       # add the ee interaction term one by one
-        res += λ_ee * ifexch / (  r + ζ_ee),"N",p1 ,"N", p2
+        res += λ_ee * ifexch / (  r + ζ_ee), ops,p1 ,ops, p2
 
       else
-        eejk  = λ_ee * ifexch / ( r + ζ_ee) * op("N", s1) * op("N", s2)
+        eejk  = λ_ee * ifexch / ( r + ζ_ee) * op(ops, s1) * op(ops, s2)
         gatefy!(res, factor, eejk, τ)
 
       end 
@@ -103,6 +128,14 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
 
   λ_ne = λ_ne * CN / Ltotal
 
+  if type == "Fermion"
+    ops = "N"
+
+  elseif type == "Electron"
+    ops = "Ntot"
+
+  end 
+
   for j=1 :Ltotal
 
     p1 = j + head
@@ -126,10 +159,10 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
     end
 
     if !if_gate
-      res += -cursum, "N", p1
+      res += -cursum, ops, p1
 
     else 
-      nej = -cursum * op("N", s1)
+      nej = -cursum * op(ops, s1)
       gatefy!(res, factor, nej, τ)
     end 
 
@@ -186,6 +219,7 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
     
     r = dis(i, QEloc[which], L, scales, disx, disy)
 
+    println("distance to QE: $r")
     r_dp = r ^ 3 + ζ_dp
 
     p1 = i + head
@@ -285,4 +319,26 @@ function add_qn!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, head=0,
 
 end 
 
+"""add on-site interaction in the case of electrons"""
+function add_onsite!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+
+  U = para["U"]
+  Ltotal = prod(L)
+
+  for i = 1:Ltotal
+
+    pi = i + head
+    si = sites[pi]
+
+    if !if_gate
+      res += U, "Nupdn", pi
+
+    else 
+      ons = U * op("Nupdn", si)
+      gatefy!(res, factor, ons, τ)
+    end 
+  end 
+
+  return res
+end 
 

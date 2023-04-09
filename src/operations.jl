@@ -219,9 +219,7 @@ end
 
 
 function QE_dynamic_eigen()
-
   dirs = getworkdir()
-
 
 end 
 
@@ -319,4 +317,23 @@ function temp_occ(num)
   writedlm(workdir *"time", T)
   writedlm(workdir * "occ", res)
   writedlm(workdir * "bonddim", bonds)
+end 
+
+
+function NF(t)
+
+  t = parse(Float64, t)
+  L = [5, 5]
+  Nup = 22
+  Ndn = 2
+  Nupdn = 0
+  N = [Nup, Ndn, Nupdn]
+  ex = 4
+  dim = 300
+  cnt = 80
+
+  paras = setpara(L=L, N=N, ex=ex, int_ee=0, int_ne=0, QE=0, t=t,
+  guess=false, sweepdim=dim, sweepcnt=cnt, noise=false, type="Electron", U=4.0)
+  main(paras)
+
 end 

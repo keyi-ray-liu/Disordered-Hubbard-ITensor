@@ -9,6 +9,9 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   QE = para["QE"]
   QN = para["QN"]
   headoverride = para["headoverride"]
+  type = para["type"]
+  int_ee = para["int_ee"]
+  int_ne = para["int_ne"]
   
   # if QE > 0, then at least left emitter, and if QN, we account for the AUX site
 
@@ -26,10 +29,20 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   
   ############################ begin chain hamiltonian ###################################
   res = add_hopping!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
-  res = add_ee!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
-  res = add_ne!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
 
+  # in case the 0 cases still adds overhead to hamiltonian
+  if int_ee != 0
+    res = add_ee!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+  end 
 
+  if int_ne != 0
+    res = add_ne!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+  end 
+
+  # if we have spin in the system, add onsite interactions 
+  if type == "Electron"
+    res = add_onsite!(res, para, L, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+  end 
   # ##################### end chain hamiltonian ###################################
   ##################### begin QE hamiltonian ###################################
   # QE part

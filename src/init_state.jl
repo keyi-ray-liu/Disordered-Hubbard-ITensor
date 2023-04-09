@@ -14,6 +14,7 @@ function init_state(para, sites, disx, disy)
   QN = para["QN"]
   headoverride = para["headoverride"]
   mode = para["dynamode"]
+  type = para["type"]
 
   
   # if not guess, using random MPS as init state
@@ -25,7 +26,13 @@ function init_state(para, sites, disx, disy)
     # QN and QE conditions if QN, explicit initiating conditions
     if QN
 
-      state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:Ltotal -N]) 
+      # we already have check for the type of N
+      if type == "Fermion"
+        state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:Ltotal -N]) 
+
+      elseif type == "Electron"
+        state = append!( ["Up" for n=1:N[1]], ["Dn" for n=1:N[2]], ["UpDn" for n=1:N[3]], ["Emp" for n=1: Ltotal - sum(N)])
+      end 
 
       if headoverride == 0
 
@@ -139,6 +146,7 @@ function init_site(para::Dict)
   QE = para["QE"]
   QN = para["QN"]
   headoverride = para["headoverride"]
+  type = para["type"]
 
   Ltotal = prod(L)
 
@@ -149,7 +157,7 @@ function init_site(para::Dict)
   extras = headoverride > 0 ? 2 * headoverride :  QE * (QN + 1)
 
   #sites = Vector{Index}(undef, L + extras)
-  sites = siteinds("Fermion", Ltotal + extras; conserve_qns =QN)
+  sites = siteinds(type, Ltotal + extras; conserve_qns =QN)
   # determines the number of total sites. IF QE and QN, then we have 2 sites for each QE, else 1
   # for s = 1: L + extras
   #   sites[s] =  siteind("Fermion"; addtags="n=$s", conserve_qns =QN)
