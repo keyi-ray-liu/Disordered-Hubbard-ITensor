@@ -71,6 +71,7 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   range = para["range"]
   scales = para["scales"]
 
+  type = para["type"]
   Ltotal = prod(L)
 
   if type == "Fermion"
@@ -125,6 +126,8 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   CN = para["CN"]
   Ltotal = prod(L)
   scales = para["scales"]
+
+  type = para["type"]
 
   λ_ne = λ_ne * CN / Ltotal
 
@@ -182,6 +185,7 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   QN = para["QN"]
   QEloc = para["QEloc"]
   scales = para["scales"]
+  type = para["type"]
 
   Ltotal = prod(L)
 
@@ -203,14 +207,26 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   sqe = sites[pqe]
 
   # diagonal energy term
+  # for the spinless case, the occ state of QE pos takes the 'ex' state 
+  # for the spinful case, the QE are initialized in 'up', and cdagup cup takes the charge between the ex and gs of the QE, the nhat is replaced by Ntotal
+
+  # set operators based on the system
+  if type == "Electron"
+    opn = "Ntot"
+    opc = [ ["Cup", "Cdagup"], ["Cdn", "Cdagdn"]]
+
+  elseif type == "Fermion"
+    opn = "N"
+    opc = [ ["C", "Cdag"]]
+    
+  end
 
   if !if_gate
-    res += QEen, "N", pqe
+    res += QEen, opn, pqe
 
   else 
-    g = QEen * op("N", sqe) 
+    g = QEen * op(opn, sqe) 
     gatefy!(res, factor, g, τ)
-
   end 
 
   cavg = CN / Ltotal
@@ -225,46 +241,50 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
     p1 = i + head
     s1 = sites[p1]
 
+    for operator in opc
 
-    if !if_gate
-      if !QN
-        res  +=  dp * r  / r_dp , "x", pqe, "N", p1
-        # centering
-        res  += -dp * r *  cavg / r_dp,  "x", pqe
+      opc1, opc2 = operator
 
-      else
-        res  +=  dp * r / r_dp, "C", paux, "Cdag", pqe, "N", p1
-        res  +=  dp * r / r_dp, "C", pqe, "Cdag", paux, "N", p1
-        
-        # centering
-        res  +=   - dp * r * cavg / r_dp, "C", paux, "Cdag", pqe
-        res  +=   - dp * r * cavg / r_dp, "C", pqe, "Cdag", paux
+      if !if_gate
+        if !QN
+          res  +=  dp * r  / r_dp , "x", pqe, opn, p1
+          # centering
+          res  += -dp * r *  cavg / r_dp,  "x", pqe
 
-      end 
+        else
+          res  +=  dp * r / r_dp, opc1, paux, opc2, pqe, opn, p1
+          res  +=  dp * r / r_dp, opc1, pqe, opc2, paux, opn, p1
+          
+          # centering
+          res  +=   - dp * r * cavg / r_dp, opc1, paux, opc2, pqe
+          res  +=   - dp * r * cavg / r_dp, opc1, pqe, opc2, paux
 
-    else
-
-      if !QN
-        dpla = dp * r  / r_dp * op( "x", sqe) * op("N", s1)
-        dpl = -dp * r *  cavg / r_dp * op( "x", sqe)
+        end 
 
       else
 
-        #two level with AUX site
-        dpla = dp * r / r_dp  * op( "C", saux) * op("Cdag", sqe) * op("N", s1) + 
-                dp * r / r_dp  * op( "C", sqe) * op("Cdag", saux) * op("N", s1)
+        if !QN
+          dpla = dp * r  / r_dp * op( "x", sqe) * op(opn, s1)
+          dpl = -dp * r *  cavg / r_dp * op( "x", sqe)
 
-        # the offset term, to set the 'center of mass'
-        # calculated as a uniform distribution:  L * N / 2
-        dpl =  - dp * r * cavg / r_dp *  op("C", saux) * op( "Cdag", sqe)  
-                - dp * r * cavg / r_dp *  op("C", sqe) * op( "Cdag", saux) 
+        else
 
+          #two level with AUX site
+          dpla = dp * r / r_dp  * op( opc1, saux) * op(opc2, sqe) * op(opn, s1) + 
+                  dp * r / r_dp  * op( opc1, sqe) * op(opc2, saux) * op(opn, s1)
+
+          # the offset term, to set the 'center of mass'
+          # calculated as a uniform distribution:  L * N / 2
+          dpl =  - dp * r * cavg / r_dp *  op(opc1, saux) * op( opc2, sqe)  
+                  - dp * r * cavg / r_dp *  op(opc1, sqe) * op( opc2, saux) 
+
+        end 
+
+        gatefy!(res, factor, dpla, τ)
+        gatefy!(res, factor, dpl, τ)
       end 
 
-      gatefy!(res, factor, dpla, τ)
-      gatefy!(res, factor, dpl, τ)
     end 
-
 
 
     # the offset term, to set the 'center of mass'

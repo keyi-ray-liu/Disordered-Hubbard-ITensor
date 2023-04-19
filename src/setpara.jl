@@ -1,8 +1,8 @@
-"""Set parameter dictionary for all future calculations, without loading"""
-function setpara(;L=22, N=11, int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5, 0.5], exch=0.2, 
+"""Set parameter dictionary for all future calculations, without loading. The system flag now accepts preset parameters defined in here"""
+function setpara(;L=22, N="HF",CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5, 0.5], exch=0.2, 
   decay=0.2, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
   guess=false, manual=false, itr_dis=[1.0], range=1000, noise=true, method="DMRG", QE=0, scales=[1.0], 
-  QN=true, CN=11, QEen=1.0, dp=[], ζ_dp = [], QEloc = [], output="Default", headoverride=0, 
+  QN=true,  QEen=1.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="Default", headoverride=0, 
   dynamode="none", TEcutoff=1E-8, TEdim=500, TEmethod="TEBD", prod=false, TEBDfactor=2,
   τ=0.1,type="Fermion", U=0.0)
 
@@ -11,9 +11,50 @@ function setpara(;L=22, N=11, int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5, 0.5], exch
     L = [L]
   end 
 
+  if QE == 1
+    dp = dp * [1.0]
+    ζ_dp = ζ_dp * [1.0]
+
+  elseif QE == 2
+    dp = dp * [1.0, -1.0]
+    ζ_dp = ζ_dp * [1.0, 1.0]
+
+    if QEloc == []
+      if length(L) == 1
+        QEloc = [ [-2], [prod(L) + 1]]
+      else
+        y = (min(L) - 1) / 2
+        QEloc = [ [y, -2 ], [y, max(L) + 1]]
+      end 
+    end 
+
+  end 
+
+  # check half-filling
+  if N == "HF"
+
+    if type == "Electron"
+      n = div(prod(L), 2)
+      N = [n, n, 0]
+    else
+      N = div( prod(L), 2)
+
+    end 
+  end 
+
+  # check charge-neutral
+  if CN == "CN"
+    if type == "Electron"
+      CN = N[1] + N[2] + 2 * N[3]
+    else
+      CN = N
+    end 
+  end 
+
   # we set the basic parameters for the simulation
   para = Dict(
     "L" => L,
+    "system" => system,
     "N" => N,
     "int_ee" => int_ee,
     "int_ne" => int_ne,

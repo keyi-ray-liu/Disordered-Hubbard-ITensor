@@ -88,7 +88,7 @@ function single_search(para::Dict, sites, disx, disy, λ)
         setnoise!(sweeps, 1E-5)
       end 
 
-      setcutoff!(sweeps, 1E-8)
+      setcutoff!(sweeps, 1E-9)
 
       # DMRG method
       # Run the DMRG algorithm, returning energy

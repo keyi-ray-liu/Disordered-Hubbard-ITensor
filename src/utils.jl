@@ -6,7 +6,7 @@ function hopping(decay::Float64, r::Float64)
 end
 
 """generates the locations of the NN down the flattened array direction"""
-function get_nn(site::Int, L::Vector{Int})
+function get_nn(site::Int, L::Vector{Int}; snake=false)
   nn = Int[]
 
   # get the size of the whole system
@@ -14,6 +14,7 @@ function get_nn(site::Int, L::Vector{Int})
   # for each dimension, generates a nearest neighbor down the flattened array, if possible
 
   # we attempt to always make the smallest hopping possible, by sorting the L array
+  # in the snake geometry, the numbering is always continuous, whether the next largest hopping happens is determined by its position
   if L != sort(L)
     error("for optimal performance, the input dimensions must be sorted. adjust QE position accordingly")
   end 
@@ -24,8 +25,26 @@ function get_nn(site::Int, L::Vector{Int})
   for dim in L
     
     next *= dim
-    if site + curstride <= total && site % next != 0
-      append!(nn, site + curstride)
+
+    if !snake
+      if site + curstride <= total && site % next != 0
+        append!(nn, site + curstride)
+      end 
+
+    else
+
+      newstride = total
+
+      if curstride == 1
+        newstride = 1
+
+      elseif site % curstride !=0
+        newstride = 2 * curstride - (site % curstride -  1) - site % curstride
+      end 
+
+      if site + newstride <= total
+        append!(nn, site + newstride)
+      end 
     end 
 
     curstride = next

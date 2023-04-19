@@ -7,7 +7,7 @@ function init_state(para, sites, disx, disy)
   guess = para["guess"]
   t = para["t"]
   λ_ne = para["int_ne"]
-  ζ_ne, ζ_ee = para["ζ"]
+  ζ_ne, _ = para["ζ"]
   decay = para["decay"]
   self = para["self_nuc"]
   QE = para["QE"]
@@ -15,11 +15,12 @@ function init_state(para, sites, disx, disy)
   headoverride = para["headoverride"]
   mode = para["dynamode"]
   type = para["type"]
-
+  Ltotal = prod(L)
+  scales = para["scales"]
   
   # if not guess, using random MPS as init state
   if !guess
-    Ltotal = prod(L)
+    
 
     # Create an initial random matrix product state
 
@@ -31,7 +32,8 @@ function init_state(para, sites, disx, disy)
         state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:Ltotal -N]) 
 
       elseif type == "Electron"
-        state = append!( ["Up" for n=1:N[1]], ["Dn" for n=1:N[2]], ["UpDn" for n=1:N[3]], ["Emp" for n=1: Ltotal - sum(N)])
+        #state = append!( ["Up" for n=1:N[1]], ["Dn" for n=1:N[2]], ["UpDn" for n=1:N[3]], ["Emp" for n=1: Ltotal - sum(N)])
+        state = append!( reduce(vcat, [["Up", "Dn"] for i=1:min(N[1], N[2])]),  [ N[1] >= N[2] ? "Up" : "Dn" for i=1: ( max(N[1], N[2]) - min(N[1], N[2])) ], ["UpDn" for n=1:N[3]], ["Emp" for n=1: Ltotal - (N[1] + N[2] + 2 * N[3])] )
       end 
 
       if headoverride == 0
@@ -91,23 +93,29 @@ function init_state(para, sites, disx, disy)
   # use gaussianMPS to calculation an init free fermionic state
   else 
     
-    # 1D chain free fermion
-    if typeof(L) == Int
 
-      # single particle H
-      H = zeros((L, L))
+    # single particle H
+    H = zeros((Ltotal, Ltotal))
 
-      #hopping
-      for i = 1:L-1
-        r = dis(i, i + 1, disx, disy)
+    #hopping
+    for i = 1:Ltotal
+
+      nns = get_nn(i, L)
+
+      for nn in nns
+        r = dis(i, nn, L, scales, disx, disy)
         hop = hopping(decay, r)
         
-        H[i, i + 1] = -t * hop
-        H[i + 1, i] = -t * hop
+        H[i, nn] = -t * hop
+        H[nn, i] = -t * hop
       end 
-      
-      # nuclear
-      for j = 1:L
+
+    end 
+    
+    # nuclear
+
+    if λ_ne != 0
+      for j = 1:Ltotal
         if self
           cursum = 0
         else
@@ -115,24 +123,35 @@ function init_state(para, sites, disx, disy)
         end
 
         for k=1:L
-          cursum += λ_ne / ( dis(j, k, disx, disy) + ζ_ne)
+          cursum += λ_ne / ( dis(j, k, L, scales, disx, disy) + ζ_ne)
         end
 
         H[j, j] = -cursum
 
       end 
-
-      _, u = eigen(H)
-
-    
-      # Get the Slater determinant
-      ϕ = u[:, 1:N]
-
-      # Create an mps for the free fermion ground state
-      ψ0 = slater_determinant_to_mps(sites, ϕ)
-
     end 
 
+    @show ishermitian(H)
+    _, u = eigen(H)
+
+  
+    # Get the Slater determinant
+    # Create an mps for the free fermion ground state
+
+    if type == "Ferimion"
+      ϕ = u[:, 1:sum(N)]
+      ψ0 = slater_determinant_to_mps(sites, ϕ)
+
+    elseif type == "Electron"
+
+      @show N
+
+      ϕup = u[:, 1:N[1]]
+      ϕdn = u[:, 1:N[2]]
+
+      ψ0 = slater_determinant_to_mps(sites, ϕup, ϕdn, eigval_cutoff=1E-10, maxblocksize=4)
+
+    end
 
   end 
 

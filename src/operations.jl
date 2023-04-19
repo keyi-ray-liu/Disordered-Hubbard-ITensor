@@ -113,30 +113,15 @@ function QE(num, energy)
   energy = parse(Float64, energy)
 
   L = 60
-  N = 30
-  CN = 30
   ex = 30
   guess = false
   dim = 300
   cnt = 50
   noise = false
-  QN = true
-  dps = 1.0
-  ζ = 0.5
-  loc = 1.0
 
-  
-  if num == 1
-    dp = dps * [1.0]
-    ζ_dp = ζ * [1.0]
 
-  elseif num == 2
-    dp = dps * [1.0, -1.0]
-    ζ_dp = ζ * [1.0, 1.0]
-  end 
-
-  paras = setpara(L=L, N=N, CN=CN, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num, QN=QN, 
-  QEen=energy, dp=dp, ζ_dp=ζ_dp, QEloc=loc, headoverride=0)
+  paras = setpara(L=L, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num,
+  QEen=energy, QEloc=loc, headoverride=0)
   main(paras)
 
 end 
@@ -145,33 +130,27 @@ end
 function QE_dynamic()
 
   L = [2, 30]
-  N = 30
-  CN = 30
   dim = 1000
   cnt = 60
-  dps = 1.0
+  QN = true
+
+  #QE para
+  energy = 0.15
+  
+  
+  QE = 2
+  dynamode = "both"
+  
+  #TE para
+  prod = false
   τ = 0.1
   start = 0.1
   fin = 15.0
-  QE = 2
-  ζ = 0.5
-  energy = 0.5
-  loc = [ [0.5, -2], [0.5, 31]]
-  QN = true
-  dynamode = "both"
-  prod = false
   TEmethod = "TEBD"
   TEdim = 150
   TEcutoff = 1E-8
+  type = "Electron"
 
-  if QE == 1
-    dp = dps * [1.0]
-    ζ_dp = ζ * [1.0]
-
-  elseif QE == 2
-    dp = dps * [1.0, -1.0]
-    ζ_dp = ζ * [1.0, 1.0]
-  end 
 
   workdir = getworkdir()
   target = "target"
@@ -179,13 +158,13 @@ function QE_dynamic()
   if !prod && !isfile(workdir * target * ".h5") 
     # if there no target file, we perform a single GS search
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
-    paras = setpara(L=L, N=N, CN=CN, ex=1, sweepdim=dim, sweepcnt=cnt, QE= QE, output = target, QN=QN, headoverride= (QE > 0) * (QN + 1),
-     dp = dp, ζ_dp=ζ_dp, QEloc =loc, dynamode=dynamode)
+    paras = setpara(L=L, ex=1, sweepdim=dim, sweepcnt=cnt, QE= QE, QN = QN, output = target, headoverride= (QE > 0) * (QN + 1),
+     dynamode=dynamode, type=type)
     main(paras)
   end 
   
-  paras = setpara(L=L, N=N, CN=CN, QEen = energy, QE=QE, QN=QN, dp=dp, ζ_dp=ζ_dp, QEloc=loc, 
-  TEcutoff=TEcutoff, TEdim=TEdim, TEmethod=TEmethod, prod=prod)
+  paras = setpara(L=L,  QEen = energy, QE=QE, QEloc=loc, 
+  TEcutoff=TEcutoff, TEdim=TEdim, TEmethod=TEmethod, prod=prod, type=type)
   # process wf
 
   if !prod
@@ -320,20 +299,24 @@ function temp_occ(num)
 end 
 
 
-function NF(t)
+function NF(t, dim, Nup, Ndn)
 
   t = parse(Float64, t)
-  L = [5, 5]
-  Nup = 22
-  Ndn = 2
+  dim = parse(Int, dim)
+  Nup = parse(Int, Nup)
+  Ndn = parse(Int, Ndn)
+
+  L = [dim, dim]
   Nupdn = 0
   N = [Nup, Ndn, Nupdn]
   ex = 4
-  dim = 300
-  cnt = 80
+  dim = 1000
+  cnt = 120
+  guess = false
+  noise = false
 
   paras = setpara(L=L, N=N, ex=ex, int_ee=0, int_ne=0, QE=0, t=t,
-  guess=false, sweepdim=dim, sweepcnt=cnt, noise=false, type="Electron", U=4.0)
+  guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, type="Electron", U=4.0)
   main(paras)
 
 end 
