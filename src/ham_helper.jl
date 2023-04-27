@@ -6,7 +6,8 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
   Ltotal = prod(L)
   scales = para["scales"]
   type = para["type"]
-
+  snake = para["snake"]
+  
   # iterate through all sites to get NN
 
   if type == "Fermion"
@@ -19,7 +20,7 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
 
   for j=1  : Ltotal
 
-    nns = get_nn(j, L)
+    nns = get_nn(j, L, snake=snake)
 
     println("site $j, NN $nns")
 
@@ -27,6 +28,11 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
       
       r = dis(j, nn, L, scales, disx, disy)
       hop = hopping(decay, r)
+
+      # temporary fix! 
+      if snake
+        hop = 1.0
+      end 
 
       #println( "$j, $nn, $hop")
       
@@ -70,6 +76,7 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   exch = para["exch"]
   range = para["range"]
   scales = para["scales"]
+  snake = para["snake"]
 
   type = para["type"]
   Ltotal = prod(L)
@@ -95,7 +102,7 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
 
       # because k < j, we check if j is in the nn of k
 
-      ifexch = (1 -  (j in get_nn(k, L)) * exch )
+      ifexch = (1 -  (j in get_nn(k, L, snake=snake)) * exch )
       r = dis(j, k, L, scales, disx, disy)
       
       #println("EE interaction: $j, $k, $ifexch, $r")

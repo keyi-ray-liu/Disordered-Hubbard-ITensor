@@ -15,9 +15,13 @@ function init_state(para, sites, disx, disy)
   headoverride = para["headoverride"]
   mode = para["dynamode"]
   type = para["type"]
-  Ltotal = prod(L)
-  scales = para["scales"]
   
+  scales = para["scales"]
+  snake = para["snake"]
+  
+  Ltotal = prod(L)
+  occ = type == "Fermion" ? "Occ" : "Up"
+  emp = "Emp"
   # if not guess, using random MPS as init state
   if !guess
     
@@ -29,19 +33,19 @@ function init_state(para, sites, disx, disy)
 
       # we already have check for the type of N
       if type == "Fermion"
-        state = append!([ "Occ" for n=1:N] , ["Emp" for n=1:Ltotal -N]) 
+        state = append!([ occ for n=1:N] , [emp for n=1:Ltotal -N]) 
 
       elseif type == "Electron"
-        #state = append!( ["Up" for n=1:N[1]], ["Dn" for n=1:N[2]], ["UpDn" for n=1:N[3]], ["Emp" for n=1: Ltotal - sum(N)])
-        state = append!( reduce(vcat, [["Up", "Dn"] for i=1:min(N[1], N[2])]),  [ N[1] >= N[2] ? "Up" : "Dn" for i=1: ( max(N[1], N[2]) - min(N[1], N[2])) ], ["UpDn" for n=1:N[3]], ["Emp" for n=1: Ltotal - (N[1] + N[2] + 2 * N[3])] )
+        #state = append!( ["Up" for n=1:N[1]], ["Dn" for n=1:N[2]], ["UpDn" for n=1:N[3]], [emp for n=1: Ltotal - sum(N)])
+        state = append!( reduce(vcat, [["Up", "Dn"] for i=1:min(N[1], N[2])]),  [ N[1] >= N[2] ? "Up" : "Dn" for i=1: ( max(N[1], N[2]) - min(N[1], N[2])) ], ["UpDn" for n=1:N[3]], [emp for n=1: Ltotal - (N[1] + N[2] + 2 * N[3])] )
       end 
 
       if headoverride == 0
 
-        AUX1 = QE > 0 ? ["Emp"] : []
-        QE1 = QE > 0 ? [ "Occ"] : []
-        QE2 = QE > 1 ? [ "Occ"] : []
-        AUX2 = QE > 1 ? ["Emp"] : []
+        AUX1 = QE > 0 ? [emp] : []
+        QE1 = QE > 0 ? [ occ ] : []
+        QE2 = QE > 1 ? [ occ ] : []
+        AUX2 = QE > 1 ? [emp] : []
 
         state = vcat(QE1, state)
         state = vcat(AUX1, state)
@@ -51,23 +55,23 @@ function init_state(para, sites, disx, disy)
       else
 
         if mode == "both"
-          front =  ["Emp", "Occ"] 
-          back =  QE > 1 ? ["Occ", "Emp"] : []
+          front =  [emp, occ ] 
+          back =  QE > 1 ? [occ, emp] : []
 
         elseif mode == "left"
-          front = ["Emp", "Occ"]
+          front = [emp, occ]
           back = QE > 1 ? front : []
 
         elseif mode == "right"
-          front = ["Occ", "Emp"]
+          front = [occ, emp]
           back = QE > 1 ? front : []
 
         elseif mode == "empty"
-          front  = ["Occ", "Emp"]
-          back = QE > 1 ? ["Emp", "Occ"] : []
+          front  = [occ, emp]
+          back = QE > 1 ? [emp, occ] : []
 
         elseif mode == "none"
-          front =  ["Emp" for n=1:headoverride] 
+          front =  [emp for n=1:headoverride] 
           back = QE > 1 ? front : []
 
         else
@@ -100,7 +104,7 @@ function init_state(para, sites, disx, disy)
     #hopping
     for i = 1:Ltotal
 
-      nns = get_nn(i, L)
+      nns = get_nn(i, L, snake =snake)
 
       for nn in nns
         r = dis(i, nn, L, scales, disx, disy)
@@ -197,14 +201,17 @@ function TE_stateprep(para)
   QN = para["QN"]
 
   Ltotal = prod(L)
+  type = para["type"]
+  occ = type == "Fermion" ? "Occ" : "Up"
+  emp = "Emp"
 
   if QN
-    state = append!([ "Occ" for n=1:N] , ["Emp" for n=1: Ltotal -N]) 
+    state = append!([ occ for n=1:N] , [emp for n=1: Ltotal -N]) 
 
-    AUX1 = QE > 0 ? ["Emp"] : []
-    QE1 = QE > 0 ? [ "Occ"] : []
-    QE2 = QE > 1 ? [ "Occ"] : []
-    AUX2 = QE > 1 ? ["Emp"] : []
+    AUX1 = QE > 0 ? [emp] : []
+    QE1 = QE > 0 ? [ occ] : []
+    QE2 = QE > 1 ? [ occ] : []
+    AUX2 = QE > 1 ? [emp] : []
 
     state = vcat(QE1, state)
     state = vcat(AUX1, state)

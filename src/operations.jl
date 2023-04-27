@@ -129,7 +129,8 @@ end
 """Calculating QE dynamics using TEBD"""
 function QE_dynamic()
 
-  L = [2, 30]
+  #L = [2, 30]
+  L = 60
   dim = 1000
   cnt = 60
   QN = true
@@ -142,32 +143,33 @@ function QE_dynamic()
   dynamode = "both"
   
   #TE para
-  prod = false
+  product_state = false
   τ = 0.1
   start = 0.1
   fin = 15.0
   TEmethod = "TEBD"
   TEdim = 150
   TEcutoff = 1E-8
-  type = "Electron"
+  type = "Fermion"
 
 
   workdir = getworkdir()
   target = "target"
 
-  if !prod && !isfile(workdir * target * ".h5") 
+  if !product_state && !isfile(workdir * target * ".h5") 
     # if there no target file, we perform a single GS search
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
+
     paras = setpara(L=L, ex=1, sweepdim=dim, sweepcnt=cnt, QE= QE, QN = QN, output = target, headoverride= (QE > 0) * (QN + 1),
-     dynamode=dynamode, type=type)
+    dynamode=dynamode, type=type)
     main(paras)
   end 
   
-  paras = setpara(L=L,  QEen = energy, QE=QE, QEloc=loc, 
-  TEcutoff=TEcutoff, TEdim=TEdim, TEmethod=TEmethod, prod=prod, type=type)
+  paras = setpara(L=L,  QEen = energy, QE=QE, TEcutoff=TEcutoff, TEdim=TEdim, 
+  TEmethod=TEmethod, product_state=product_state, type=type)
   # process wf
 
-  if !prod
+  if !product_state
 
     wf = h5open( workdir * target * ".h5", "r")
 
@@ -309,14 +311,16 @@ function NF(t, dim, Nup, Ndn)
   L = [dim, dim]
   Nupdn = 0
   N = [Nup, Ndn, Nupdn]
-  ex = 4
+  ex = 1
   dim = 1000
   cnt = 120
   guess = false
   noise = false
+  snake = true
+  krylovdim = 3
 
   paras = setpara(L=L, N=N, ex=ex, int_ee=0, int_ne=0, QE=0, t=t,
-  guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, type="Electron", U=4.0)
+  guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, type="Electron", U=4.0, snake=snake, krylovdim = krylovdim)
   main(paras)
 
 end 

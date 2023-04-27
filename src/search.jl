@@ -16,6 +16,7 @@ function single_search(para::Dict, sites, disx, disy, λ)
   noise = para["noise"]
   method = para["method"]
   tol = 1e-8
+  krylovdim = para["krylovdim"]
   
   
 
@@ -95,11 +96,11 @@ function single_search(para::Dict, sites, disx, disy, λ)
       # (dominant eigenvalue) and optimized MPS
 
       if cur_ex == 1
-        energy, ψ = dmrg(H, ϕ, sweeps)
+        energy, ψ = dmrg(H, ϕ, sweeps; eigsolve_krylovdim = krylovdim)
         cur_ex += 1
 
       else
-        energy, ψ = dmrg(H, states, ϕ, sweeps; weight) 
+        energy, ψ = dmrg(H, states, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim) 
 
         # check if cur energy is lower than previously achieved energy, if so, return to the point with lower energy (if not, start with current state as GS)
         if abs(energy - energies[end]) > tol && energy < energies[end]
