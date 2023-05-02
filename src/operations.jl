@@ -301,14 +301,15 @@ function temp_occ(num)
 end 
 
 
-function NF(t, dim, Nup, Ndn)
+function NF(t, spdim, dim, Nup, Ndn)
 
   t = parse(Float64, t)
+  spdim = parse(Int, spdim)
   dim = parse(Int, dim)
   Nup = parse(Int, Nup)
   Ndn = parse(Int, Ndn)
 
-  L = [dim, dim]
+  L = [dim for _ in 1:spdim]
   Nupdn = 0
   N = [Nup, Ndn, Nupdn]
   ex = 1
@@ -317,7 +318,7 @@ function NF(t, dim, Nup, Ndn)
   guess = false
   noise = false
   snake = true
-  krylovdim = 3
+  krylovdim = 10
 
   paras = setpara(L=L, N=N, ex=ex, int_ee=0, int_ne=0, QE=0, t=t,
   guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, type="Electron", U=4.0, snake=snake, krylovdim = krylovdim)

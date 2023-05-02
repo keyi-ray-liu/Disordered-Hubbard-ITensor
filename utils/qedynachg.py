@@ -9,7 +9,7 @@ from matplotlib.ticker import MaxNLocator
 from scipy.optimize import curve_fit
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def compplot( timestep=0.1, timechange=1e10, comment=""):
+def compplot( timestep=0.1, timechange=1e10):
 
     def animate(i):
 
@@ -29,12 +29,12 @@ def compplot( timestep=0.1, timechange=1e10, comment=""):
             else:
                 color = 'red'
 
-            ax[j].set_title('time = {:2f}'.format(timestep * i), color=color)
+            ax[j].set_title(input[j])
             ax[j].set_ylabel( r'$ \langle n_i \rangle $')
             ax[j].xaxis.set_major_locator(MaxNLocator(integer=True))
 
         ax[-1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        fig.suptitle(comment)
+        fig.suptitle('time = {:2f}'.format(timestep * i), color=color)
 
     input = sys.argv[2:]
 
@@ -223,13 +223,12 @@ if __name__ == '__main__':
 
     timechange = 1e10
     #comment = "Timechange at {}, Left: bond dim capped at 150. Right: bond dim capped at 300".format(timechange)
-    comment = "cutoff small"
 
     if control == 1:
-        compplot(timestep=0.1, timechange=timechange, comment=comment)
+        compplot(timestep=0.1, timechange=timechange)
 
     elif control == 2:
-        compplot2d(timestep=0.1, timechange=timechange, comment=comment)
+        compplot2d(timestep=0.1, timechange=timechange)
 
     elif control == 3:
         bonds()
