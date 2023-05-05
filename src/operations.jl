@@ -166,14 +166,14 @@ function QE_dynamic()
   end 
   
   paras = setpara(L=L,  QEen = energy, QE=QE, TEcutoff=TEcutoff, TEdim=TEdim, 
-  TEmethod=TEmethod, product_state=product_state, type=type)
+  TEmethod=TEmethod, product_state=product_state, type=type, τ=τ)
   # process wf
 
   if !product_state
 
     wf = h5open( workdir * target * ".h5", "r")
 
-    if start == 0.1
+    if start == τ
       ψ = read(wf, "psi1", MPS)
     else 
       ψ = read(wf, "psi", MPS)
@@ -193,7 +193,7 @@ function QE_dynamic()
   println("length of ψ is:" , length(ψ))
   println("length of sites", length(sites))
 
-  time_evolve(ψ, sites, paras, start, fin, τ)
+  time_evolve(ψ, sites, paras, start, fin)
   
   
 end 

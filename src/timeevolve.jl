@@ -1,5 +1,5 @@
 """worker function perfomring time evolution"""
-function time_evolve(ψ, sites, paras, start, fin, τ)
+function time_evolve(ψ, sites, paras, start, fin)
 
     QE = paras["QE"]
     L = paras["L"]
@@ -7,7 +7,7 @@ function time_evolve(ψ, sites, paras, start, fin, τ)
     maxdim = paras["TEdim"]
     method = paras["TEmethod"]
     disorder = paras["disorder"]
-    
+    τ = paras["τ"]
 
     if QE == 0
         throw(ArgumentError("Dynamics have to include quantum emitters"))
