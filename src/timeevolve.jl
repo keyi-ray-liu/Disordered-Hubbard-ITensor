@@ -61,12 +61,16 @@ function time_evolve(ψ, sites, paras, start, fin)
         for dt in start:τ:fin
 
             println("$method time : $dt")
-            ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, cutoff, nsite=2)
+            #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, cutoff, nsite=2)
+            ψ1 = tdvp(H,  -im * dt, ψ;  cutoff, nsite=2, time_step= -im * τ, normalize=true)
 
             println( "inner", abs(inner(ψ1, ψ)))
-            ψ = ψ1
+            #ψ = ψ1
+            
+            #occ = expect(ψ, "N")
+            #println("occ: $occ")
 
-            var = variance(H, ψ)
+            var = variance(H, ψ1)
             println("variance of the state: $var")
 
 

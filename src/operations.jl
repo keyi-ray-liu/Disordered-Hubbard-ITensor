@@ -130,13 +130,13 @@ end
 function QE_dynamic()
 
   #L = [2, 30]
-  L = 60
+  L = 12
   dim = 1000
   cnt = 60
   QN = true
 
   #QE para
-  energy = 0.15
+  energy = 0.5
   
   
   QE = 2
