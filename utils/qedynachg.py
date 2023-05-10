@@ -9,13 +9,14 @@ from matplotlib.ticker import MaxNLocator
 from scipy.optimize import curve_fit
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-def compplot( timestep=0.1, timechange=1e10):
+def compplot( timestep=[0.1], timechange=1e10):
 
     def animate(i):
 
         for j in range(num):
             ax[j].clear()
-            ax[j].set_ylim(lo[j], hi[j])
+            #ax[j].set_ylim(lo[j], hi[j])
+            ax[j].set_ylim(0.45, 0.55)
             ax[j].scatter( [1, L[j] + 4 ], data[j][i, [0, L[j] + 3]], c='red', label=r'$QE \   \ |0\rangle $')
             ax[j].scatter( [2, L[j] + 3], data[j][i, [1, L[j] + 2]], c='green', label=r'$QE\   \ |1\rangle $')
 
@@ -23,23 +24,30 @@ def compplot( timestep=0.1, timechange=1e10):
 
             ax[j].set_xlabel('sites')
 
-            if i * timestep < timechange:
+            if i * timestep[j] < timechange:
                 color = 'black'
 
             else:
                 color = 'red'
 
-            ax[j].set_title(input[j])
+            ax[j].set_title(input[j] + 'time = {:2f}'.format(timestep[j] * i), color=color)
             ax[j].set_ylabel( r'$ \langle n_i \rangle $')
             ax[j].xaxis.set_major_locator(MaxNLocator(integer=True))
 
         ax[-1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
-        fig.suptitle('time = {:2f}'.format(timestep * i), color=color)
+        #fig.suptitle('time = {:2f}'.format(timestep * i), color=color)
 
     input = sys.argv[2:]
 
+    # num of input cases
+    num = len(input) // 2
+    timestep = [ float(val) for val in input[num:]]
+
     outdir = os.getcwd() + '/vids/' 
-    num = len(input)
+
+    if num != len(timestep):
+        raise ValueError('Timestep num and input num does not match')
+    
     fig, ax = plt.subplots(1, num, figsize=(5 * num + 1,5))
 
     if num == 1:
@@ -225,7 +233,7 @@ if __name__ == '__main__':
     #comment = "Timechange at {}, Left: bond dim capped at 150. Right: bond dim capped at 300".format(timechange)
 
     if control == 1:
-        compplot(timestep=0.1, timechange=timechange)
+        compplot( timechange=timechange)
 
     elif control == 2:
         compplot2d(timestep=0.1, timechange=timechange)
