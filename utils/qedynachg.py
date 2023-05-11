@@ -81,11 +81,14 @@ def compplot( timestep=[0.1], timechange=1e10):
 
     #mpl.rcParams['animation.ffmpeg_path'] = os.getcwd() + '/ffmpeg'
 
-    writervideo = animation.FFMpegWriter(fps=15)
-    anim.save( outdir + 'Dyna{}.mp4'.format( '_'.join(input)), writer=writervideo)
+    html = True
+    if not html:
+        writervideo = animation.FFMpegWriter(fps=15)
+        anim.save( outdir + 'Dyna{}.mp4'.format( '_'.join(input)), writer=writervideo)
 
-    #writervideo = animation.HTMLWriter()
-    #anim.save( outdir + 'Dyna{}.html'.format( '_'.join(input[1:])), writer=writervideo)
+    else:
+        writervideo = animation.HTMLWriter()
+        anim.save( outdir + 'Dyna{}.html'.format( '_'.join(input)), writer=writervideo)
 
 def compplot2d( timestep=0.1, timechange=1e10, comment=""):
 
