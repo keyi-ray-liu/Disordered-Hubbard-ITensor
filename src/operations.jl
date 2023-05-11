@@ -268,7 +268,7 @@ function temp_occ(num)
 
   start = 0.1
   steps = 0.1 
-  fin = 10.0
+  fin = 15.0
 
   if control == 1
     method = "TEBD"
@@ -281,6 +281,13 @@ function temp_occ(num)
   res = []
   bonds = []
 
+  gs = h5open( workdir * "gs.h5", "r")
+  gs_wf = read(gs, "psi1", MPS)
+  close(gs)
+
+  occ_gs = expect(gs_wf, "N")
+  writedlm( workdir * "gs", occ_gs)
+
   T = start:steps:fin
 
   for t in T
@@ -290,6 +297,7 @@ function temp_occ(num)
 
     bond = checkmaxbond(ψ)
     occ = expect(ψ, "N")
+
     println(t)
     append!(bonds, bond)
     append!(res, [occ])
