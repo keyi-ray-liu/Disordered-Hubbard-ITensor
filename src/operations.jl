@@ -130,14 +130,14 @@ end
 function QE_dynamic()
 
   #L = [2, 30]
-  L = 12
+  L = 60
   dim = 1000
   cnt = 60
   QN = true
 
   #QE para
-  energy = 0.5
-  
+  energy = 0.15672
+  dp = 1.0
   
   QE = 2
   dynamode = "both"
@@ -151,6 +151,7 @@ function QE_dynamic()
   TEdim = 150
   TEcutoff = 1E-8
   type = "Fermion"
+  
 
 
   workdir = getworkdir()
@@ -165,7 +166,7 @@ function QE_dynamic()
     main(paras)
   end 
   
-  paras = setpara(L=L,  QEen = energy, QE=QE, TEcutoff=TEcutoff, TEdim=TEdim, 
+  paras = setpara(L=L,  QEen = energy, QE=QE, TEcutoff=TEcutoff, TEdim=TEdim, dp=dp,
   TEmethod=TEmethod, product_state=product_state, type=type, τ=τ)
   # process wf
 
@@ -268,7 +269,7 @@ function temp_occ(num)
 
   start = 0.1
   steps = 0.1 
-  fin = 15.0
+  fin = 0.2
 
   if control == 1
     method = "TEBD"
@@ -281,12 +282,7 @@ function temp_occ(num)
   res = []
   bonds = []
 
-  gs = h5open( workdir * "gs.h5", "r")
-  gs_wf = read(gs, "psi1", MPS)
-  close(gs)
 
-  occ_gs = expect(gs_wf, "N")
-  writedlm( workdir * "gs", occ_gs)
 
   T = start:steps:fin
 
@@ -306,6 +302,13 @@ function temp_occ(num)
   writedlm(workdir *"time", T)
   writedlm(workdir * "occ", res)
   writedlm(workdir * "bonddim", bonds)
+
+  gs = h5open( workdir * "gs.h5", "r")
+  gs_wf = read(gs, "psi1", MPS)
+  close(gs)
+
+  occ_gs = expect(gs_wf, "N")
+  writedlm( workdir * "gs", occ_gs)
 end 
 
 
