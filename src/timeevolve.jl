@@ -7,7 +7,6 @@ function time_evolve(ψ, sites, paras, start, fin)
     maxdim = paras["TEdim"]
     method = paras["TEmethod"]
     disorder = paras["disorder"]
-    TEreverse = paras["TEreverse"]
     τ = paras["τ"]
 
     if QE == 0
@@ -17,7 +16,7 @@ function time_evolve(ψ, sites, paras, start, fin)
         throw(ArgumentError("More than two QE, not allowed"))
     end 
 
-    if TEreverse && (start < fin || (start > fin && τ > 0))
+    if start > fin && τ > 0
         
         throw(ArgumentError("reverse parameters not correct"))
     end 

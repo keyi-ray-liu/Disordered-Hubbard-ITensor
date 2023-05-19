@@ -4,7 +4,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
   guess=false, manual=false, itr_dis=[1.0], range=1000, noise=true, method="DMRG", QE=0, scales=[1.0], 
   QN=true,  QEen=1.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="Default", headoverride=0, 
   dynamode="none", TEcutoff=1E-8, TEdim=500, TEmethod="TEBD", product_state=false, TEBDfactor=2,
-  τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3, TEreverse=false)
+  τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3)
 
   # process L so that it's consistent with the new definition
   if typeof(L) == Int
@@ -97,8 +97,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
     "type" => type,
     "U" => U,
     "snake" => snake,
-    "krylovdim" => krylovdim,
-    "TEreverse" => TEreverse
+    "krylovdim" => krylovdim
   )
 
   if (type == "Electron" && typeof(N) == Int) ||  (type == "Fermion" && typeof(N) != Int)
