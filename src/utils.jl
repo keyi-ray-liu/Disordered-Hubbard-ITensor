@@ -6,48 +6,77 @@ function hopping(decay::Float64, r::Float64)
 end
 
 """generates the locations of the NN down the flattened array direction"""
-function get_nn(site::Int, L::Vector{Int}; snake=false)
+function get_nn(site::Int, L::Vector{Int}; snake=false, geometry ="linear")
   nn = Int[]
 
   # get the size of the whole system
   total = prod(L)
-  # for each dimension, generates a nearest neighbor down the flattened array, if possible
 
-  # we attempt to always make the smallest hopping possible, by sorting the L array
-  # in the snake geometry, the numbering is always continuous, whether the next largest hopping happens is determined by its position
-  if L != sort(L)
-    error("for optimal performance, the input dimensions must be sorted. adjust QE position accordingly")
-  end 
+  if geometry == "linear"
+    # for each dimension, generates a nearest neighbor down the flattened array, if possible
 
-  curstride = 1
-  next = curstride 
-
-  for dim in L
-    
-    next *= dim
-
-    if !snake
-      if site + curstride <= total && site % next != 0
-        append!(nn, site + curstride)
-      end 
-
-    else
-
-      newstride = total
-
-      if curstride == 1
-        newstride = 1
-
-      elseif site % curstride !=0
-        newstride = 2 * curstride - (site % curstride -  1) - site % curstride
-      end 
-
-      if site + newstride <= total
-        append!(nn, site + newstride)
-      end 
+    # we attempt to always make the smallest hopping possible, by sorting the L array
+    # in the snake geometry, the numbering is always continuous, whether the next largest hopping happens is determined by its position
+    if L != sort(L)
+      error("for optimal performance, the input dimensions must be sorted. adjust QE position accordingly")
     end 
 
-    curstride = next
+    curstride = 1
+    next = curstride 
+
+    for dim in L
+      
+      next *= dim
+
+      if !snake
+        if site + curstride <= total && site % next != 0
+          append!(nn, site + curstride)
+        end 
+
+      else
+
+        newstride = total
+
+        if curstride == 1
+          newstride = 1
+
+        elseif site % curstride !=0
+          newstride = 2 * curstride - (site % curstride -  1) - site % curstride
+        end 
+
+        if site + newstride <= total
+          append!(nn, site + newstride)
+        end 
+      end 
+
+      curstride = next
+    end 
+
+
+  elseif geometry == "loop"
+
+
+
+  # chain dim will e hardcoreded for now 2x2 squares
+  elseif geometry == "chain"
+
+    if (total - 1) % 3 != 0 
+      error(ArgumentError("Not a valid chain length"))
+    end 
+
+    if site < total && (site - 1) % 3 == 0
+
+      append!(nn, site + 1)
+      append!(nn, site + 2)
+
+    elseif site < total
+      append!(nn, 3 * div(site - 1, 3) + 4)
+    end 
+
+
+  else
+    error(ArgumentError("undefined geometry"))
+
   end 
 
   return nn

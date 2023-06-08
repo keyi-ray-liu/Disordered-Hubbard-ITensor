@@ -7,6 +7,7 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
   scales = para["scales"]
   type = para["type"]
   snake = para["snake"]
+  geometry = para["geometry"]
   
   # iterate through all sites to get NN
 
@@ -20,7 +21,7 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
 
   for j=1  : Ltotal
 
-    nns = get_nn(j, L, snake=snake)
+    nns = get_nn(j, L, snake=snake, geometry=geometry)
 
     println("site $j, NN $nns")
 

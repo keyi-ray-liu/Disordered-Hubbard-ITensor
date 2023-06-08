@@ -135,8 +135,6 @@ function cal_overlap()
       rawt = SubString(raw, 1 + 1 + length(method), length(raw) - 3)
       t = parse(Float64, rawt )
   
-      println(t)
-      append!(T, t)
       return t
     end 
   
@@ -161,13 +159,16 @@ function cal_overlap()
     sort!(files, by=get_time)
   
     for file in files
+
       wf = h5open(workdir * file, "r")
       ψ = read( wf, "psi", MPS)
       close(wf)
-  
+
+      t = get_time(file)
       bond = checkmaxbond(ψ)
       occ = expect(ψ, "N")
-  
+        
+      append!(T, t)
       append!(bonds, bond)
       append!(res, [occ])
     end 

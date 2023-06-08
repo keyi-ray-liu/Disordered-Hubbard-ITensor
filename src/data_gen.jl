@@ -149,10 +149,12 @@ function NF(t, spdim, dim, Nup, Ndn)
   guess = false
   noise = false
   snake = true
+  geometry = "linear"
   krylovdim = 10
 
   paras = setpara(L=L, N=N, ex=ex, int_ee=0, int_ne=0, QE=0, t=t,
-  guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, type="Electron", U=4.0, snake=snake, krylovdim = krylovdim)
+  guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, type="Electron", U=4.0, snake=snake, 
+  geometry =geometry, krylovdim = krylovdim)
   main(paras)
 
 end 
