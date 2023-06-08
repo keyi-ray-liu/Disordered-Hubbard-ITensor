@@ -132,7 +132,7 @@ function QE_dynamic()
 end 
 
 
-function NF(t, spdim, dim, Nup, Ndn)
+function NF(t, spdim, dim, Nup, Ndn, geometry)
 
   t = parse(Float64, t)
   spdim = parse(Int, spdim)
@@ -149,7 +149,6 @@ function NF(t, spdim, dim, Nup, Ndn)
   guess = false
   noise = false
   snake = true
-  geometry = "linear"
   krylovdim = 10
 
   paras = setpara(L=L, N=N, ex=ex, int_ee=0, int_ne=0, QE=0, t=t,
