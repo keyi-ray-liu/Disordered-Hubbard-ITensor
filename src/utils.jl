@@ -53,8 +53,34 @@ function get_nn(site::Int, L::Vector{Int}; snake=false, geometry ="linear")
     end 
 
 
-  elseif geometry == "loop"
+  elseif geometry == "loop-pbc"
 
+    if site < total
+      append!(nn, site + 1)
+
+    elseif site == total
+      append!(nn, 1)
+
+    end 
+
+
+    # odd sites start from the front, even sites start from the back
+  elseif geometry == "loop-two-end"
+
+    # not the end
+    if site + 2 <= total
+      append!(nn, site + 2)
+    
+    # to end
+    elseif site < total
+      append!(nn, total)
+
+    end 
+    # last we connect site 1 and 2
+    if site == 1
+      append!(nn, 2)
+
+    end 
 
 
   # chain dim will e hardcoreded for now 2x2 squares

@@ -32,7 +32,7 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = true
+  test = false
   disable_blas = true
 
   if disable_blas
