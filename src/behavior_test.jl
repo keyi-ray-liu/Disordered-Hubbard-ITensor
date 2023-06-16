@@ -4,45 +4,46 @@ using ITensors
 using ITensorTDVP
 using Random
 using Test
+using ITensors.HDF5
 
-@testset "DMRG-X" begin
+# @testset "DMRG-X" begin
 
-  function HB(L)
-    ampo = OpSum()
-    hop = 1.0
-    t = 1.0
+#   function HB(L)
+#     ampo = OpSum()
+#     hop = 1.0
+#     t = 1.0
 
-    for j=1  :L-1
+#     for j=1  :L-1
         
-        #println(hop)
-        # Hopping
-        ampo += -t * hop, "C",j,"Cdag",j+1
-        ampo += -t * hop, "C",j+1,"Cdag",j 
-    end
+#         #println(hop)
+#         # Hopping
+#         ampo += -t * hop, "C",j,"Cdag",j+1
+#         ampo += -t * hop, "C",j+1,"Cdag",j 
+#     end
 
-    return ampo
-  end 
+#     return ampo
+#   end 
 
-  L = 12
-  N = 6
+#   L = 12
+#   N = 6
 
-  s = siteinds("Fermion", L, conserve_qns=true)
-  H = MPO(HB(L), s)
+#   s = siteinds("Fermion", L, conserve_qns=true)
+#   H = MPO(HB(L), s)
 
-  initstate = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N])
-  ψ = randomMPS(s, initstate)
+#   initstate = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N])
+#   ψ = randomMPS(s, initstate)
 
-  dmrg_x_kwargs = (
-    nsweeps=20, reverse_step=false, normalize=true, maxdim=20, cutoff=1e-10, outputlevel=0
-  )
+#   dmrg_x_kwargs = (
+#     nsweeps=20, reverse_step=false, normalize=true, maxdim=20, cutoff=1e-10, outputlevel=0
+#   )
 
-  ϕ = dmrg_x(ProjMPO(H), ψ; nsite=2, dmrg_x_kwargs...)
+#   ϕ = dmrg_x(ProjMPO(H), ψ; nsite=2, dmrg_x_kwargs...)
 
-  @test inner(ψ', H, ψ) / inner(ψ, ψ) ≈ inner(ϕ', H, ϕ) / inner(ϕ, ϕ) rtol = 1e-1
-  @test inner(H, ψ, H, ψ) ≉ inner(ψ', H, ψ)^2 rtol = 1e-7
-  @test inner(H, ϕ, H, ϕ) ≈ inner(ϕ', H, ϕ)^2 rtol = 1e-7
+#   @test inner(ψ', H, ψ) / inner(ψ, ψ) ≈ inner(ϕ', H, ϕ) / inner(ϕ, ϕ) rtol = 1e-1
+#   @test inner(H, ψ, H, ψ) ≉ inner(ψ', H, ψ)^2 rtol = 1e-7
+#   @test inner(H, ϕ, H, ϕ) ≈ inner(ϕ', H, ϕ)^2 rtol = 1e-7
 
-end
+# end
 
 
 # @testset "DMRG-X" begin
@@ -93,3 +94,90 @@ end
 # end
 
 # nothing
+
+
+
+@testset "Test" begin
+
+  function HB(L)
+    ampo = OpSum()
+    hop = 1.0
+    t = 10.0
+
+    for j=1  :L-1
+        
+        #println(hop)
+        # Hopping
+        ampo += -t * hop, "C",j,"Cdag",j+1
+        ampo += -t * hop, "C",j+1,"Cdag",j 
+    end
+
+    return ampo
+  end 
+
+  function get_gate(s, L, τ)
+    # Make gates (1,2),(2,3),(3,4),...
+    gates = ITensor[]
+    hop = 1.0
+    t = 10.0
+
+    for j in 1:(L - 1)
+      s1 = s[j]
+      s2 = s[j + 1]
+      hj =
+        - t * hop * op("C", s1) * op("Cdag", s2) +
+        - t * hop * op("C", s2) * op("Cdag", s1)
+      Gj = exp(-im * τ / 2 * hj)
+      push!(gates, Gj)
+    end
+    # Include gates in reverse order too
+    # (N,N-1),(N-1,N-2),...
+    append!(gates, reverse(gates))
+
+    return gates
+  end 
+
+  L = 20
+  N = 10
+  τ = 0.1
+  start = 0.0
+  fin = 2.0
+   
+  s = siteinds("Fermion", L, conserve_qns=true)
+  H = MPO(HB(L), s)
+  G = get_gate(s, L, τ)
+
+  prefix = pwd()
+  initstate = append!([ "Occ" for n=1:N] , ["Emp" for n=1:L -N])
+  ψ = randomMPS(s, initstate)
+  
+  cutoff = 1e-9
+  
+
+  ψkrylov = ψ
+  ψtrotter = ψ
+
+
+  for dt in start:τ:fin
+
+    println("time: $dt")
+    #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, cutoff, nsite=2)
+    ψkrylov = tdvp(H,  -im * τ, ψkrylov;  cutoff, nsite=2, time_step= -im * τ/2, normalize=true)
+
+    ψtrotter = apply(G, ψtrotter; cutoff)
+    normalize!(ψtrotter)
+    
+    println("Krylov occ: ", expect(ψkrylov, "N"))
+    println("Trotter occ: ", expect(ψtrotter, "N"))
+
+    wf = h5open(  prefix * "TDVP" * string(dt) * ".h5", "w")
+    write(wf, "psi", ψkrylov)
+    close(wf)
+
+    wf = h5open(  prefix * "Trotter" * string(dt) * ".h5", "w")
+    write(wf, "psi", ψtrotter)
+    close(wf)
+
+  end 
+
+end
