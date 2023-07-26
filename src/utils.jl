@@ -1,6 +1,6 @@
 """Calculates hopping
 Return the strength of hooping, baseline is 1 without disorder"""
-function hopping(decay::Float64, r::Float64)
+function disorder_hopping(decay::Float64, r::Float64)
   
   return exp( -(r - 1)/decay)
 end
@@ -287,3 +287,52 @@ function linsolvemeasure!(obs::DMRGObserver; kwargs...)
   end
 end
 
+
+"""
+Load eigenvectors and eigenvalues for the static hamiltonian eigenstates. \n
+Return staticenergy, staticwf, overlaps
+"""
+function load_eigen(ψ)
+
+
+  prefix = getworkdir()
+
+  if !isfile(prefix * "staticwf.h5") || !isfile(prefix * "staticenergy")
+    raise(ArgumentError("Please provide the eigen basis functions"))
+  end 
+
+  staticenergy = readdlm( prefix * "staticenergy")
+
+  staticwf = []
+  staticwffile = h5open( prefix * "staticwf.h5")
+
+  for key in sort(keys(staticwffile), by= x-> parse(Int, x[4:end]))
+    append!(staticwf, [read(staticwffile, key, MPS )])
+  end 
+
+  overlaps = [ inner(ψ', staticwf[i]) for i in eachindex(staticwf)]
+  
+  println( "overlap sum:", sum( abs2.(overlaps)))
+  return staticenergy, staticwf, overlaps
+
+end 
+
+function load_tcd()
+
+  prefix = getworkdir()
+  tcd_key = "TCD"
+  tcd_dict = Dict()
+
+  for file in filter(x->occursin(tcd_key,x), readdir(prefix))
+
+    keys = split(file, "_")
+    i = parse(Int, keys[end - 1])
+    j = parse(Int, keys[end])
+    
+    tcd_dict[ (i, j) ] = readdlm( prefix * file)
+  end 
+
+  print(keys(tcd_dict))
+  return tcd_dict
+
+end 

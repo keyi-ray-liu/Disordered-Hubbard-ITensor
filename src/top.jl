@@ -43,7 +43,11 @@ function top()
   if test
 
     println("TEST TEST TEST")
-    NF("0.01", "1", "40", "10", "5", "chain")
+
+    QE_dynamic()
+    #QE("2", "0.0855")
+    #eigen_overlap()
+    #NF("0.01", "1", "40", "10", "5", "chain")
     #QE_dynamic()
     #paras = setpara(L=12, N=6, CN=6, ex=3, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=100, 
     #sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEloc = [[-2.0], [13.0]])
@@ -63,7 +67,7 @@ function top()
       cal_observe()
 
     elseif ARGS[1] == "2"
-      scandisorder( ARGS[2], ARGS[3])
+      GSGap()
 
     elseif ARGS[1] == "3"
       truedisorder( ARGS[2], ARGS[3] )
@@ -84,6 +88,9 @@ function top()
 
     elseif ARGS[1] == "8"
       cal_overlap()
+
+    elseif ARGS[1] == "9"
+      eigen_overlap()
 
     else
       println("not a valid operating mode")

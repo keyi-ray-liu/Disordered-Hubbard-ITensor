@@ -120,7 +120,7 @@ function cal_tcd(ψ1, ψ2)
     tcd[i] = inner( ψ1', new)
   end 
 
-  print(tcd)
+  #print(tcd)
 
   return tcd
 end 

@@ -9,6 +9,7 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
   snake = para["snake"]
   geometry = para["geometry"]
   
+  spec_hop_struct = para["spec_hop_struct"]
   # iterate through all sites to get NN
 
   if type == "Fermion"
@@ -28,7 +29,7 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
     for nn in nns
       
       r = dis(j, nn, L, scales, disx, disy)
-      hop = hopping(decay, r)
+      hop = disorder_hopping(decay, r) * (haskey(spec_hop_struct, j) ? spec_hop_struct[j] : 1)
 
       # temporary fix! 
       if snake
@@ -78,7 +79,7 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   range = para["range"]
   scales = para["scales"]
   snake = para["snake"]
-
+  scr = para["screening"]
   type = para["type"]
   Ltotal = prod(L)
 
@@ -106,13 +107,14 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
       ifexch = (1 -  (j in get_nn(k, L, snake=snake)) * exch )
       r = dis(j, k, L, scales, disx, disy)
       
+      screen_factor = exp( - scr * r )
       #println("EE interaction: $j, $k, $ifexch, $r")
       if !if_gate
       # add the ee interaction term one by one
-        res += λ_ee * ifexch / (  r + ζ_ee), ops,p1 ,ops, p2
+        res += λ_ee * ifexch * screen_factor / (  r + ζ_ee), ops,p1 ,ops, p2
 
       else
-        eejk  = λ_ee * ifexch / ( r + ζ_ee) * op(ops, s1) * op(ops, s2)
+        eejk  = λ_ee * ifexch * screen_factor / ( r + ζ_ee) * op(ops, s1) * op(ops, s2)
         gatefy!(res, factor, eejk, τ)
 
       end 
@@ -134,7 +136,7 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   CN = para["CN"]
   Ltotal = prod(L)
   scales = para["scales"]
-
+  scr = para["screening"]
   type = para["type"]
 
   λ_ne = λ_ne * CN / Ltotal
@@ -165,8 +167,10 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
     for l=1 :Ltotal
 
       r = dis(j, l, L, scales, disx, disy)
+
+      screen_factor = exp( - scr * r )
       #println("NE interaction: $j, $l, $r")
-      cursum += λ_ne / ( r + ζ_ne)
+      cursum += λ_ne * screen_factor / ( r + ζ_ne)
     end
 
     if !if_gate
@@ -194,6 +198,7 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   QEloc = para["QEloc"]
   scales = para["scales"]
   type = para["type"]
+  scr = para["screening"]
 
   Ltotal = prod(L)
 
@@ -243,6 +248,7 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
     
     r = dis(i, QEloc[which], L, scales, disx, disy)
 
+    screen_factor = exp( - scr * r)
     println("distance to QE: $r")
     r_dp = r ^ 3 + ζ_dp
 
@@ -255,36 +261,36 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
 
       if !if_gate
         if !QN
-          res  +=  dp * r  / r_dp , "x", pqe, opn, p1
+          res  +=  dp * r * screen_factor / r_dp , "x", pqe, opn, p1
           # centering
-          res  += -dp * r *  cavg / r_dp,  "x", pqe
+          res  += -dp * r * screen_factor * cavg / r_dp,  "x", pqe
 
         else
-          res  +=  dp * r / r_dp, opc1, paux, opc2, pqe, opn, p1
-          res  +=  dp * r / r_dp, opc1, pqe, opc2, paux, opn, p1
+          res  +=  dp * r * screen_factor / r_dp, opc1, paux, opc2, pqe, opn, p1
+          res  +=  dp * r * screen_factor / r_dp, opc1, pqe, opc2, paux, opn, p1
           
           # centering
-          res  +=   - dp * r * cavg / r_dp, opc1, paux, opc2, pqe
-          res  +=   - dp * r * cavg / r_dp, opc1, pqe, opc2, paux
+          res  +=   - dp * r * screen_factor * cavg / r_dp, opc1, paux, opc2, pqe
+          res  +=   - dp * r * screen_factor * cavg / r_dp, opc1, pqe, opc2, paux
 
         end 
 
       else
 
         if !QN
-          dpla = dp * r  / r_dp * op( "x", sqe) * op(opn, s1)
-          dpl = -dp * r *  cavg / r_dp * op( "x", sqe)
+          dpla = dp * r * screen_factor / r_dp * op( "x", sqe) * op(opn, s1)
+          dpl = -dp * r * screen_factor * cavg / r_dp * op( "x", sqe)
 
         else
 
           #two level with AUX site
-          dpla = dp * r / r_dp  * op( opc1, saux) * op(opc2, sqe) * op(opn, s1) + 
-                  dp * r / r_dp  * op( opc1, sqe) * op(opc2, saux) * op(opn, s1)
+          dpla = dp * r * screen_factor / r_dp  * op( opc1, saux) * op(opc2, sqe) * op(opn, s1) + 
+                  dp * r * screen_factor / r_dp  * op( opc1, sqe) * op(opc2, saux) * op(opn, s1)
 
           # the offset term, to set the 'center of mass'
           # calculated as a uniform distribution:  L * N / 2
-          dpl =  - dp * r * cavg / r_dp *  op(opc1, saux) * op( opc2, sqe)  
-                  - dp * r * cavg / r_dp *  op(opc1, sqe) * op( opc2, saux) 
+          dpl =  - dp * r * screen_factor * cavg / r_dp *  op(opc1, saux) * op( opc2, sqe)  
+                  - dp * r * screen_factor * cavg / r_dp *  op(opc1, sqe) * op( opc2, saux) 
 
         end 
 

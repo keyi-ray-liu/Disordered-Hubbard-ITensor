@@ -83,6 +83,46 @@ function time_evolve(ψ, sites, paras, start, fin)
             close(wf)
 
         end 
+    
+    elseif occursin("eigen", method)
+
+        staticenergy, staticwf, overlaps = load_eigen(ψ)
+
+        if method == "eigen-occ"
+            res = []
+        end 
+        
+        for dt in start:τ:fin
+
+            println("$method time : $dt")
+            phase = exp.( -im * dt * staticenergy)
+            
+            if method == "eigen-wf"
+                
+                teeigenwf = phase .* overlaps .* staticwf
+                totalwf = sum(teeigenwf; cutoff=cutoff)
+                wf = h5open( prefix * "t$method" * string(dt) * ".h5", "w")
+                write(wf, "psi", totalwf)
+                close(wf)
+
+            elseif method == "eigen-occ"
+                
+                tcd_dict = load_tcd()
+
+                phased_overlap = phase .* overlaps
+                occ = get_eigen_occ(tcd_dict, phased_overlap)
+                append!(res, [occ])
+
+            end 
+
+        end 
+
+        if method == "eigen-occ"
+            writedlm(prefix * "occ", res)
+        end 
+
+    else
+        error(ArgumentError("Unrecognized method"))
 
     end 
 

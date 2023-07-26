@@ -13,43 +13,34 @@ function main(para)
   # disable threading in BLAS, so that jobs are multithreaded
 
   prefix = getworkdir()
-  cases = size(disx)[1]
-  idfile = open( prefix * "disid", "a")
-
-
 
   # in this version, jobs are parallelized and BLAS is not 
-  for case=1:cases
-    λ = - 20.0
-    sites = init_site(para)
+  λ = - 20.0
+  sites = init_site(para)
 
-    println("type of sites", typeof(sites))
-    energy, states, allres, allvars, vars= single_search(para, sites, disx[case, :], disy[case, :], λ)
+  println("type of sites", typeof(sites))
+  energy, states, allres, allvars, vars= single_search(para, sites, disx[1, :], disy[1, :], λ)
 
-    suffix = string(L) * "_" * string(case)
-    
-    writedlm( prefix * "ex" *  suffix, energy)
-    writedlm( prefix * "var" *  suffix, vars)
-    writedlm( prefix * "allvar" *  suffix, allvars)
-    writedlm( prefix * "allenergy" *  suffix, allres)
-    writedlm( idfile, case)
+  gaps = energy[2:end] - energy[1:end-1]
+  
+  writedlm( prefix * output * "ex" , energy)
+  writedlm( prefix * output * "gaps", gaps)
+  writedlm( prefix * output *"var", vars)
+  writedlm( prefix * output *" allvar", allvars)
+  writedlm( prefix * output * "allenergy", allres)
 
-    # write wf
+  # write wf
 
-    if output == "Default" || cases > 1
-      wf = h5open( prefix * "wf" * suffix * ".h5", "w")
-    else
-      wf = h5open( prefix * output * ".h5", "w")
-    end 
+  if output == "" 
+    wf = h5open( prefix * "wf"  * ".h5", "w")
+  else
+    wf = h5open( prefix * output * ".h5", "w")
+  end 
 
-    for (i, psi) in enumerate(states)
-      write(wf, "psi" * string(i), psi)
-    end
-
-    close(wf)
-
+  for (i, psi) in enumerate(states)
+    write(wf, "psi" * string(i), psi)
   end
 
-  close(idfile)
+  close(wf)
   return nothing
 end

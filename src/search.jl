@@ -98,6 +98,7 @@ function single_search(para::Dict, sites, disx, disy, λ)
       if cur_ex == 1
         energy, ψ = dmrg(H, ϕ, sweeps; eigsolve_krylovdim = krylovdim)
         cur_ex += 1
+        
 
       else
         energy, ψ = dmrg(H, states, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim) 
@@ -136,12 +137,17 @@ function single_search(para::Dict, sites, disx, disy, λ)
           cur_ex = 2
 
         end 
-
+        
       end
+
+    
+    
+      # save temp results
+    wf = h5open( prefix * "temp_cur_ex" * cur_ex * ".h5", "w")
+    write(wf, "psi", ψ)
+    close(wf)
+
     # shift and invert block
-
-
-
 
     elseif method == "SI"
       # metric is <phi | ψ>

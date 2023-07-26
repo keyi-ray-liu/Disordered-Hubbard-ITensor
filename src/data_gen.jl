@@ -39,67 +39,100 @@ function truedisorder(lam, gen)
   main(paras)
 end
 
+
+function GSGap()
+
+  L = 120
+  N = 6
+  guess = false
+  dim = 300
+  cnt = 50
+  noise = false
+  krylovdim = 8
+  output = "GSGap"
+
+  paras = setpara(L=L, N=N, ex=2, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=0,
+   headoverride=0, krylovdim=krylovdim, output=output)
+  main(paras)
+
+end 
+
 """Statically solve the QE system"""
 function QE(num, energy)
   num = parse(Int, num)
   energy = parse(Float64, energy)
 
-  L = 60
-  ex = 30
+  L = 120
+  N = 6
+  ex = 2
   guess = false
   dim = 300
   cnt = 50
   noise = false
+  krylovdim = 8
 
-
-  paras = setpara(L=L, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num,
-  QEen=energy, QEloc=loc, headoverride=0)
+  paras = setpara(L=L, N=N, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num,
+  QEen=energy,  headoverride=0, krylovdim=krylovdim)
   main(paras)
 
 end 
 
-"""Calculating QE dynamics using TEBD"""
+"""Calculating QE dynamics using various methods"""
 function QE_dynamic()
 
   #L = [2, 30]
-  L = 60
+  L = 400
   dim = 1000
-  cnt = 60
+  cnt = 100
   QN = true
 
   #QE para
-  energy = 0.15672
   dp = 1.0
-  
+  energy = nothing
+
+
   QE = 2
-  dynamode = "both"
+  dynamode = "left"
   
+  spec_hop_struct = Dict( )
   #TE para
   product_state = false
-  τ = 0.1
-  start = 0.1
-  fin = 15.0
-  TEmethod = "TEBD"
+  τ = 1.0
+  start = 1.0
+  fin = 100.0
+  TEmethod = "TDVP"
   TEdim = 150
   TEcutoff = 1E-8
   type = "Fermion"
+  screening = 0.0
+  guess = true
+  krylovdim = 8
   
-
-
   workdir = getworkdir()
   target = "target"
+  
+  if isnothing(energy)
+    ex = 2
+  else
+    ex = 1
+  end 
 
   if !product_state && !isfile(workdir * target * ".h5") 
     # if there no target file, we perform a single GS search
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
 
-    paras = setpara(L=L, ex=1, sweepdim=dim, sweepcnt=cnt, QE= QE, QN = QN, output = target, headoverride= (QE > 0) * (QN + 1),
-    dynamode=dynamode, type=type)
+    paras = setpara(L=L, ex=ex, sweepdim=dim, sweepcnt=cnt, QE= QE, QN = QN, output = target, headoverride= (QE > 0) * (QN + 1),
+    dynamode=dynamode, type=type, spec_hop_struct=spec_hop_struct, screening=screening, guess=guess, krylovdim=krylovdim)
     main(paras)
   end 
+
+  if isnothing(energy)
+    plasmon_energy = readdlm(workdir * "ex1")
+    energy = plasmon_energy[end] - plasmon_energy[end - 1]
+  end 
   
-  paras = setpara(L=L,  QEen = energy, QE=QE, TEcutoff=TEcutoff, TEdim=TEdim, dp=dp,
-  TEmethod=TEmethod, product_state=product_state, type=type, τ=τ)
+  paras = setpara(L=L,  QEen = energy, QE=QE, TEcutoff=TEcutoff, TEdim=TEdim, dp=dp, spec_hop_struct=spec_hop_struct, 
+  TEmethod=TEmethod, product_state=product_state, type=type, τ=τ, screening=screening)
   # process wf
 
   if !product_state

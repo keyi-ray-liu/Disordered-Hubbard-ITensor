@@ -16,10 +16,10 @@ function init_state(para, sites, disx, disy)
   mode = para["dynamode"]
   type = para["type"]
   
+  Ltotal = prod(L)
   scales = para["scales"]
   snake = para["snake"]
-  
-  Ltotal = prod(L)
+  QEen = para["QEen"]
   occ = type == "Fermion" ? "Occ" : "Up"
   emp = "Emp"
   # if not guess, using random MPS as init state
@@ -99,7 +99,7 @@ function init_state(para, sites, disx, disy)
     
 
     # single particle H
-    H = zeros((Ltotal, Ltotal))
+    H = zeros((Ltotal + QE * (QN + 1), Ltotal + QE * (QN + 1)))
 
     #hopping
     for i = 1:Ltotal
@@ -108,10 +108,10 @@ function init_state(para, sites, disx, disy)
 
       for nn in nns
         r = dis(i, nn, L, scales, disx, disy)
-        hop = hopping(decay, r)
+        hop = disorder_hopping(decay, r)
         
-        H[i, nn] = -t * hop
-        H[nn, i] = -t * hop
+        H[i + (QN + 1), nn + (QN + 1)] = -t * hop
+        H[nn + (QN + 1), i + (QN + 1)] = -t * hop
       end 
 
     end 
@@ -126,13 +126,25 @@ function init_state(para, sites, disx, disy)
           cursum = -λ_ne / ζ_ne
         end
 
-        for k=1:L
+        for k=1:Ltotal
           cursum += λ_ne / ( dis(j, k, L, scales, disx, disy) + ζ_ne)
         end
 
-        H[j, j] = -cursum
+        H[j + (QN + 1), j + (QN + 1)] = -cursum
 
       end 
+    end 
+
+    if QE > 0
+
+      H[ QN + 1, QN + 1] = QEen
+
+    end 
+
+    if QE > 1
+
+      H[ Ltotal  + QN + 2, Ltotal + QN + 2] = QEen
+
     end 
 
     @show ishermitian(H)
@@ -142,7 +154,7 @@ function init_state(para, sites, disx, disy)
     # Get the Slater determinant
     # Create an mps for the free fermion ground state
 
-    if type == "Ferimion"
+    if type == "Fermion"
       ϕ = u[:, 1:sum(N)]
       ψ0 = slater_determinant_to_mps(sites, ϕ)
 
