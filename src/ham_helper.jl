@@ -79,7 +79,7 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   range = para["range"]
   scales = para["scales"]
   snake = para["snake"]
-  scr = para["screening"]
+  scr = para["screening_int"]
   type = para["type"]
   Ltotal = prod(L)
 
@@ -136,7 +136,7 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   CN = para["CN"]
   Ltotal = prod(L)
   scales = para["scales"]
-  scr = para["screening"]
+  scr = para["screening_int"]
   type = para["type"]
 
   λ_ne = λ_ne * CN / Ltotal
@@ -198,7 +198,7 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   QEloc = para["QEloc"]
   scales = para["scales"]
   type = para["type"]
-  scr = para["screening"]
+  scr = para["screening_qe"]
 
   Ltotal = prod(L)
 

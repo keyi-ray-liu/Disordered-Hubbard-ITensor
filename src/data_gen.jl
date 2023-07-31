@@ -40,76 +40,36 @@ function truedisorder(lam, gen)
 end
 
 
-function GSGap()
+function GSGap(additional_para)
 
-  L = 120
-  N = 6
-  guess = false
-  dim = 300
-  cnt = 50
-  noise = false
-  krylovdim = 8
-  output = "GSGap"
-
-  paras = setpara(L=L, N=N, ex=2, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=0,
-   headoverride=0, krylovdim=krylovdim, output=output)
+  paras = setpara(;additional_para...,
+   headoverride=0, ex=2, QE=0, output="GSGap")
   main(paras)
 
 end 
 
 """Statically solve the QE system"""
-function QE(num, energy)
-  num = parse(Int, num)
-  energy = parse(Float64, energy)
+function QE(additional_para)
 
-  L = 120
-  N = 6
-  ex = 2
-  guess = false
-  dim = 300
-  cnt = 50
-  noise = false
-  krylovdim = 8
-
-  paras = setpara(L=L, N=N, ex=ex, guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, QE=num,
-  QEen=energy,  headoverride=0, krylovdim=krylovdim)
+  paras = setpara(;additional_para..., headoverride=0, output="QE")
   main(paras)
 
 end 
 
 """Calculating QE dynamics using various methods"""
-function QE_dynamic()
+function QE_dynamic(additional_para)
 
-  #L = [2, 30]
-  L = 400
-  dim = 1000
-  cnt = 100
-  QN = true
-
-  #QE para
-  dp = 1.0
-  energy = nothing
-
-
-  QE = 2
-  dynamode = "left"
-  
-  spec_hop_struct = Dict( )
   #TE para
   product_state = false
-  τ = 1.0
-  start = 1.0
-  fin = 100.0
-  TEmethod = "TDVP"
-  TEdim = 150
-  TEcutoff = 1E-8
-  type = "Fermion"
-  screening = 0.0
-  guess = true
-  krylovdim = 8
-  
   workdir = getworkdir()
-  target = "target"
+  output = "target"
+
+  energy = additional_para[:QEen]
+  QN = additional_para[:QN]
+
+  τ = 0.1
+  start = 0.1
+  fin = 100.0
   
   if isnothing(energy)
     ex = 2
@@ -117,27 +77,25 @@ function QE_dynamic()
     ex = 1
   end 
 
-  if !product_state && !isfile(workdir * target * ".h5") 
+  if !product_state && !isfile(workdir * output * ".h5") 
     # if there no target file, we perform a single GS search
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
 
-    paras = setpara(L=L, ex=ex, sweepdim=dim, sweepcnt=cnt, QE= QE, QN = QN, output = target, headoverride= (QE > 0) * (QN + 1),
-    dynamode=dynamode, type=type, spec_hop_struct=spec_hop_struct, screening=screening, guess=guess, krylovdim=krylovdim)
+    paras = setpara(;additional_para..., ex=ex, output = output, headoverride= QN + 1)
     main(paras)
   end 
 
   if isnothing(energy)
-    plasmon_energy = readdlm(workdir * "ex1")
+    plasmon_energy = readdlm(workdir * output * "ex" )
     energy = plasmon_energy[end] - plasmon_energy[end - 1]
   end 
   
-  paras = setpara(L=L,  QEen = energy, QE=QE, TEcutoff=TEcutoff, TEdim=TEdim, dp=dp, spec_hop_struct=spec_hop_struct, 
-  TEmethod=TEmethod, product_state=product_state, type=type, τ=τ, screening=screening)
+  paras = setpara(;additional_para..., τ=τ, QEen=energy, dynamode="none")
   # process wf
 
   if !product_state
 
-    wf = h5open( workdir * target * ".h5", "r")
+    wf = h5open( workdir * output * ".h5", "r")
 
     if start == τ
       ψ = read(wf, "psi1", MPS)
@@ -188,5 +146,48 @@ function NF(t, spdim, dim, Nup, Ndn, geometry)
   guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, type="Electron", U=4.0, snake=snake, 
   geometry =geometry, krylovdim = krylovdim)
   main(paras)
+
+end 
+
+
+
+function eigensolver()
+
+  workdir = getworkdir()
+
+  additional_para = Dict{Any, Any}(
+    :L => 12,
+    :N => 6,
+    :sweepdim => 300,
+    :sweepcnt => 5,
+    :krylovdim => 8,
+
+  )
+  
+  #Step 1
+  GSGap(additional_para)
+
+  plasmon_energy = readdlm(workdir * "GSGapex" )
+  QEen = plasmon_energy[end] - plasmon_energy[end - 1]
+
+  #Step 2
+  additional_para[:QEen]= QEen
+  additional_para[:ex] = 4
+  additional_para[:N] = 6
+  additional_para[:QE] = 2
+  additional_para[:QN] = true
+  additional_para[:screening_qe] = 0.2
+
+  QE(additional_para)
+
+  #Step 3
+  cal_observe(key="QE.h5")
+
+  #Step 4
+
+  additional_para[:dynamode]= "left"
+  additional_para[:TEmethod] = "eigen-occ"
+
+  QE_dynamic(additional_para)
 
 end 

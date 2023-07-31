@@ -5,7 +5,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
   QN=true,  QEen=1.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
   dynamode="none", TEcutoff=1E-8, TEdim=500, TEmethod="TEBD", product_state=false, TEBDfactor=2,
   τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3, geometry = "linear", spec_hop_struct = Dict(),
-  screening=0.0)
+  screening_int=0.0, screening_qe=0.0)
 
   # process L so that it's consistent with the new definition
   if typeof(L) == Int
@@ -101,7 +101,8 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
     "krylovdim" => krylovdim,
     "geometry" => geometry,
     "spec_hop_struct" => spec_hop_struct,
-    "screening" => screening
+    "screening_int" => screening_int,
+    "screening_qe" => screening_qe,
   )
 
   if (type == "Electron" && typeof(N) == Int) ||  (type == "Fermion" && typeof(N) != Int)
@@ -117,7 +118,8 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
     error("Wrong head override number")
   end 
   
-  writedlm("parameters", para)
+  workdir = getworkdir()
+  writedlm( workdir * output * "parameters", para)
   return para
 end
 

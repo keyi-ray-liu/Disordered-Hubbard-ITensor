@@ -18,6 +18,7 @@ function single_search(para::Dict, sites, disx, disy, λ)
   tol = 1e-8
   krylovdim = para["krylovdim"]
   
+  prefix = getworkdir()
   
 
   # if we gradually increasing the disorder strength
@@ -143,9 +144,9 @@ function single_search(para::Dict, sites, disx, disy, λ)
     
     
       # save temp results
-    wf = h5open( prefix * "temp_cur_ex" * cur_ex * ".h5", "w")
-    write(wf, "psi", ψ)
-    close(wf)
+      wf = h5open( prefix * "temp_cur_ex" * string((cur_ex - 1)) * ".h5", "w")
+      write(wf, "psi", ψ)
+      close(wf)
 
     # shift and invert block
 

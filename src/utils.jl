@@ -297,20 +297,21 @@ function load_eigen(ψ)
 
   prefix = getworkdir()
 
-  if !isfile(prefix * "staticwf.h5") || !isfile(prefix * "staticenergy")
+  if !isfile(prefix * "QE.h5") || !isfile(prefix * "QEex")
     raise(ArgumentError("Please provide the eigen basis functions"))
   end 
 
-  staticenergy = readdlm( prefix * "staticenergy")
+  staticenergy = readdlm( prefix * "QEex")
 
   staticwf = []
-  staticwffile = h5open( prefix * "staticwf.h5")
+  staticwffile = h5open( prefix * "QE.h5")
 
   for key in sort(keys(staticwffile), by= x-> parse(Int, x[4:end]))
     append!(staticwf, [read(staticwffile, key, MPS )])
   end 
 
   overlaps = [ inner(ψ', staticwf[i]) for i in eachindex(staticwf)]
+  println( "overlaps:", overlaps)
   
   println( "overlap sum:", sum( abs2.(overlaps)))
   return staticenergy, staticwf, overlaps

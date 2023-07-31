@@ -25,8 +25,8 @@ function main(para)
   
   writedlm( prefix * output * "ex" , energy)
   writedlm( prefix * output * "gaps", gaps)
-  writedlm( prefix * output *"var", vars)
-  writedlm( prefix * output *" allvar", allvars)
+  writedlm( prefix * output * "var", vars)
+  writedlm( prefix * output * "allvar", allvars)
   writedlm( prefix * output * "allenergy", allres)
 
   # write wf

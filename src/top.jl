@@ -25,6 +25,7 @@ include("process.jl")
 include("shift_and_invert.jl")
 include("timeevolve.jl")
 include("ham_helper.jl")
+include("wrappers.jl")
 #include("projection.jl")
 
 """The top level function that controls workflow. Use operation mode to select code function"""
@@ -44,7 +45,8 @@ function top()
 
     println("TEST TEST TEST")
 
-    QE_dynamic()
+    eigensolver()
+    #QEdyna_wrapper()
     #QE("2", "0.0855")
     #eigen_overlap()
     #NF("0.01", "1", "40", "10", "5", "chain")
@@ -58,7 +60,7 @@ function top()
     
   else
     if ARGS == []
-      println("must specify operating mode. 0: plasmon (L, lam), 1: gscc, 2: scan stat, 3: true disorder stat, 4: single instance of main, 5: QE, 6: time-evolution")
+      println("must specify operating mode.")
 
     elseif ARGS[1] == "0"
       plasmonstat( ARGS[2], ARGS[3])
@@ -67,7 +69,7 @@ function top()
       cal_observe()
 
     elseif ARGS[1] == "2"
-      GSGap()
+      GS_wrapper()
 
     elseif ARGS[1] == "3"
       truedisorder( ARGS[2], ARGS[3] )
@@ -78,10 +80,10 @@ function top()
 
     # testing QE
     elseif ARGS[1] == "5"
-      QE(ARGS[2], ARGS[3])
+      QE_wrapper(ARGS[2], ARGS[3])
     
     elseif ARGS[1] == "6"
-      QE_dynamic()
+      QEdyna_wrapper()
 
     elseif ARGS[1] == "7"
       temp_occ(ARGS[2])
@@ -91,6 +93,9 @@ function top()
 
     elseif ARGS[1] == "9"
       eigen_overlap()
+
+    elseif ARGS[1] == "10"
+      eigensolver()
 
     else
       println("not a valid operating mode")

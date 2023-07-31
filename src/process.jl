@@ -20,10 +20,9 @@ function sweepstat()
   end
 end
 
-"""work function that performs data io and calculates exp vals of observables, in this case, correlation"""
-function cal_observe()
+"""work function that performs data io and calculates exp vals of observables, in this case, TCD"""
+function cal_observe(;key="wf.h5")
 
-  key = "wf"
   workdir = getworkdir()
   obs = "TCD"
 
