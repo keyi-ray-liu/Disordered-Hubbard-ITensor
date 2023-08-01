@@ -95,7 +95,7 @@ function top()
       eigen_overlap()
 
     elseif ARGS[1] == "10"
-      eigensolver()
+      eigensolver_wrapper()
 
     else
       println("not a valid operating mode")

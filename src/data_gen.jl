@@ -69,7 +69,7 @@ function QE_dynamic(additional_para)
 
   τ = 0.1
   start = 0.1
-  fin = 100.0
+  fin = 1000.0
   
   if isnothing(energy)
     ex = 2
@@ -90,7 +90,7 @@ function QE_dynamic(additional_para)
     energy = plasmon_energy[end] - plasmon_energy[end - 1]
   end 
   
-  paras = setpara(;additional_para..., τ=τ, QEen=energy, dynamode="none")
+  paras = setpara(;additional_para..., τ=τ, QEen=energy, dynamode="none", output="TE")
   # process wf
 
   if !product_state
@@ -151,26 +151,24 @@ end
 
 
 
-function eigensolver()
+function eigensolver(additional_para)
 
   workdir = getworkdir()
 
-  additional_para = Dict{Any, Any}(
-    :L => 12,
-    :N => 6,
-    :sweepdim => 300,
-    :sweepcnt => 5,
-    :krylovdim => 8,
-
-  )
-  
   #Step 1
-  GSGap(additional_para)
+
+  if !isfile( workdir * "GSGapex")
+    println("GS gap file not found, start cal")
+    GSGap(additional_para)
+  else
+    println("GS gap file already exists")
+  end 
 
   plasmon_energy = readdlm(workdir * "GSGapex" )
   QEen = plasmon_energy[end] - plasmon_energy[end - 1]
 
   #Step 2
+
   additional_para[:QEen]= QEen
   additional_para[:ex] = 4
   additional_para[:N] = 6
@@ -178,10 +176,24 @@ function eigensolver()
   additional_para[:QN] = true
   additional_para[:screening_qe] = 0.2
 
-  QE(additional_para)
+  if !isfile( workdir * "QE.h5")
+    println("QE file not found, start cal")
+    QE(additional_para)
+  else
+    println("QE file already exists")
+  end 
 
   #Step 3
-  cal_observe(key="QE.h5")
+
+  try
+    @suppress begin
+    run(`bash -c 'ls TCD*'`)
+    end
+    println("TCD files exist")
+  catch 
+    println("TCD file not found, start cal")
+    cal_observe(key="QE.h5")
+  end
 
   #Step 4
 
@@ -189,5 +201,6 @@ function eigensolver()
   additional_para[:TEmethod] = "eigen-occ"
 
   QE_dynamic(additional_para)
+  gs_occ()
 
 end 

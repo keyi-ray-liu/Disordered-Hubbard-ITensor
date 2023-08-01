@@ -55,3 +55,18 @@ function QEdyna_wrapper()
 
     QE_dynamic(para)
 end 
+
+
+function eigensolver_wrapper()
+
+    additional_para = Dict{Any, Any}(
+        :L => 12,
+        :N => 6,
+        :sweepdim => 300,
+        :sweepcnt => 5,
+        :krylovdim => 8,
+    
+      )
+
+    eigensolver(additional_para)
+end 

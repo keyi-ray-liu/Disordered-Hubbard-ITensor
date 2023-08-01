@@ -123,6 +123,21 @@ function cal_overlap()
   
 end 
   
+
+
+
+function gs_occ()
+
+  workdir = getworkdir()
+
+  gs = h5open( workdir * "target.h5", "r")
+  gs_wf = read(gs, "psi1", MPS)
+  close(gs)
+
+  occ_gs = expect(gs_wf, "N")
+  writedlm( workdir * "gs", occ_gs)
+end 
+
 """calculates the occ for the available t slices"""
 function temp_occ(num)
   
