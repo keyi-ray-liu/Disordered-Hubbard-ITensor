@@ -7,7 +7,7 @@ using ITensorTDVP
 # now load the rest of the functions 
 using ITensors
 using DelimitedFiles
-using Suppressor
+using Suppressor, Glob
 using ITensors.HDF5
 using LinearAlgebra
 using ITensorGaussianMPS: correlation_matrix_to_mps, slater_determinant_to_mps

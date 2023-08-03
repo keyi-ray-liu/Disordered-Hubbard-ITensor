@@ -184,16 +184,13 @@ function eigensolver(additional_para)
   end 
 
   #Step 3
-
-  try
-    @suppress begin
-    run(`bash -c 'ls TCD*'`)
-    end
-    println("TCD files exist")
-  catch 
+  if length(glob("TCD*ex*", workdir)) == 0
     println("TCD file not found, start cal")
     cal_observe(key="QE.h5")
-  end
+  else
+    println("TCD files already exist")
+  end 
+
 
   #Step 4
 

@@ -40,8 +40,8 @@ function single_search(para::Dict, sites, disx, disy, λ)
       
       setcutoff!(sweeps, 1E-10)
 
-      #_, ψ = dmrg(H, ϕ, sweeps)
-      _, ψ = shift_and_invert(H, ϕ, sweeps)
+      _, ψ = dmrg(H, ϕ, sweeps)
+      #_, ψ = shift_and_invert(H, ϕ, sweeps)
 
       H = init_ham(para, para["L"], disx.* scale, disy.* scale, sites)
       ϕ = ψ

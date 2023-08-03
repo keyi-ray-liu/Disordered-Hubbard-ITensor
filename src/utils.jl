@@ -249,9 +249,10 @@ end
 
 """Wrapper function for the evaluation of the std of Hamiltonian"""
 function variance(H::MPO, psi::MPS)
-  var = inner(H, psi, H, psi) - inner(psi, H, psi) ^ 2
-  return var
-
+  @suppress begin 
+    var = inner(H, psi, H, psi) - inner(psi, H, psi) ^ 2 
+    return var
+  end
 end 
 
 linsolvemeasure!(o::AbstractObserver; kwargs...) = nothing

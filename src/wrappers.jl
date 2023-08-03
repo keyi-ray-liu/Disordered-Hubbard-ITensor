@@ -63,7 +63,7 @@ function eigensolver_wrapper()
         :L => 12,
         :N => 6,
         :sweepdim => 300,
-        :sweepcnt => 5,
+        :sweepcnt => 25,
         :krylovdim => 8,
     
       )
