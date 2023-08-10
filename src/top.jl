@@ -97,6 +97,9 @@ function top()
     elseif ARGS[1] == "10"
       eigensolver_wrapper()
 
+    elseif ARGS[1] == "11"
+      eigenplot()
+
     else
       println("not a valid operating mode")
     

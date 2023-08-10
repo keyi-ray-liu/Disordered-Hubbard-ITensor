@@ -149,7 +149,22 @@ function NF(t, spdim, dim, Nup, Ndn, geometry)
 
 end 
 
+function eigenplot()
 
+  workdir = getworkdir()
+
+  if !isfile(workdir * "QE.h5")
+    raise(ArgumentError("Please provide the eigen basis functions"))
+  end 
+
+  staticwffile = h5open( workdir * "QE.h5")
+  staticwf=  [read(staticwffile, key, MPS ) for key in sort(keys(staticwffile), by= x-> parse(Int, x[4:end]))]
+  println( size(staticwf))
+
+  exps =  [  expect(wf, "N") for wf in staticwf]
+  writedlm( workdir * "expects", exps)
+  
+end 
 
 function eigensolver(additional_para)
 

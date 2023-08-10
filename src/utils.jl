@@ -250,7 +250,7 @@ end
 """Wrapper function for the evaluation of the std of Hamiltonian"""
 function variance(H::MPO, psi::MPS)
   @suppress begin 
-    var = inner(H, psi, H, psi) - inner(psi, H, psi) ^ 2 
+    var = inner(H, psi, H, psi) - inner(psi', H, psi) ^ 2 
     return var
   end
 end 
