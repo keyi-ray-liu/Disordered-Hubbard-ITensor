@@ -45,7 +45,7 @@ function top()
 
     println("TEST TEST TEST")
 
-    eigensolver()
+    eigensolver_wrapper()
     #QEdyna_wrapper()
     #QE("2", "0.0855")
     #eigen_overlap()

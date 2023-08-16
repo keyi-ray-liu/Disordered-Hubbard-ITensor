@@ -36,7 +36,7 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
         hop = 1.0
       end 
 
-      #println( "$j, $nn, $hop")
+      println( "$j, $nn, $hop")
       
       # Hopping
       p1 = j + head

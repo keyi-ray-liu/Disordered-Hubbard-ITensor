@@ -53,6 +53,18 @@ function get_nn(site::Int, L::Vector{Int}; snake=false, geometry ="linear")
     end 
 
 
+  # currently only available for 1D chain
+  elseif geometry == "2ndNN"
+
+    if site < total 
+      append!(nn, site + 1)
+    end
+
+    if site < total - 1
+      append!(nn, site + 2)
+    end 
+
+
   elseif geometry == "loop-pbc"
 
     if site < total
