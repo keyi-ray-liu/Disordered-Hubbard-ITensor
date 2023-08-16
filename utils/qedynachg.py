@@ -2,6 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
+from matplotlib import axes
 from matplotlib.animation import FuncAnimation
 import matplotlib.animation as animation
 import matplotlib as mpl
@@ -9,35 +10,39 @@ from matplotlib.ticker import MaxNLocator
 from scipy.optimize import curve_fit
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.ticker as mticker
-from scipy.fftpack import fft, ifft
+from scipy.fftpack import fft, ifft, fftfreq
 
-def compplot( timestep=[0.1]):
+def compplot( dim= 1 ):
 
     def animate(i):
 
         print("frame {}".format(i))
         prev = -1
         cnt = 0
-        colors = ['blue', 'purple', 'magenta', 'green']
+        colors = ['blue', 'red', 'green', 'orange']
         colorsQElim = ['black', 'brown', 'grey']
         colorsQE = ['red', 'orange', 'yellow']
 
         for j in range(num):
             
             # internal counter in case multiple data on one plot
-            if ax_pos[j] != prev:
+            if ax_pos[j] != prev or dim >1:
+
                 cnt =0 
                 prev = ax_pos[j]
                 cur_title = inputs[j]
                 ax[0][ax_pos[j]].clear()
                 ax[1][ax_pos[j]].clear()
 
+                if dim > 1:
+                    cax[j].clear()
+
             else:
                 cnt += 1
-                cur_title = cur_title + ' and ' +  inputs[j]
+                cur_title = cur_title + ' & ' +  inputs[j]
 
             #ax[j].set_ylim(lo[j], hi[j])
-
+            frame_cnt = (i + 1) * skip_frame[j] - 1
             # set QE axis
             ax[0][ax_pos[j]].set_ylim(0, 1)
             #ax[j].scatter( [1, L[j] + 4 ], data[j][i, [0, L[j] + 3]], c='red', label=r'$QE \   \ |0\rangle $')
@@ -45,31 +50,46 @@ def compplot( timestep=[0.1]):
             # plot QE in separated axis
             qe_label = [ 'Left QE', 'Right QE' ]
             ticks_loc = [0 , 1]
-            ax[0][ax_pos[j]].set_title(cur_title + 'time = {:2f}'.format(timestep[j] * i) + 'avg {}'.format(avg[j]))
-            ax[0][ax_pos[j]].scatter( [0, 1], data[j][i, [1, L[j] + 2]], c=colorsQE[cnt])
+            ax[0][ax_pos[j]].set_title(cur_title + 'time = {:.2f}'.format(timestep[j] * (frame_cnt + 1)) + 'avg {}'.format(avg[j]))
+            ax[0][ax_pos[j]].scatter( [0, 1], data[j][frame_cnt, [1, L[j] + 2]], c=colorsQE[cnt])
 
-            ax[0][ax_pos[j]].scatter( [0], leftlo[j], c=colorsQElim[cnt], label='maxQE_{}'.format(inputs[j]))
-            ax[0][ax_pos[j]].scatter( [1], righthi[j], c=colorsQElim[cnt], label='maxQE_{}'.format(inputs[j]))
+            ax[0][ax_pos[j]].scatter( [0], leftlo[j], c=colorsQElim[cnt], label='min_left_QE_{}'.format(inputs[j]))
+            ax[0][ax_pos[j]].scatter( [1], righthi[j], c=colorsQElim[cnt], label='max_right_QE_{}'.format(inputs[j]))
 
             ax[0][ax_pos[j]].xaxis.set_major_locator(mticker.FixedLocator(ticks_loc))
             ax[0][ax_pos[j]].set_xticklabels(qe_label)
 
-            x = np.arange(L[j] + avg[j] )
-            y = data[j][i, 2:L[j]+2] - gs[j]
+            y = data[j][frame_cnt, 2:L[j]+2] - gs[j]
+            if dim == 1:
+                x = np.arange(L[j] + avg[j] )
+                
 
-            # adding 0 paddings on both ends
+                # adding 0 paddings on both ends
 
-            if avg[j]:
-                padding = np.zeros(1)
-                y = (np.concatenate( (padding, y), axis=0) + np.concatenate((y, padding) , axis=0) ) / 2
+                if avg[j]:
+                    padding = np.zeros(1)
+                    y = (np.concatenate( (padding, y), axis=0) + np.concatenate((y, padding) , axis=0) ) / 2
 
-            ax[1][ax_pos[j]].scatter( x, y, c=colors[cnt], label='Chain_{}'.format(inputs[j])) 
-            ax[1][ax_pos[j]].plot(x, y, c=colors[cnt])
-            ax[1][ax_pos[j]].set_xlabel('sites')
-            ax[1][ax_pos[j]].set_ylim(lo[j], hi[j])
+                ax[1][ax_pos[j]].scatter( x, y, c=colors[cnt], label='Chain_{}'.format(inputs[j]), s=3) 
+                ax[1][ax_pos[j]].plot(x, y, c=colors[cnt])
+                ax[1][ax_pos[j]].set_xlabel('sites')
+                ax[1][ax_pos[j]].set_ylim(lo[j], hi[j])
 
-            ax[1][ax_pos[j]].set_ylabel( r'$ \langle n_i \rangle $')
-            ax[1][ax_pos[j]].xaxis.set_major_locator(MaxNLocator(integer=True))
+                ax[1][ax_pos[j]].set_ylabel( r'$ \langle n_i \rangle $')
+                ax[1][ax_pos[j]].xaxis.set_major_locator(MaxNLocator(integer=True))
+
+                ax[0][ax_pos[j]].legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),fancybox=True, shadow=True, ncol=1)
+                ax[1][ax_pos[j]].legend(loc='upper center', bbox_to_anchor=(0.5, -0.05),fancybox=True, shadow=True, ncol=1)
+
+            else:
+
+                side = int(np.sqrt( y.shape[0]))
+                y = np.reshape(y, (side, side))
+                im = ax[1][ax_pos[j]].imshow( y, vmin=lo[j], vmax=hi[j])
+                
+                #ax[1][ax_pos[j]].axis('off')
+                fig.colorbar(im, cax=cax[j], orientation='horizontal', label=r'$\langle n \rangle$')
+
 
         #ax[1][-1].legend(loc='center left', bbox_to_anchor=(1, 0.5))
         fig.tight_layout()
@@ -78,19 +98,23 @@ def compplot( timestep=[0.1]):
 
     # num of input cases
 
-    inputs = np.loadtxt('input_files', dtype=str)
-    timestep = np.loadtxt('timestep')
-    avg = np.loadtxt('avg', dtype=int)
-    ax_pos = np.loadtxt('ax', dtype=int)
+    inputs = np.loadtxt('input_files', dtype=str, ndmin=1)
+    timestep = np.loadtxt('timestep', ndmin=1)
+    avg = np.loadtxt('avg', dtype=int, ndmin=1)
+    ax_pos = np.loadtxt('ax', dtype=int, ndmin=1)
+    skip_frame = np.loadtxt( 'skip_frame', dtype=int, ndmin=1)
+    gs_tag = np.loadtxt('gs_tag', dtype=str, ndmin=1)
 
     num = inputs.shape[0]
+
     outdir = os.getcwd() + '/vids/' 
 
-    if num != avg.shape[0] or num!= timestep.shape[0] or num!= ax_pos.shape[0]:
+    if num != avg.shape[0] or num!= timestep.shape[0] or num!= ax_pos.shape[0] or num!= skip_frame.shape[0] or num!= gs_tag.shape[0]:
         raise ValueError('input dim does not match')
     
     # update: separated QE and actual
-    fig, ax = plt.subplots(2, ax_pos[-1] + 1, figsize=(5 * num + 1,9))
+    #fig, ax = plt.subplots(2, ax_pos[-1] + 1, figsize=(4 * num + 1, 12))
+    fig, ax = plt.subplots(2, ax_pos[-1] + 1, figsize=(32, 18))
 
     if ax_pos[-1] + 1 == 1:
         ax = [ [ax[0]],[ax[1]]]
@@ -102,20 +126,24 @@ def compplot( timestep=[0.1]):
     L = [0] * num
     hi = np.zeros(num)
     lo = np.zeros(num)
-    
     leftlo = np.ones(num)
     righthi = np.zeros(num)
+
+    if dim >1:
+        cax = []
     
     for i in range(num):
         dirs[i] = os.getcwd() + '/' + inputs[i ] + '/'
         data[i] = np.loadtxt(dirs[i] + 'expN')
 
-        int_tag = 'nonint' if 'nonint' in inputs[i] else ''
-
         frames[i], L[i] = data[i].shape
         L[i] -= 4
 
-        gs[i] = np.loadtxt( os.getcwd() + '/gs{}{}'.format(L[i], int_tag))
+    common_frame = min( [ frames[i] // skip_frame[i] for i in range(num)])
+    print(common_frame)
+
+    for i in range(num):
+        gs[i] = np.loadtxt( os.getcwd() + '/gs{}'.format(gs_tag[i]))
 
         padding = np.zeros( (frames[i], 1))
         temp_y = data[i][:, 2:L[i]+ 2] -  np.tile(gs[i], (frames[i], 1))
@@ -126,16 +154,19 @@ def compplot( timestep=[0.1]):
         hi[i] = np.amax(temp_y)
         lo[i] = np.amin(temp_y)
 
-        leftlo[i] = np.amin( data[i][:, 1])
-        righthi[i] = np.amax( data[i][:, L[i] + 2])
+        cutoff = min(common_frame * skip_frame[i], frames[i])
+        leftlo[i] = np.amin( data[i][:cutoff, 1])
+        righthi[i] = np.amax( data[i][:cutoff, L[i] + 2])
+
+        if dim >1:
+            divider = make_axes_locatable(ax[1][ax_pos[i]])
+            cax.append( divider.append_axes('bottom', size='10%',  pad=0.05) )
 
     #box = ax[-1].get_position()
     #ax[-1].set_position([box.x0, box.y0, box.width * 0.9, box.height])
 
-    frame = min(frames)
 
-    print(frame)
-    anim = FuncAnimation(fig, animate, frames= frame, interval=100, repeat=False)
+    anim = FuncAnimation(fig, animate, frames= common_frame, interval=100, repeat=False)
     #plt.show()
 
     #mpl.rcParams['animation.ffmpeg_path'] = os.getcwd() + '/ffmpeg'
@@ -150,97 +181,37 @@ def compplot( timestep=[0.1]):
         writervideo = animation.HTMLWriter()
         anim.save( outdir + 'Dyna{}.html'.format( '_'.join(signature)), writer=writervideo)
 
-def compplot2d( timestep=0.1, timechange=1e10, comment=""):
 
-    def animate(i):
+def expecteigen():
 
-        for j in range(num):
-            
-            for k in range(3):
-                ax[j * 3 + k].clear()
-
-            cax[j].clear()
-
-            raw = data[j][i]
-
-            chain = raw [ 2:-2]
-            chain = np.reshape(chain, shapes[j])
-
-            ax[j * 3].scatter( [0], [raw[0]], label='QE1gs')
-            ax[j * 3].scatter( [1], [raw[1]], label='QE1ex')
-            ax[j * 3].set_ylim(0, 1)
-
-            ax[j * 3].set_xticks([0, 1], ['QE1gs', 'QE1ex'])
-
-            ax[j * 3 + 2].scatter( [1], [raw[-1]], label='QE2gs')
-            ax[j * 3 + 2].scatter( [0], [raw[-2]], label='QE2ex')
-
-            ax[j * 3 + 2].set_xticks([0, 1], ['QE2ex', 'QE2gs'])
-            ax[j * 3 + 2].set_ylim(0, 1)
-            
-
-            im = ax[j *3 + 1].imshow( chain)
-            
-            if i * timestep < timechange:
-                color = 'black'
-
-            else:
-                color = 'red'
-
-            ax[j * 3 + 1].set_title('time = {:2f}'.format(timestep * i), color=color)
-            ax[j * 3 + 1].axis('off')
-            fig.colorbar(im, cax=cax[j], orientation='horizontal', label=r'$\langle n \rangle$')
-            
-            
-
-        fig.suptitle(comment)
-
-    input = sys.argv[2:]
-
-    outdir = os.getcwd() + '/vids/' 
-    num = len(input) 
-    fig, ax = plt.subplots( num , 3, figsize=(15, 5 * num + 1), width_ratios=[1, 10, 1] * num)
-
-
-    dirs = [''] * num
-    data = [[]] * num
-    frames = [0] * num
-    shapes = []
-    cax = []
+    file = sys.argv[2]
+    raw = np.loadtxt( file + '/expeigen')
     
-    for i in range(num):
-        dirs[i] = os.getcwd() + '/' + input[i] + '/'
-        data[i] = np.loadtxt(dirs[i] + 'expN')
+    row = 3
+    col = 5
 
-        frames[i], shape = data[i].shape
-        shape = (2, shape//2 - 2)
+    fig, ax = plt.subplots(row, col, figsize = (5 * col, 5 * row))
 
+    cnt = 0
+    for ex in raw:
 
-        divider = make_axes_locatable(ax[i * 3 + 1])
-        cax.append( divider.append_axes('bottom', size='10%',  pad=0.05) )
+        r = cnt // col
+        c = cnt % col
 
-        
-        shapes.append( shape)
+        cur_ax : axes.Axes = ax[r][c]
 
-    print(cax)
-    print(shapes)
+        chain = np.arange(1, len(ex) - 3)
+        qe = [0, len(ex) - 3]
+        cur_ax.scatter(chain, ex[2:-2], color = 'red', s= 5)
+        cur_ax.scatter( qe, ex[ [1, -1] ], color ='orange')
 
-    box = ax[-1].get_position()
-    ax[-1].set_position([box.x0, box.y0, box.width * 0.9, box.height])
+        cur_ax.set_ylabel(r'$ \langle \hat{n} \rangle$')
+        cur_ax.set_xlabel('site')
 
-    frame = min(frames)
+        cur_ax.set_title('Eigen state {}'.format(cnt))
 
-    print(frame)
-    anim = FuncAnimation(fig, animate, frames= frame, interval=100, repeat=False)
-    #plt.show()
-
-    #mpl.rcParams['animation.ffmpeg_path'] = os.getcwd() + '/ffmpeg'
-
-    writervideo = animation.FFMpegWriter(fps=15)
-    anim.save( outdir + 'Dyna{}.mp4'.format( '_'.join(input)), writer=writervideo)
-
-    #writervideo = animation.HTMLWriter()
-    #anim.save( outdir + 'Dyna{}.html'.format( '_'.join(input[1:])), writer=writervideo)
+        cnt += 1
+    fig.savefig( 'plots/eigen{}.pdf'.format(file))
 
 
 def bonds():
@@ -273,42 +244,55 @@ def bonds():
 
 def ft():
 
+    def dephasing(t, a, c, d, off):
+        return a * np.cos(  t * c) * np.exp( - t/d) + off
+    
+    
     file_dir = os.getcwd() + '/' + sys.argv[2] + '/'
+    plot_dir = os.getcwd() + '/vids/'
     data= np.loadtxt(file_dir + 'expN')
 
-    tseries = data[:,3]
-    X = fft(tseries)
+    timestep = float(sys.argv[3])
+    T = 1/timestep
+    tseries = data[:,1]
+    N = tseries.shape[0]
+    
+    times = np.arange(N) * timestep
 
+    
+    X = fft(tseries)
+    paras, _ = curve_fit(dephasing, times, tseries, [1, 0.01, 1000, 0.5])
     #print(X)
     N = len(X)
-    allfreq = np.arange(N)
-    posfreq = np.arange(1, N//2 + 1)
+    #posfreq = np.arange(1, N//2 + 1)
 
-    fig, ax = plt.subplots(4, figsize=(10, 20))
+    posfreq = fftfreq(N, T)[1:N//2+1]
+    
 
-    ax[0].scatter(np.arange(tseries.shape[0]), tseries)
+    fig, ax = plt.subplots(3, figsize=(10, 15))
+
+    ax[0].scatter(times, tseries)
+    ax[0].plot( times, dephasing(times, *paras), label='${:.2f} \cos ({:.5f} * t) * \exp (-t/{:.2f}) + {:.2f}$'.format(*paras), color='red')
     ax[0].set_title('original oscialltion vs. t')
     ax[0].set_ylabel( r'$ \langle \hat{n}_i \rangle $')
     ax[0].set_xlabel( 'time (1/hopping)')
+    ax[0].legend()
 
-    ax[1].stem(posfreq, np.abs(X[1: N //2 + 1]), 'b', \
-            markerfmt=" ", basefmt="-b")
+    #ax[1].stem(posfreq, np.abs(X[1: N //2 + 1]), 'b', markerfmt=" ", basefmt="-b")
+
+    ax[1].plot(posfreq, np.abs(X[1: N //2 + 1]))
+    ax[1].set_xlim(0, 0.2)
     ax[1].set_xlabel('Freq (1/t)')
     ax[1].set_ylabel('FFT Amplitude')
     ax[1].set_title('FFT')
 
 
-    ax[2].plot( allfreq, ifft(X))
-    ax[2].set_title('Inverse FFT')
-    ax[2].set_ylabel( r'$ \langle \hat{n}_i \rangle $')
-    ax[2].set_xlabel( 'time (1/hopping)')
-
-    ax[3].scatter( 1/posfreq * N, np.abs(X[1: N//2 + 1]))
-    ax[3].set_ylabel('FFT Amplitude')
-    ax[3].set_xlabel( 'time interval of pulse (1/t)')
+    ax[2].scatter( 1/posfreq * N, np.abs(X[1: N//2 + 1]))
+    ax[2].set_ylabel('FFT Amplitude')
+    ax[2].set_xlabel( 'time interval of pulse (1/t)')
 
     fig.tight_layout()
-    fig.savefig('fft.pdf')
+    fig.savefig(plot_dir + 'fft_{}.pdf'.format(sys.argv[2]))
 
 
 def overlap():
@@ -351,10 +335,10 @@ if __name__ == '__main__':
     #comment = "Timechange at {}, Left: bond dim capped at 150. Right: bond dim capped at 300".format(timechange)
 
     if control == 1:
-        compplot( )
+        compplot( dim=1)
 
     elif control == 2:
-        compplot2d(timestep=0.1)
+        compplot( dim =2)
 
     elif control == 3:
         bonds()
@@ -367,3 +351,6 @@ if __name__ == '__main__':
 
     elif control == 6:
         overlap_gs()
+
+    elif control == 7:
+        expecteigen()

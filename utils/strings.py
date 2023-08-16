@@ -29,8 +29,9 @@ def gen_op(L, onesiteop, twositeop):
 
     for op1, op2, int_st, int_range in twositeop:
 
+
         if len(int_st) != int_range:
-            print('not enough int parameters for int_range')
+            raise Exception('not enough int parameters for int_range')
 
         A[cnt][0] = [op1]
         end[cnt][0] = [op1 + '_{{{}}}'.format(L)]
@@ -52,7 +53,7 @@ def gen_op(L, onesiteop, twositeop):
     start[0][0] = [ onesiteop[0]]
     end[-1][0] = [ onesiteop[0] + '_{{{}}}'.format(L)]
 
-    print(start, A, end)
+    #print(start, A, end)
     return start, A, end
 
 def mul(A, B, L, idflag):
@@ -125,13 +126,13 @@ def tostring(arr):
 def init(L):
 
     #add onesite, can only be one!
-    onesiteop = ['h(r) \hat{{n}}']
+    onesiteop = ['h']
+    #onesiteop = ['0']
 
     # add two-site operator, following the format: op1, op2, array of interaction strength, range of the interaction
     twositeop = [ ['c', 'c^{{\dagger}}', ['t'], 1], \
                     ['c^{{\dagger}}', 'c', ['t'], 1], \
-                        ['\hat{{n}}', '\hat{{n}}', [r"\frac{1}{r_{" + str(k + 1) + "}}" for k in range(4)], 4], \
-                            ['\hat{{T}}', '\hat{{T}}', [r"\frac{1}{t_{" + str(k + 1) + "}}" for k in range(2)], 2],]
+                        ['\hat{{n}}', '\hat{{n}}', [r'\frac{{1}}{{r_{{{}}}}}'.format(i) for i in range(1, L )], L - 1]]
     start, A, end = gen_op(L, onesiteop, twositeop)
 
 
@@ -156,6 +157,8 @@ def construct(start, A, end, L, idflag):
 
 
 def plotall(st, start, A, end):
+
+    print(st)
 
     mpl.rcParams['text.latex.preamble'] = r"\usepackage{{amsmath}}"
     mpl.rcParams['text.usetex'] = True
@@ -185,6 +188,9 @@ def plotall(st, start, A, end):
         res += r'\end{pmatrix}$'
         return res
 
+    print("start", convert(start))
+    print("A", convert(A))
+    print("end", convert(end))
 
     ax.text(0, 0.3, 'Start = {}, A = {}, end = {}'.format(convert(start), convert(A), convert(end)))
     #ax.text(0, 0.3, r'$\begin{pmatrix} ' + r'1 & 2 & 3 \end{pmatrix}$')
@@ -192,7 +198,7 @@ def plotall(st, start, A, end):
 
 if __name__ == '__main__':
 
-    L = 9
+    L = 7
 
     start, A, end = init(L)
     idflag = True
