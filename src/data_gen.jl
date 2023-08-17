@@ -57,7 +57,7 @@ function QE(additional_para)
 end 
 
 """Calculating QE dynamics using various methods"""
-function QE_dynamic(additional_para)
+function QE_dynamic(simu_para, time_para)
 
   #TE para
   product_state = false
@@ -67,9 +67,9 @@ function QE_dynamic(additional_para)
   energy = additional_para[:QEen]
   QN = additional_para[:QN]
 
-  τ = 0.1
-  start = 0.1
-  fin = 1000.0
+  τ = time_para["τ"]
+  start = time_para["start"]
+  fin = time_para["fin"]
   
   if isnothing(energy)
     ex = 2
@@ -81,7 +81,7 @@ function QE_dynamic(additional_para)
     # if there no target file, we perform a single GS search
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
 
-    paras = setpara(;additional_para..., ex=ex, output = output, headoverride= QN + 1)
+    paras = setpara(;simu_para..., ex=ex, output = output, headoverride= QN + 1)
     main(paras)
   end 
 
@@ -90,7 +90,7 @@ function QE_dynamic(additional_para)
     energy = plasmon_energy[end] - plasmon_energy[end - 1]
   end 
   
-  paras = setpara(;additional_para..., τ=τ, QEen=energy, dynamode="none", output="TE")
+  paras = setpara(;simu_para..., τ=τ, QEen=energy, dynamode="none", output="TE")
   # process wf
 
   if !product_state
@@ -166,34 +166,32 @@ function eigenplot()
   
 end 
 
-function eigensolver(additional_para)
+function eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, time_para)
 
   workdir = getworkdir()
-
+  
+  QE_mul = QE_internal_para["QE_mul"]
+  pl_level = QE_internal_para["pl_level"]
   #Step 1
 
   if !isfile( workdir * "GSGapex")
     println("GS gap file not found, start cal")
-    GSGap(additional_para)
+    GSGap(GS_para)
   else
     println("GS gap file already exists")
   end 
 
   plasmon_energy = readdlm(workdir * "GSGapex" )
-  QEen = plasmon_energy[end] - plasmon_energy[end - 1]
-
+  QEen = plasmon_energy[pl_level] - plasmon_energy[1]
+  QEen *= QE_mul
   #Step 2
 
-  additional_para[:QEen]= QEen
-  additional_para[:ex] = 4
-  additional_para[:N] = 6
-  additional_para[:QE] = 2
-  additional_para[:QN] = true
-  additional_para[:screening_qe] = 0.2
+  QE_para[:QEen]= QEen 
+  dyna_para[:QEen] = QEen
 
   if !isfile( workdir * "QE.h5")
     println("QE file not found, start cal")
-    QE(additional_para)
+    QE(QE_para)
   else
     println("QE file already exists")
   end 
@@ -209,10 +207,7 @@ function eigensolver(additional_para)
 
   #Step 4
 
-  additional_para[:dynamode]= "left"
-  additional_para[:TEmethod] = "eigen-occ"
-
-  QE_dynamic(additional_para)
+  QE_dynamic(dyna_para, time_para)
   gs_occ()
 
 end 

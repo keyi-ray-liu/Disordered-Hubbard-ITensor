@@ -106,7 +106,6 @@ function cal_tcd(ψ1, ψ2)
 
   for i in 1:L
     #tcd[ i] = inner( ψ1', op( operator, s2, i), ψ2)
-    println(i)
 
     Op = op( operator, s2, i)
     Op /= norm(Op)

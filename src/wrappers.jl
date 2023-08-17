@@ -39,7 +39,7 @@ function QEdyna_wrapper()
         :L => 120,
         :N => 6,
         :sweepdim => 300,
-        :sweepcnt => 50
+        :sweepcnt => 50,
         :QE => 2,
         :QEen => nothing,
         :dynamode => "left",
@@ -49,24 +49,55 @@ function QEdyna_wrapper()
         :type => "Fermion",
         :screening => 0.0,
         :krylovdim => 8,
-        :τ=>0.1,
         :QN=>true
     )
 
-    QE_dynamic(para)
+    time_para = Dict(
+        "τ" => 0.1,
+        "start" => 0.1,
+        "fin" => 100.0
+    )
+
+    QE_dynamic(para, time_para)
 end 
 
 
 function eigensolver_wrapper()
 
-    additional_para = Dict{Any, Any}(
-        :L => 12,
-        :N => 6,
+    GS_para = Dict{Any, Any}(
+        :L => 120,
+        :N => 60,
         :sweepdim => 300,
         :sweepcnt => 25,
         :krylovdim => 8,
-    
+        :QN => true
       )
 
-    eigensolver(additional_para)
+    QE_internal_para = Dict(
+        "QE_mul" => 1,
+        "pl_level" => 2
+    )
+
+    QE_para = deepcopy(GS_para)
+
+    QE_para[:ex] = 4
+    QE_para[:N] = 60
+    QE_para[:QE] = 2
+    QE_para[:screening_qe] = 0.2
+
+    dyna_para = deepcopy(QE_para)
+    dyna_para[:dynamode]= "left"
+    dyna_para[:TEmethod] = "eigen-occ"
+
+    time_para = Dict(
+        "τ" => 0.1,
+        "start" => 0.1,
+        "fin" => 100.0
+    )
+
+    println(GS_para)
+    println(QE_para)
+    println(dyna_para)
+    
+    eigensolver(additional_para, QE_internal_para, QE_para, dyna_para, time_para)
 end 

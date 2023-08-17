@@ -325,6 +325,7 @@ function load_eigen(ψ)
 
   overlaps = [ inner(ψ', staticwf[i]) for i in eachindex(staticwf)]
   println( "overlaps:", overlaps)
+  writedlm( prefix * "overlaps", overlaps)
   
   println( "overlap sum:", sum( abs2.(overlaps)))
   return staticenergy, staticwf, overlaps
