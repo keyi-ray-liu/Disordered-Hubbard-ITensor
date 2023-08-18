@@ -64,8 +64,8 @@ function QE_dynamic(simu_para, time_para)
   workdir = getworkdir()
   output = "target"
 
-  energy = additional_para[:QEen]
-  QN = additional_para[:QN]
+  energy = simu_para[:QEen]
+  QN = simu_para[:QN]
 
   τ = time_para["τ"]
   start = time_para["start"]

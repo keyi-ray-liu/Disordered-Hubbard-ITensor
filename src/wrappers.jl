@@ -99,5 +99,5 @@ function eigensolver_wrapper()
     println(QE_para)
     println(dyna_para)
     
-    eigensolver(additional_para, QE_internal_para, QE_para, dyna_para, time_para)
+    eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, time_para)
 end 
