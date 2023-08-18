@@ -300,6 +300,33 @@ function linsolvemeasure!(obs::DMRGObserver; kwargs...)
   end
 end
 
+"""
+Load QE file
+"""
+function load_qe()
+
+  prefix = getworkdir()
+
+  if !isfile(prefix * "QE.h5") 
+    error(ArgumentError("Please provide the eigen basis function"))
+  end 
+
+  if !isfile(prefix * "QEex")
+    error(ArgumentError("Please provide the eigen basis energy"))
+  end 
+
+  staticenergy = readdlm( prefix * "QEex")
+
+  staticwf::Vector{MPS} = []
+  staticwffile = h5open( prefix * "QE.h5")
+
+  for key in sort(keys(staticwffile), by= x-> parse(Int, x[4:end]))
+    append!(staticwf, [read(staticwffile, key, MPS )])
+  end 
+
+  return staticwf, staticenergy
+
+end 
 
 """
 Load eigenvectors and eigenvalues for the static hamiltonian eigenstates. \n
@@ -307,21 +334,8 @@ Return staticenergy, staticwf, overlaps
 """
 function load_eigen(ψ)
 
-
   prefix = getworkdir()
-
-  if !isfile(prefix * "QE.h5") || !isfile(prefix * "QEex")
-    raise(ArgumentError("Please provide the eigen basis functions"))
-  end 
-
-  staticenergy = readdlm( prefix * "QEex")
-
-  staticwf = []
-  staticwffile = h5open( prefix * "QE.h5")
-
-  for key in sort(keys(staticwffile), by= x-> parse(Int, x[4:end]))
-    append!(staticwf, [read(staticwffile, key, MPS )])
-  end 
+  staticwf, staticenergy = load_qe()
 
   overlaps = [ inner(ψ', staticwf[i]) for i in eachindex(staticwf)]
   println( "overlaps:", overlaps)

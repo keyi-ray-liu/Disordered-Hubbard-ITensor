@@ -4,6 +4,7 @@ function GS_wrapper()
     para = Dict(
         :L => 120,
         :N => 6,
+        :ex => 2,
         :sweepdim => 300,
         :sweepcnt => 50,
         :krylovdim => 8
@@ -67,6 +68,7 @@ function eigensolver_wrapper()
     GS_para = Dict{Any, Any}(
         :L => 120,
         :N => 60,
+        :ex => 3,
         :sweepdim => 300,
         :sweepcnt => 25,
         :krylovdim => 8,
@@ -83,16 +85,16 @@ function eigensolver_wrapper()
     QE_para[:ex] = 4
     QE_para[:N] = 60
     QE_para[:QE] = 2
-    QE_para[:screening_qe] = 0.2
+    QE_para[:screening_qe] = 0.0
 
     dyna_para = deepcopy(QE_para)
     dyna_para[:dynamode]= "left"
     dyna_para[:TEmethod] = "eigen-occ"
 
     time_para = Dict(
-        "τ" => 0.1,
-        "start" => 0.1,
-        "fin" => 100.0
+        "τ" => 1.0,
+        "start" => 1.0,
+        "fin" => 1000.0
     )
 
     println(GS_para)

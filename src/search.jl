@@ -1,15 +1,13 @@
 """Completes one iteration of searches based on the number of excited states. Will return states only when all energies are in ascending order."""
-function single_search(para::Dict, sites, disx, disy, λ)
+function single_search(para::Dict, sites, disx, disy, λ, states, energies)
   # Create N fermion indices
 
   sweepdim = para["sweepdim"]
   sweepcnt = para["sweepcnt"]
   global_cnt = 60
   ex = para["ex"]
-  energies = []
   allvars = []
   vars = []
-  states::Vector{MPS} = []
   weight = para["weight"]
   itr_dis = para["itr_dis"]
   allres = []
@@ -65,7 +63,7 @@ function single_search(para::Dict, sites, disx, disy, λ)
   #H2 = replaceprime(H2, 2 => 1)
 
 
-  cur_ex = 1
+  cur_ex = 1 + length(states)
   cnt = 1
 
   # changed to while loop for possible retracting operation

@@ -6,7 +6,7 @@ function plasmonstat(L, lam)
   lam = parse(Float64, lam)
   L = parse(Int, L)
   paras = setpara(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, weight=5.0)
-  main(paras)
+  main(paras;)
 
 
 end
@@ -36,23 +36,37 @@ function truedisorder(lam, gen)
   end
 
   paras = setpara(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, disorder=true, weight=5.0, range=5)
-  main(paras)
+  main(paras;)
 end
 
 
 function GSGap(additional_para)
 
-  paras = setpara(;additional_para...,
-   headoverride=0, ex=2, QE=0, output="GSGap")
-  main(paras)
+  paras = setpara(;additional_para..., headoverride=0, QE=0, output="GSGap")
+  main(paras;)
 
 end 
 
 """Statically solve the QE system"""
-function QE(additional_para)
+function QE(QE_para; check_flag = false)
 
-  paras = setpara(;additional_para..., headoverride=0, output="QE")
-  main(paras)
+  paras = setpara(;QE_para..., headoverride=0, output="QE")
+
+  if check_flag
+    states, energies = load_qe()
+    num_state = length(states)
+    
+    if length(states) < paras["ex"]
+      println("number of existing excited states $num_state smaller than required, starting QE")
+      main(paras; states=states, energies=energies)
+
+    else
+      println("number of existing excited states $num_state already satisfies requirement")
+    end 
+
+  else
+    main(paras;)
+  end 
 
 end 
 
@@ -82,7 +96,7 @@ function QE_dynamic(simu_para, time_para)
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
 
     paras = setpara(;simu_para..., ex=ex, output = output, headoverride= QN + 1)
-    main(paras)
+    main(paras;)
   end 
 
   if isnothing(energy)
@@ -145,7 +159,7 @@ function NF(t, spdim, dim, Nup, Ndn, geometry)
   paras = setpara(L=L, N=N, ex=ex, int_ee=0, int_ne=0, QE=0, t=t,
   guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, type="Electron", U=4.0, snake=snake, 
   geometry =geometry, krylovdim = krylovdim)
-  main(paras)
+  main(paras;)
 
 end 
 
@@ -193,7 +207,8 @@ function eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, time_para)
     println("QE file not found, start cal")
     QE(QE_para)
   else
-    println("QE file already exists")
+    println("QE file already exists, checking if needs more states")
+    QE(QE_para; check_flag = true)
   end 
 
   #Step 3

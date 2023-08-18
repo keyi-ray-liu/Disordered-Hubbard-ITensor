@@ -45,7 +45,9 @@ function top()
 
     println("TEST TEST TEST")
 
-    eigensolver_wrapper()
+    paras = setpara()
+    main(paras;)
+    #eigensolver_wrapper()
     #QEdyna_wrapper()
     #QE("2", "0.0855")
     #eigen_overlap()

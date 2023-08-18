@@ -4,7 +4,7 @@ function getmaxsweep(;L=12, tol=1e-11)
 
   output = @capture_out begin
     paras = setpara(L=L, N=Int(L//2), sweepdim=maxsweepdim)
-    main(paras)
+    main(paras;)
   end
 
   maxsweep = stringmaxproc(output, tol)

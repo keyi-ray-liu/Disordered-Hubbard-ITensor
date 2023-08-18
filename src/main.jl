@@ -3,7 +3,7 @@ Most are self-explanatory, self_nuc determines a constant shift in the final ene
 guess determines if use a guess initial wf instead of a random one, manual indicates 
 if implement the 2D flattening manually
 """
-function main(para)
+function main(para; states::Vector{MPS} = MPS[], energies = [])
 
   L = para["L"]
   disorder = para["disorder"]
@@ -16,10 +16,15 @@ function main(para)
 
   # in this version, jobs are parallelized and BLAS is not 
   λ = - 20.0
-  sites = init_site(para)
+
+  if states == []
+    sites = init_site(para)
+  else
+    sites = siteinds( states[1])
+  end
 
   println("type of sites", typeof(sites))
-  energy, states, allres, allvars, vars= single_search(para, sites, disx[1, :], disy[1, :], λ)
+  energy, states, allres, allvars, vars= single_search(para, sites, disx[1, :], disy[1, :], λ, states, energies)
 
   gaps = energy[2:end] - energy[1:end-1]
   
