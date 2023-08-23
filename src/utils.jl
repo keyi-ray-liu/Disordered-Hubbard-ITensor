@@ -315,16 +315,25 @@ function load_qe()
     error(ArgumentError("Please provide the eigen basis energy"))
   end 
 
-  staticenergy = readdlm( prefix * "QEex")
+  if !isfile(prefix * "QEvar")
+    error(ArgumentError("Please provide the eigen basis variance"))
+  end 
 
-  staticwf::Vector{MPS} = []
+  staticenergy = vec(readdlm( prefix * "QEex"))
+
+  staticwf= MPS[]
   staticwffile = h5open( prefix * "QE.h5")
+  staticvar = vec(readdlm( prefix * "QEvar"))
 
   for key in sort(keys(staticwffile), by= x-> parse(Int, x[4:end]))
     append!(staticwf, [read(staticwffile, key, MPS )])
   end 
 
-  return staticwf, staticenergy
+  if length(staticwf) != length(staticenergy) || length(staticwf) != length(staticvar)
+    error(ArgumentError("QE wf and energy or var length mismatch!"))
+  end 
+
+  return staticwf, staticenergy, staticvar
 
 end 
 
@@ -335,7 +344,7 @@ Return staticenergy, staticwf, overlaps
 function load_eigen(ψ)
 
   prefix = getworkdir()
-  staticwf, staticenergy = load_qe()
+  staticwf, staticenergy, _ = load_qe()
 
   overlaps = [ inner(ψ', staticwf[i]) for i in eachindex(staticwf)]
   println( "overlaps:", overlaps)

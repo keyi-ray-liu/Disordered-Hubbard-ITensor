@@ -102,6 +102,9 @@ function top()
     elseif ARGS[1] == "11"
       eigenplot()
 
+    elseif ARGS[1] == "12"
+      time_corr_plot()
+      
     else
       println("not a valid operating mode")
     

@@ -92,7 +92,7 @@ function time_evolve(ψ, sites, paras, start, fin)
             res = []
         end 
         
-        tcd_dict = load_tcd()
+        
         for dt in start:τ:fin
 
             println("$method time : $dt")
@@ -101,13 +101,16 @@ function time_evolve(ψ, sites, paras, start, fin)
             if method == "eigen-wf"
                 
                 teeigenwf = phase .* overlaps .* staticwf
-                totalwf = sum(teeigenwf; cutoff=cutoff)
+                totalwf = add(teeigenwf...; cutoff=cutoff)
+
+                println("overlap now: ", abs(inner( totalwf', ψ)))
                 wf = h5open( prefix * "t$method" * string(dt) * ".h5", "w")
                 write(wf, "psi", totalwf)
                 close(wf)
 
             elseif method == "eigen-occ"
                 
+                tcd_dict = load_tcd()
                 phased_overlap = phase .* overlaps
                 occ = get_eigen_occ(tcd_dict, phased_overlap)
                 append!(res, [occ])

@@ -138,6 +138,7 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   scales = para["scales"]
   scr = para["screening_int"]
   type = para["type"]
+  range = para["range"]
 
   λ_ne = λ_ne * CN / Ltotal
 
@@ -164,7 +165,7 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
       cursum = -λ_ne / ζ_ne
     end
 
-    for l=1 :Ltotal
+    for l= max(1, j - range) : min(Ltotal, j + range)
 
       r = dis(j, l, L, scales, disx, disy)
 
@@ -199,6 +200,7 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   scales = para["scales"]
   type = para["type"]
   scr = para["screening_qe"]
+  range = para["range"]
 
   Ltotal = prod(L)
 
@@ -244,7 +246,18 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
 
   cavg = CN / Ltotal
   # dipole
-  for i = 1 : Ltotal
+  if which == 1
+
+    qe_begin = 1
+    qe_end = min(range, Ltotal)
+
+  elseif which == 2
+
+    qe_begin = max(Ltotal - range, 1)
+    qe_end = Ltotal 
+  end 
+
+  for i = qe_begin : qe_end
     
     r = dis(i, QEloc[which], L, scales, disx, disy)
 

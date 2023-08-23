@@ -7,7 +7,8 @@ function GS_wrapper()
         :ex => 2,
         :sweepdim => 300,
         :sweepcnt => 50,
-        :krylovdim => 8
+        :krylovdim => 8,
+        :range => 10000
     )
 
     GSGap(para)
@@ -23,11 +24,12 @@ function QE_wrapper(num, energy)
         :L => 120,
         :N => 6,
         :sweepdim => 300,
-        :sweepcnt => 50
+        :sweepcnt => 50,
         :QE => num,
         :QEen => energy,
         :ex => 25,
         :krylovdim => 8
+        :range => 10000
     )
 
     QE(para)
@@ -72,7 +74,8 @@ function eigensolver_wrapper()
         :sweepdim => 300,
         :sweepcnt => 25,
         :krylovdim => 8,
-        :QN => true
+        :QN => true,
+        :range => 10000
       )
 
     QE_internal_para = Dict(

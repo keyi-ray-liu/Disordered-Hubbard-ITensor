@@ -53,12 +53,12 @@ function QE(QE_para; check_flag = false)
   paras = setpara(;QE_para..., headoverride=0, output="QE")
 
   if check_flag
-    states, energies = load_qe()
+    states, energies, vars = load_qe()
     num_state = length(states)
     
     if length(states) < paras["ex"]
       println("number of existing excited states $num_state smaller than required, starting QE")
-      main(paras; states=states, energies=energies)
+      main(paras; states=states, energies=energies, vars = vars)
 
     else
       println("number of existing excited states $num_state already satisfies requirement")
@@ -212,6 +212,7 @@ function eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, time_para)
   end 
 
   #Step 3
+
   if length(glob("TCD*ex*", workdir)) == 0
     println("TCD file not found, start cal")
     cal_observe(key="QE.h5")
@@ -224,5 +225,32 @@ function eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, time_para)
 
   QE_dynamic(dyna_para, time_para)
   gs_occ()
+
+end 
+
+
+function time_corr_plot()
+
+  workdir = getworkdir()
+
+  files = glob("teigen-wf*.h5", workdir)
+
+  if length(files) == 0
+    error(ArgumentError("no time evolved wf found"))
+  end 
+
+  get_time(x) = parse(Float64, x[ length(workdir) + length("teigen-wf" ) + 1:end-3])
+  sort!(files, by = x -> get_time(x))
+
+  for file in files
+
+    println("calculating file", file)
+    wf = h5open(file, "r")
+    ψ = read(wf, "psi", MPS)
+
+    NN_corr = correlation_matrix(ψ, "N", "N")
+    writedlm( workdir * "NN_corr" * string(get_time(file)), NN_corr )
+  end 
+
 
 end 
