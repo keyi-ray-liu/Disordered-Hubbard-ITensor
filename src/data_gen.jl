@@ -229,9 +229,13 @@ function eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, time_para)
 end 
 
 
-function time_corr_plot()
+function time_corr_plot(paras)
 
   workdir = getworkdir()
+
+  op1 = paras["op1"]
+  op2 = paras["op2"]
+  tag = paras["tag"]
 
   files = glob("teigen-wf*.h5", workdir)
 
@@ -248,8 +252,8 @@ function time_corr_plot()
     wf = h5open(file, "r")
     ψ = read(wf, "psi", MPS)
 
-    NN_corr = correlation_matrix(ψ, "N", "N")
-    writedlm( workdir * "NN_corr" * string(get_time(file)), NN_corr )
+    NN_corr = abs.(correlation_matrix(ψ, op1, op2))
+    writedlm( workdir * tag * "_corr" * string(get_time(file)), NN_corr )
   end 
 
 

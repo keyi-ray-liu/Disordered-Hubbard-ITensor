@@ -106,3 +106,15 @@ function eigensolver_wrapper()
     
     eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, time_para)
 end 
+
+
+function corr_wrapper()
+
+    para = Dict{Any, Any}(
+        "op1" => "Cdag",
+        "op2" => "C",
+        "tag" => "CC"
+    )
+
+    time_corr_plot(para)
+end
