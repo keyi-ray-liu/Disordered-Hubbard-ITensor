@@ -5,7 +5,7 @@ function plasmonstat(L, lam)
 
   lam = parse(Float64, lam)
   L = parse(Int, L)
-  paras = setpara(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, weight=5.0)
+  paras = setpara(L=L, ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, weight=5.0)
   main(paras;)
 
 
@@ -35,7 +35,7 @@ function truedisorder(lam, gen)
     cases, L = size(raw)
   end
 
-  paras = setpara(L=L, N=div(L, 2), ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, disorder=true, weight=5.0, range=5)
+  paras = setpara(L=L, ex=22, int_ee=lam, int_ne=lam, sweepcnt=100, disorder=true, weight=5.0, range=5)
   main(paras;)
 end
 
@@ -71,19 +71,19 @@ function QE(QE_para; check_flag = false)
 end 
 
 """Calculating QE dynamics using various methods"""
-function QE_dynamic(simu_para, time_para)
+function QE_dynamic(simu_para, additional_para)
 
   #TE para
-  product_state = false
+  product_state = additional_para["product_state"]
   workdir = getworkdir()
   output = "target"
 
   energy = simu_para[:QEen]
   QN = simu_para[:QN]
 
-  τ = time_para["τ"]
-  start = time_para["start"]
-  fin = time_para["fin"]
+  τ = additional_para["τ"]
+  start = additional_para["start"]
+  fin = additional_para["fin"]
   
   if isnothing(energy)
     ex = 2
@@ -147,7 +147,7 @@ function NF(t, spdim, dim, Nup, Ndn, geometry)
 
   L = [dim for _ in 1:spdim]
   Nupdn = 0
-  N = [Nup, Ndn, Nupdn]
+  N = [Nup, Ndn, Nupdn, 1]
   ex = 1
   dim = 1000
   cnt = 120
@@ -255,6 +255,35 @@ function time_corr_plot(paras)
     NN_corr = abs.(correlation_matrix(ψ, op1, op2))
     writedlm( workdir * tag * "_corr" * string(get_time(file)), NN_corr )
   end 
+
+
+end 
+
+
+function SD_dynamics(additional_para, sd_hop, time_para)
+
+
+  L = additional_para[:L]
+  Ltotal = prod(L)
+  if length(L) == 1
+    sd_loc = [ [-1.0], [Ltotal]]
+    source_site = 1
+    drain_site = Ltotal
+  else
+    y = (minimum(L) - 1) / 2
+    sd_loc = [ [y, -1.0 ], [y, maximum(L)]]
+    source_site = div(L, 2) + 1
+    drain_site = Ltotal - div(L, 2)
+  end 
+
+  sd_hop["sd_loc"] = sd_loc
+  sd_hop["source_site"] = source_site
+  sd_hop["drain_site"] = drain_site
+
+  additional_para[:sd_hop] = sd_hop
+
+  QE_dynamic(additional_para, time_para)
+
 
 
 end 

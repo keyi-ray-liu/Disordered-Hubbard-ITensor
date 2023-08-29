@@ -4,13 +4,15 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
   guess=false, manual=false, itr_dis=[1.0], range=10000, noise=true, method="DMRG", QE=0, scales=[1.0], 
   QN=true,  QEen=1.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
   dynamode="none", TEcutoff=1E-8, TEdim=500, TEmethod="TEBD", product_state=false, TEBDfactor=2,
-  τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3, geometry = "linear", spec_hop_struct = Dict(),
-  screening_int=0.0, screening_qe=0.0)
+  τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3, geometry = "linear", spec_hop_struct = Dict{Int64, Float64}(),
+  screening_int=0.0, screening_qe=0.0,  source_config = Int[], drain_config = Int[], sd_hop = Dict{Any, Any}())
 
   # process L so that it's consistent with the new definition
   if typeof(L) == Int
     L = [L]
   end 
+
+  Ltotal = prod(L)
 
   if QE == 0
     dp = []
@@ -35,25 +37,38 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
 
   end 
 
-  # check half-filling
+  # check half-filling and various N condition
   if N == "HF"
 
+    n = div(prod(L), 2)
+
     if type == "Electron"
-      n = div(prod(L), 2)
-      N = [n, n, 0]
+      N = [0, n, n, 0]
     else
-      N = div( prod(L), 2)
+      N = [n, n, 0, 0]
     end 
 
+  end
+
+  if typeof(N) == Int
+    N = [Ltotal - N, N, 0, 0]
+  end 
+
+  if sum(N) > Ltotal
+    error("too many sites!")
+  end 
+
+  if type == "Fermion" && (N[3] != 0 || N[4] != 0)
+    error("Wrong number condition for spinless Fermions!")
+  end 
+
+  if length(N) == 3
+    append!(N, Ltotal - sum(N))
   end 
 
   # check charge-neutral
   if CN == "CN"
-    if type == "Electron"
-      CN = N[1] + N[2] + 2 * N[3]
-    else
-      CN = N
-    end 
+      CN = N[2] + N[3] + 2 * N[4]
   end 
 
   # we set the basic parameters for the simulation
@@ -103,20 +118,22 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
     "spec_hop_struct" => spec_hop_struct,
     "screening_int" => screening_int,
     "screening_qe" => screening_qe,
+    "source_config" => source_config,
+    "drain_config" => drain_config,
+    "sd_hop" => sd_hop
   )
 
-  if (type == "Electron" && typeof(N) == Int) ||  (type == "Fermion" && typeof(N) != Int)
-    error("Type must match N: int for fermion, vector for electron")
+  if (QE > 0 || headoverride > 0) && length(source_config) + length(drain_config) > 0
+    error("QE/headoverride and SD cannot both be non zero")
   end 
-
 
   if length(dp) != QE || length(ζ_dp) != QE || length(QEloc) != QE
     error("dp parameter(s) and QE number mismatch")
   end 
 
-  if dynamode != "none" && headoverride != 2
-    error("Wrong head override number")
-  end 
+  # if dynamode != "none" && headoverride != 2
+  #   error("Wrong head override number")
+  # end 
   
   workdir = getworkdir()
   writedlm( workdir * output * "parameters", para)

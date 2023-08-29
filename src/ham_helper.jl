@@ -1,5 +1,5 @@
-"""Hopping term"""
-function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+"""bulk hopping term"""
+function add_hopping_bulk!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
   t = para["t"]
   decay = para["decay"]
@@ -23,8 +23,6 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
   for j=1  : Ltotal
 
     nns = get_nn(j, L, snake=snake, geometry=geometry)
-
-    println("site $j, NN $nns")
 
     for nn in nns
       
@@ -70,6 +68,161 @@ function add_hopping!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, di
   return res
 end 
 
+
+"""sd hopping term"""
+function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1, s_len = 0, d_len = 0)
+
+  t = para["t"]
+  decay = para["decay"]
+  Ltotal = prod(L)
+  type = para["type"]
+  snake = para["snake"]
+  geometry = para["geometry"]
+  scales = para["scales"]
+  
+  sd_hop = para["sd_hop"]
+
+  source_site = sd_hop["source_site"]
+  drain_site = sd_hop["drain_site"]
+  internal_hop = sd_hop["internal_hop"]
+  to_chain_hop = sd_hop["to_chain_hop"]
+  sd_loc = sd_hop["sd_loc"]
+  # iterate through all sites to get NN
+
+  if type == "Fermion"
+    operators = [ ["C", "Cdag"]]
+
+  elseif type == "Electron"
+    operators = [ ["Cup", "Cdagup"], ["Cdn", "Cdagdn"]]
+  end 
+
+  #source, internal
+  for i_source =1  : length(s_len) - 1
+
+    #nns = get_nn(j, L, snake=snake, geometry=geometry, belong="source")
+    # for the moment we only consider 1D SD
+
+    p1 = i_source
+    p2 = i_source + 1
+    s1 = sites[p1]
+    s2 = sites[p2]
+
+    for operator in operators
+
+      op1, op2 = operator 
+
+      if !if_gate
+        res += -t * internal_hop, op1, p1 ,op2, p2
+        res += -t * internal_hop, op1, p2 ,op2, p1
+
+      else 
+        hj =
+        - t  * internal_hop *  op(op1, s1) * op(op2, s2) +
+        - t  * internal_hop * op(op1, s2) * op(op2, s1)
+
+        gatefy!(res, factor, hj, τ)
+
+      end 
+
+    end 
+
+  end
+
+  #drain, internal
+  for i_drain =1  : length(d_len) - 1
+
+    #nns = get_nn(j, L, snake=snake, geometry=geometry, belong="source")
+    # for the moment we only consider 1D SD
+
+    p1 = i_drain + head + Ltotal 
+    p2 = i_source + head + Ltotal + 1
+    s1 = sites[p1]
+    s2 = sites[p2]
+
+    for operator in operators
+
+      op1, op2 = operator 
+
+      if !if_gate
+        res += -t * internal_hop , op1, p1 ,op2, p2
+        res += -t * internal_hop, op1, p2 ,op2, p1
+
+      else 
+        hj =
+        - t  * internal_hop * op(op1, s1) * op(op2, s2) +
+        - t  * internal_hop * op(op1, s2) * op(op2, s1)
+
+        gatefy!(res, factor, hj, τ)
+
+      end 
+
+    end 
+
+  end
+
+  #source, onto chain
+  # 
+  r_source = dis(source_site, sd_loc[1], L, scales, disx, disy)
+  hop = disorder_hopping(decay, r_source) * to_chain_hop
+
+  p1 = head
+  p2 = source_site + head 
+  s1 = sites[p1]
+  s2 = sites[p2]
+
+  println("source, $p1, $p2, $hop")
+  for operator in operators
+
+    op1, op2 = operator 
+
+    if !if_gate
+      res += -t * hop, op1, p1 ,op2, p2
+      res += -t * hop, op1, p2 ,op2, p1
+
+    else 
+      hj =
+      - t * hop * op(op1, s1) * op(op2, s2) +
+      - t * hop * op(op1, s2) * op(op2, s1)
+
+      gatefy!(res, factor, hj, τ)
+
+    end 
+
+  end 
+
+  # drain, onto chain]
+
+  r_drain = dis(drain_site, sd_loc[2], L, scales, disx, disy)
+  hop = disorder_hopping(decay, r_drain) * to_chain_hop
+
+  p1 = drain_site + head
+  p2 = Ltotal + head + 1
+
+  println("drain, $p1, $p2, $hop")
+  s1 = sites[p1]
+  s2 = sites[p2]
+
+  for operator in operators
+
+    op1, op2 = operator 
+
+    if !if_gate
+      res += -t * hop, op1, p1 ,op2, p2
+      res += -t * hop, op1, p2 ,op2, p1
+
+    else 
+      hj =
+      - t * hop * op(op1, s1) * op(op2, s2) +
+      - t * hop * op(op1, s2) * op(op2, s1)
+
+      gatefy!(res, factor, hj, τ)
+
+    end 
+
+  end 
+
+  return res
+end 
 """E-E interaction term"""
 function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 

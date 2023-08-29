@@ -12,12 +12,15 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   type = para["type"]
   int_ee = para["int_ee"]
   int_ne = para["int_ne"]
+
+  source_config = para["source_config"]
+  drain_config = para["drain_config"]
   
   # if QE > 0, then at least left emitter, and if QN, we account for the AUX site
 
   # head denotes the position of QE1: 0 if QE == 0, 1 if QE but not QN, 2 if QE and QN
   # we add a head override function for the situation where we need 'empty' site indices
-  head = headoverride > 0 ? headoverride : (QE > 0) * (QN + 1) 
+  head = headoverride > 0 ? headoverride : (QE > 0) * (QN + 1) + length(source_config)
   println("head position is now at", head)
 
   if !if_gate
@@ -28,7 +31,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   
   ############################ begin chain hamiltonian ###################################
-  res = add_hopping!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+  res = add_hopping_bulk!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
 
   # in case the 0 cases still adds overhead to hamiltonian
   if int_ee != 0
@@ -67,6 +70,18 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   end 
 
   ########################### end penalty ###################################
+  ##################### begin SD hamiltonian ###################################
+
+  if length(source_config) + length(drain_config) > 0
+
+    res = add_hopping_sd!(res, para, L, disx, disy, sites; if_gate = if_gate, head=head, factor =factor, τ=τ, s_len = length(source_config), d_len = length(drain_config))
+
+  end 
+
+
+
+  ########################### end SD hamiltonian ###################################
+
   if !if_gate
     H = MPO(res, sites)
     return H

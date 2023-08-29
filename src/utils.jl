@@ -1,3 +1,17 @@
+function get_type_dict(type)
+
+  op_str = Dict(
+    1 => "Emp",
+    2 => type == "Fermion" ? "Occ" : "Up",
+    3 => "Dn",
+    4 => "UpDn"
+  )
+
+  return op_str
+
+end 
+
+
 """Calculates hopping
 Return the strength of hooping, baseline is 1 without disorder"""
 function disorder_hopping(decay::Float64, r::Float64)

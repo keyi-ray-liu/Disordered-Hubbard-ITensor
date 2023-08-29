@@ -33,7 +33,7 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = false
+  test = true
   disable_blas = true
 
   if disable_blas
@@ -45,15 +45,15 @@ function top()
 
     println("TEST TEST TEST")
 
-    paras = setpara()
-    main(paras;)
+    source_drain_wrapper(;temp=1)
+    #paras = setpara(;L=12, ex=5)
+    #main(paras)
     #eigensolver_wrapper()
     #QEdyna_wrapper()
     #QE("2", "0.0855")
     #eigen_overlap()
     #NF("0.01", "1", "40", "10", "5", "chain")
     #QE_dynamic()
-    #paras = setpara(L=12, N=6, CN=6, ex=3, int_ee=2.0, int_ne=2.0, guess=false, method="DMRG", sweepdim=100, 
     #sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEloc = [[-2.0], [13.0]])
     #sweepcnt=40, noise=false, QE=0, QN=true, QEen=0.0, dp= [] , ζ_dp = [] , QEloc = [])
     #main(paras)
@@ -104,6 +104,9 @@ function top()
 
     elseif ARGS[1] == "12"
       corr_wrapper()
+
+    elseif ARGS[1] == "13"
+      source_drain_wrapper(;temp=1)
 
     else
       println("not a valid operating mode")

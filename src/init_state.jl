@@ -16,12 +16,18 @@ function init_state(para, sites, disx, disy)
   mode = para["dynamode"]
   type = para["type"]
   
+  source_config = para["source_config"]
+  drain_config = para["drain_config"]
+
   Ltotal = prod(L)
   scales = para["scales"]
   snake = para["snake"]
   QEen = para["QEen"]
-  occ = type == "Fermion" ? "Occ" : "Up"
-  emp = "Emp"
+  
+  op_str = get_type_dict(type)
+  emp = op_str[1]
+  occ = op_str[2]
+
   # if not guess, using random MPS as init state
   if !guess
     
@@ -32,15 +38,17 @@ function init_state(para, sites, disx, disy)
     if QN
 
       # we already have check for the type of N
-      if type == "Fermion"
-        state = append!([ occ for n=1:N] , [emp for n=1:Ltotal -N]) 
 
-      elseif type == "Electron"
-        #state = append!( ["Up" for n=1:N[1]], ["Dn" for n=1:N[2]], ["UpDn" for n=1:N[3]], [emp for n=1: Ltotal - sum(N)])
-        state = append!( reduce(vcat, [["Up", "Dn"] for i=1:min(N[1], N[2])]),  [ N[1] >= N[2] ? "Up" : "Dn" for i=1: ( max(N[1], N[2]) - min(N[1], N[2])) ], ["UpDn" for n=1:N[3]], [emp for n=1: Ltotal - (N[1] + N[2] + 2 * N[3])] )
-      end 
+      state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
 
-      if headoverride == 0
+      if length(source_config) + length(drain_config) != 0
+
+        source = [ op_str[n] for n in source_config]
+        drain = [ op_str[n] for n in drain_config]
+
+        state = vcat(source, state, drain)
+
+      elseif headoverride == 0
 
         AUX1 = QE > 0 ? [emp] : []
         QE1 = QE > 0 ? [ occ ] : []
@@ -182,6 +190,8 @@ function init_site(para::Dict)
   QN = para["QN"]
   headoverride = para["headoverride"]
   type = para["type"]
+  source_config = para["source_config"]
+  drain_config = para["drain_config"]
 
   Ltotal = prod(L)
 
@@ -189,7 +199,8 @@ function init_site(para::Dict)
   # experimental feature, QN AND QE
   # if we have both, then need AUX sites
 
-  extras = headoverride > 0 ? 2 * headoverride :  QE * (QN + 1)
+  # we have previously check condition that SD and QE cannot both be greater than 0
+  extras = headoverride > 0 ? 2 * headoverride :  QE * (QN + 1) + length(source_config) + length(drain_config)
 
   #sites = Vector{Index}(undef, L + extras)
   sites = siteinds(type, Ltotal + extras; conserve_qns =QN)
@@ -212,23 +223,36 @@ function TE_stateprep(para)
   QE = para["QE"]
   QN = para["QN"]
 
+  source_config = para["source_config"]
+  drain_config = para["drain_config"]
+
   Ltotal = prod(L)
   type = para["type"]
-  occ = type == "Fermion" ? "Occ" : "Up"
-  emp = "Emp"
-
+  
+  op_str = get_type_dict(type)
+  emp = op_str[1]
+  occ = op_str[2]
+  
   if QN
-    state = append!([ occ for n=1:N] , [emp for n=1: Ltotal -N]) 
+    state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
 
-    AUX1 = QE > 0 ? [emp] : []
-    QE1 = QE > 0 ? [ occ] : []
-    QE2 = QE > 1 ? [ occ] : []
-    AUX2 = QE > 1 ? [emp] : []
+    if length(source_config) + length(drain_config) > 0
 
-    state = vcat(QE1, state)
-    state = vcat(AUX1, state)
-    state = vcat(state, QE2)
-    state = vcat(state, AUX2)
+      source = [ op_str[n] for n in source_config]
+      drain = [ op_str[n] for n in drain_config]
+      state = vcat(source, state, drain)
+
+    else
+      AUX1 = QE > 0 ? [emp] : []
+      QE1 = QE > 0 ? [ occ] : []
+      QE2 = QE > 1 ? [ occ] : []
+      AUX2 = QE > 1 ? [emp] : []
+
+      state = vcat(QE1, state)
+      state = vcat(AUX1, state)
+      state = vcat(state, QE2)
+      state = vcat(state, AUX2)
+    end
 
     ψ = randomMPS(sites,state)
 

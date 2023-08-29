@@ -8,16 +8,18 @@ function time_evolve(ψ, sites, paras, start, fin)
     method = paras["TEmethod"]
     disorder = paras["disorder"]
     τ = paras["τ"]
+    source_config = paras["source_config"]
+    drain_config = paras["drain_config"]
+    
 
-    if QE == 0
-        throw(ArgumentError("Dynamics have to include quantum emitters"))
+    # if QE == 0 && length(source_config) + length(drain)
+    #     throw(ArgumentError("Dynamics have to include quantum emitter/SD"))
 
-    elseif QE > 2
+    if QE > 2
         throw(ArgumentError("More than two QE, not allowed"))
     end 
 
     if start > fin && τ > 0
-        
         throw(ArgumentError("reverse parameters not correct"))
     end 
 
@@ -90,9 +92,10 @@ function time_evolve(ψ, sites, paras, start, fin)
 
         if method == "eigen-occ"
             res = []
+            tcd_dict = load_tcd()
         end 
         
-        
+
         for dt in start:τ:fin
 
             println("$method time : $dt")
@@ -110,7 +113,7 @@ function time_evolve(ψ, sites, paras, start, fin)
 
             elseif method == "eigen-occ"
                 
-                tcd_dict = load_tcd()
+                
                 phased_overlap = phase .* overlaps
                 occ = get_eigen_occ(tcd_dict, phased_overlap)
                 append!(res, [occ])
