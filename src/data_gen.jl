@@ -84,6 +84,7 @@ function QE_dynamic(simu_para, additional_para)
   τ = additional_para["τ"]
   start = additional_para["start"]
   fin = additional_para["fin"]
+  occ_direct = additional_para["occ_direct"]
   
   if isnothing(energy)
     ex = 2
@@ -131,7 +132,7 @@ function QE_dynamic(simu_para, additional_para)
   println("length of ψ is:" , length(ψ))
   println("length of sites", length(sites))
 
-  time_evolve(ψ, sites, paras, start, fin)
+  time_evolve(ψ, sites, paras, start, fin, occ_direct)
   
   
 end 
@@ -180,7 +181,7 @@ function eigenplot()
   
 end 
 
-function eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, time_para)
+function eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, additional_para)
 
   workdir = getworkdir()
   
@@ -223,7 +224,7 @@ function eigensolver(GS_para, QE_internal_para, QE_para, dyna_para, time_para)
 
   #Step 4
 
-  QE_dynamic(dyna_para, time_para)
+  QE_dynamic(dyna_para, additional_para)
   gs_occ()
 
 end 
@@ -260,10 +261,10 @@ function time_corr_plot(paras)
 end 
 
 
-function SD_dynamics(additional_para, sd_hop, time_para)
+function SD_dynamics(simu_para, sd_hop, additional_para)
 
 
-  L = additional_para[:L]
+  L = simu_para[:L]
   Ltotal = prod(L)
   if length(L) == 1
     sd_loc = [ [-1.0], [Ltotal]]
@@ -280,9 +281,9 @@ function SD_dynamics(additional_para, sd_hop, time_para)
   sd_hop["source_site"] = source_site
   sd_hop["drain_site"] = drain_site
 
-  additional_para[:sd_hop] = sd_hop
+  simu_para[:sd_hop] = sd_hop
 
-  QE_dynamic(additional_para, time_para)
+  QE_dynamic(simu_para, additional_para)
 
 
 

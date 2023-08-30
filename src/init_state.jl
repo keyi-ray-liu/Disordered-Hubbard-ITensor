@@ -235,6 +235,7 @@ function TE_stateprep(para)
   
   if QN
     state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
+    reverse!(state)
 
     if length(source_config) + length(drain_config) > 0
 

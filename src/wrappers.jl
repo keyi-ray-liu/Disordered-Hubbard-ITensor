@@ -57,7 +57,8 @@ function QEdyna_wrapper()
         "τ" => 0.1,
         "start" => 0.1,
         "fin" => 100.0,
-        "product_state" => false
+        "product_state" => false,
+        "occ_direct" => false
     )
 
     QE_dynamic(para, additional_para)
@@ -95,7 +96,8 @@ function eigensolver_wrapper()
         "τ" => 1.0,
         "start" => 1.0,
         "fin" => 1000.0,
-        "product_state" => false
+        "product_state" => false,
+        "occ_direct" => false
     )
 
     println(GS_para)
@@ -129,7 +131,7 @@ function source_drain_wrapper(;temp=0)
         :dynamode => "left",
         :TEmethod => "TDVP",
         :TEdim => 150,
-        :TEcutoff => 1E-8,
+        :TEcutoff => 1E-30,
         :type => "Fermion",
         :krylovdim => 8,
         :QN=>true,
@@ -142,10 +144,11 @@ function source_drain_wrapper(;temp=0)
     )
 
     additional_para = Dict(
-        "τ" => 0.001,
-        "start" => 0.001,
-        "fin" => 2,
-        "product_state" => true
+        "τ" => 0.1,
+        "start" => 0.1,
+        "fin" => 100,
+        "product_state" => true,
+        "occ_direct" => true
     )
 
     # temp flag for temporary 1D solution where the SD are treated as part of the chain.
@@ -153,17 +156,17 @@ function source_drain_wrapper(;temp=0)
     if temp == 0
 
         para[:source_config] = [2]
-        para[:drain_config] = [2]
+        para[:drain_config] = [1]
         SD_dynamics(para, sd_hop, additional_para)
 
     else
 
         println("TEMP TEMP TEMP")
-        para[:L]= 14
+        para[:L]= 12
         para[:N]= 1
         para[:spec_hop_struct] = Dict(
-            1 => 1000,
-            13 => 1000
+            1 => 0.001,
+            13 => 0.001
         )
         QE_dynamic(para, additional_para)
 

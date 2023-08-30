@@ -1,5 +1,5 @@
 """worker function perfomring time evolution"""
-function time_evolve(ψ, sites, paras, start, fin)
+function time_evolve(ψ, sites, paras, start, fin, occ_direct)
 
     QE = paras["QE"]
     L = paras["L"]
@@ -44,6 +44,14 @@ function time_evolve(ψ, sites, paras, start, fin)
             println("$method time : $dt")
         
             ψ = apply(gates, ψ; cutoff=cutoff, maxdim = maxdim)
+
+            if occ_direct
+                occ = expect(ψ, "N")
+
+                open(prefix * "occ" * string(τ), "a") do f
+                    writedlm( f, transpose(occ))
+                end 
+            end 
             
             normalize!(ψ)
             var = variance(H, ψ)
@@ -73,8 +81,13 @@ function time_evolve(ψ, sites, paras, start, fin)
             println( "inner", abs(inner(ψ1, ψ)))
             ψ = ψ1
             
-            #occ = expect(ψ, "N")
-            #println("occ: $occ")
+            if occ_direct
+                occ = expect(ψ, "N")
+
+                open(prefix * "occ" * string(τ), "a") do f
+                    writedlm( f, transpose(occ))
+                end 
+            end 
 
             var = variance(H, ψ1)
             println("variance of the state: $var")
