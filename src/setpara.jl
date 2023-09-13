@@ -5,7 +5,8 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
   QN=true,  QEen=1.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
   dynamode="none", TEcutoff=1E-8, TEdim=500, TEmethod="TEBD", product_state=false, TEBDfactor=2,
   τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3, geometry = "linear", spec_hop_struct = Dict{Int64, Float64}(),
-  screening_int=0.0, screening_qe=0.0,  source_config = Int[], drain_config = Int[], sd_hop = Dict{Any, Any}())
+  screening_int=0.0, screening_qe=0.0,  source_config = Int[], drain_config = Int[], sd_hop = Dict{Any, Any}(), 
+  sd_override=false, range_qe=1000)
 
   # process L so that it's consistent with the new definition
   if typeof(L) == Int
@@ -49,6 +50,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
     end 
 
   end
+
 
   if typeof(N) == Int
     N = [Ltotal - N, N, 0, 0]
@@ -120,11 +122,13 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
     "screening_qe" => screening_qe,
     "source_config" => source_config,
     "drain_config" => drain_config,
-    "sd_hop" => sd_hop
+    "sd_hop" => sd_hop,
+    "sd_override" => sd_override,
+    "range_qe" => range_qe
   )
 
-  if (QE > 0 || headoverride > 0) && length(source_config) + length(drain_config) > 0
-    error("QE/headoverride and SD cannot both be non zero")
+  if (QE > 0) && length(source_config) + length(drain_config) > 0
+    error("QE and SD cannot both be non zero")
   end 
 
   if length(dp) != QE || length(ζ_dp) != QE || length(QEloc) != QE

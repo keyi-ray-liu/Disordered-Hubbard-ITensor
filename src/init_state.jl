@@ -41,7 +41,7 @@ function init_state(para, sites, disx, disy)
 
       state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
 
-      if length(source_config) + length(drain_config) != 0
+      if length(source_config) + length(drain_config) > 0
 
         source = [ op_str[n] for n in source_config]
         drain = [ op_str[n] for n in drain_config]
@@ -235,7 +235,6 @@ function TE_stateprep(para)
   
   if QN
     state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
-    reverse!(state)
 
     if length(source_config) + length(drain_config) > 0
 
@@ -255,6 +254,7 @@ function TE_stateprep(para)
       state = vcat(state, AUX2)
     end
 
+    print(state)
     ψ = randomMPS(sites,state)
 
   else 

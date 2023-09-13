@@ -21,14 +21,15 @@ function QE_wrapper(num, energy)
     energy = parse(Float64, energy)
 
     para = Dict(
-        :L => 120,
-        :sweepdim => 300,
-        :sweepcnt => 50,
+        :L => 100,
+        :sweepdim => 400,
+        :sweepcnt => 30,
         :QE => num,
         :QEen => energy,
-        :ex => 25,
-        :krylovdim => 8
-        :range => 10000
+        :ex => 20,
+        :krylovdim => 8,
+        :range=>1000,
+        :range_qe => 1000
     )
 
     QE(para)
@@ -38,27 +39,30 @@ end
 function QEdyna_wrapper()
 
     para = Dict(
-        :L => 120,
-        :sweepdim => 300,
-        :sweepcnt => 50,
+        :L => 100,
+        :N => 25,
+        :sweepdim => 400,
+        :sweepcnt => 30,
         :QE => 2,
         :QEen => nothing,
         :dynamode => "left",
         :TEmethod => "TDVP",
         :TEdim => 150,
-        :TEcutoff => 1E-8,
+        :TEcutoff => 1E-9,
         :type => "Fermion",
         :krylovdim => 8,
         :QN=>true,
-        :range=>1000
+        :range=>1000,
+        :range_qe => 1000
     )
 
     additional_para = Dict(
-        "τ" => 0.1,
-        "start" => 0.1,
+        "τ" => 0.5,
+        "start" => 0.5,
         "fin" => 100.0,
         "product_state" => false,
-        "occ_direct" => false
+        "occ_direct" => false,
+        "QEmul" => 1.0
     )
 
     QE_dynamic(para, additional_para)
@@ -113,64 +117,62 @@ function corr_wrapper()
     para = Dict{Any, Any}(
         "op1" => "Cdag",
         "op2" => "C",
-        "tag" => "CC"
+        "tag" => "CC",
+        "wftag" => "tTDVP", 
     )
 
     time_corr_plot(para)
 end
 
+function iter_sd_wrapper()
 
-function source_drain_wrapper(;temp=0)
+    for mul in 1:20
+
+        offset = mul * 0.2
+        source_drain_wrapper(;offset=offset)
+
+    end 
+
+end 
+
+
+function source_drain_wrapper(; offset=nothing)
 
     para = Dict{Any, Any}(
         :L => 12,
-        :N => 0,
+        :N => 1,
         :sweepdim => 100,
         :sweepcnt => 20,
         :QEen => 0.0,
         :dynamode => "left",
         :TEmethod => "TDVP",
-        :TEdim => 150,
         :TEcutoff => 1E-30,
         :type => "Fermion",
         :krylovdim => 8,
         :QN=>true,
-        :range=>1000
+        :CN=>1
     )
-
+    
     sd_hop = Dict{Any, Any}(
         "to_chain_hop" => 0.001,
-        "internal_hop" => 1.0
+        "internal_hop" => 1.0,
+        "source_offset" => offset,
+        "drain_offset" => offset,
+        "bulk_bias" => 0.0
     )
 
     additional_para = Dict(
         "τ" => 0.1,
         "start" => 0.1,
-        "fin" => 100,
+        "fin" => 10,
         "product_state" => true,
         "occ_direct" => true
     )
 
-    # temp flag for temporary 1D solution where the SD are treated as part of the chain.
+    para[:source_config] = [2]
+    para[:drain_config] = [1]
+    SD_dynamics(para, sd_hop, additional_para)
 
-    if temp == 0
-
-        para[:source_config] = [2]
-        para[:drain_config] = [1]
-        SD_dynamics(para, sd_hop, additional_para)
-
-    else
-
-        println("TEMP TEMP TEMP")
-        para[:L]= 12
-        para[:N]= 1
-        para[:spec_hop_struct] = Dict(
-            1 => 0.001,
-            13 => 0.001
-        )
-        QE_dynamic(para, additional_para)
-
-    end 
 
 end 
 

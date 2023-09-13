@@ -222,25 +222,79 @@ end
 function get_eigen_occ(tcd_dict, phase_overlap)
 
   num = minimum( map(maximum, collect(zip(collect(keys(tcd_dict))...))))
+  occ = zeros( ComplexF64, tcd_dict[ (1, 1)])
 
-  println(num)
-  res = zeros( length(phase_overlap[1]))
+
 
   for left in 1:num
     for right in left+1:num
 
       tcd = tcd_dict[ (left, right)]
-      res = res .+ conj(phase_overlap[left]) .* tcd .* phase_overlap[right]
-      res = res .+ conj(phase_overlap[right]) .* conj.(tcd) .* phase_overlap[left]
+      occ .+= conj(phase_overlap[left]) .* tcd .* phase_overlap[right]
+      occ .+= conj(phase_overlap[right]) .* conj.(tcd) .* phase_overlap[left]
 
     end 
   end 
   
   for idx in 1:num
     tcd = tcd_dict[ (idx, idx)]
-    res = res.+ abs2( phase_overlap[idx]) * tcd
+    occ = occ.+ abs2( phase_overlap[idx]) * tcd
   end 
 
-  return real.(res)
+
+  return real.(occ), tcd_ex
 
 end 
+
+
+function get_eigen_tcd(tcd_dict, phase_overlap)
+
+  num = minimum( map(maximum, collect(zip(collect(keys(tcd_dict))...))))
+
+  #print(length(phase_overlap))
+  #print(length(phase_overlap[1]))
+
+  # we calculate the tcd between the time evolved GS state and every ex state of the system
+  tcd_ex = [zeros( ComplexF64, length(tcd_dict[ (1, 1)])) for _ in 1:num]
+
+  for left in 1:num
+    for right in 1:num
+
+      tcd = tcd_dict[ (left ,right)]
+      tcd_ex[left] .+= conj(phase_overlap[right]) .* conj.(tcd)
+
+    end 
+  end 
+
+  ## tcd_ex end ##
+
+  return tcd_ex
+
+end 
+
+function get_eigen_gpi(tcd_gs, paras)
+
+  num = length(tcd_gs)
+  L = length(tcd_gs[1])
+  λ_ee = paras["int_ee"]
+  ζ = paras["ζ"]
+  gpi = zeros(num)
+
+  for i in 1:num
+
+    tcd = tcd_gs[i]
+    for j in 1:L
+      for k in 1:L
+        
+        if j != k
+          gpi[i] += tcd[j] * tcd[k] * λ_ee / (abs(j - k) + ζ)
+
+        end 
+      end 
+    end 
+  end 
+
+  return gpi
+end 
+
+

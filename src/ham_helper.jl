@@ -34,7 +34,7 @@ function add_hopping_bulk!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64
         hop = 1.0
       end 
 
-      println( "$j, $nn, $hop")
+      println( "adding hopping $(j + head), $(nn + head), $hop")
       
       # Hopping
       p1 = j + head
@@ -70,7 +70,7 @@ end
 
 
 """sd hopping term"""
-function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1, s_len = 0, d_len = 0)
+function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
   t = para["t"]
   decay = para["decay"]
@@ -82,6 +82,9 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   
   sd_hop = para["sd_hop"]
 
+  println(sd_hop)
+  s_len = length(para["source_config"])
+  d_len = length(para["drain_config"])
   source_site = sd_hop["source_site"]
   drain_site = sd_hop["drain_site"]
   internal_hop = sd_hop["internal_hop"]
@@ -99,6 +102,7 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   #source, internal
   for i_source =1  : length(s_len) - 1
 
+    println("internal hop, source, $i_source")
     #nns = get_nn(j, L, snake=snake, geometry=geometry, belong="source")
     # for the moment we only consider 1D SD
 
@@ -134,6 +138,7 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
     #nns = get_nn(j, L, snake=snake, geometry=geometry, belong="source")
     # for the moment we only consider 1D SD
 
+    println("internal hop, drain, $i_drain")
     p1 = i_drain + head + Ltotal 
     p2 = i_source + head + Ltotal + 1
     s1 = sites[p1]
@@ -170,7 +175,7 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   s1 = sites[p1]
   s2 = sites[p2]
 
-  println("source, $p1, $p2, $hop")
+  println("source hop to bulk, $p1, $p2, $hop")
   for operator in operators
 
     op1, op2 = operator 
@@ -198,7 +203,7 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   p1 = drain_site + head
   p2 = Ltotal + head + 1
 
-  println("drain, $p1, $p2, $hop")
+  println("drain hop to bulk, $p1, $p2, $hop")
   s1 = sites[p1]
   s2 = sites[p2]
 
@@ -250,7 +255,7 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
     s1 = sites[p1]
 
     for k= max(1, j - range):j-1
-
+      
       # delta function setting up the exchange between nearest neighbor
       p2 = k + head
       s2 = sites[p2]
@@ -353,7 +358,7 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   scales = para["scales"]
   type = para["type"]
   scr = para["screening_qe"]
-  range = para["range"]
+  range = para["range_qe"]
 
   Ltotal = prod(L)
 
@@ -402,11 +407,11 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   if which == 1
 
     qe_begin = 1
-    qe_end = min(range, Ltotal)
+    qe_end = min(range + 1, Ltotal)
 
   elseif which == 2
 
-    qe_begin = max(Ltotal - range, 1)
+    qe_begin = max(Ltotal - range , 1)
     qe_end = Ltotal 
   end 
 
@@ -520,18 +525,18 @@ function add_qn!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, head=0,
 end 
 
 """add on-site interaction in the case of electrons"""
-function add_onsite!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+function add_onsite_hubbard!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
   U = para["U"]
   Ltotal = prod(L)
 
   for i = 1:Ltotal
 
-    pi = i + head
-    si = sites[pi]
+    p = i + head
+    si = sites[p]
 
     if !if_gate
-      res += U, "Nupdn", pi
+      res += U, "Nupdn", p
 
     else 
       ons = U * op("Nupdn", si)
@@ -542,3 +547,79 @@ function add_onsite!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, hea
   return res
 end 
 
+
+""" adding bulk bias"""
+function add_onsite_bias!(res, para::Dict, sites; if_gate=false, head=0, factor=2, τ=0.1)
+
+  sd_hop = para["sd_hop"]
+  L = para["L"]
+  Ltotal = prod(L)
+
+  bulk_bias = sd_hop["bulk_bias"]
+
+  for i = 1:Ltotal
+
+    println("adding bulk bias, $(i + head), $bulk_bias")
+    p = i + head
+    si = sites[p]
+
+    if !if_gate
+      res += bulk_bias, "N", p
+
+    else 
+      ons = bulk_bias * op("N", si)
+      gatefy!(res, factor, ons, τ)
+    end 
+  end 
+
+  return res
+end 
+
+"""add source-drain potential"""
+function add_sd_potential(res, para, sites; if_gate = false, factor=2, τ=0.1)
+
+  s_len = length(para["source_config"])
+  d_len = length(para["drain_config"])
+  sd_hop = para["sd_hop"]
+  L = para["L"]
+  Ltotal = prod(L)
+
+  source_offset = sd_hop["source_offset"]
+  drain_offset = sd_hop["drain_offset"]
+
+  for i_source in 1:s_len
+
+    ps = i_source
+    ss = sites[ps]
+
+    println("adding source offset, $ps, $source_offset")
+    if !if_gate
+      res += source_offset, "N", ps
+
+    else 
+      ons = source_offset * op("N", ss)
+      gatefy!(res, factor, ons, τ)
+    end 
+
+  end 
+
+  for i_drain in 1:d_len
+
+    pd = i_drain + s_len + Ltotal
+    sd = sites[pd]
+
+    println("adding drain offset, $pd, $drain_offset")
+
+    if !if_gate
+      res += drain_offset, "N", pd
+
+    else 
+      ons = drain_offset * op("N", sd)
+      gatefy!(res, factor, ons, τ)
+    end 
+
+  end 
+
+  return res
+
+end 

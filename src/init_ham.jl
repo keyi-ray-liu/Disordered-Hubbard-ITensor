@@ -12,6 +12,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   type = para["type"]
   int_ee = para["int_ee"]
   int_ne = para["int_ne"]
+  sd_override = para["sd_override"]
 
   source_config = para["source_config"]
   drain_config = para["drain_config"]
@@ -44,7 +45,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   # if we have spin in the system, add onsite interactions 
   if type == "Electron"
-    res = add_onsite!(res, para, L, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+    res = add_onsite_hubbard!(res, para, L, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
   end 
   # ##################### end chain hamiltonian ###################################
   ##################### begin QE hamiltonian ###################################
@@ -72,13 +73,13 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   ########################### end penalty ###################################
   ##################### begin SD hamiltonian ###################################
 
-  if length(source_config) + length(drain_config) > 0
+  if length(source_config) + length(drain_config) > 0 && sd_override == false
 
-    res = add_hopping_sd!(res, para, L, disx, disy, sites; if_gate = if_gate, head=head, factor =factor, τ=τ, s_len = length(source_config), d_len = length(drain_config))
+    res = add_hopping_sd!(res, para, L, disx, disy, sites; if_gate = if_gate, head=head, factor =factor, τ=τ)
+    res = add_sd_potential(res, para, sites; if_gate = if_gate,  factor=factor, τ=τ)
+    res = add_onsite_bias!(res, para, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
 
   end 
-
-
 
   ########################### end SD hamiltonian ###################################
 

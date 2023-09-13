@@ -33,7 +33,7 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = true
+  test = false
   disable_blas = true
 
   if disable_blas
@@ -44,9 +44,9 @@ function top()
   if test
 
     println("TEST TEST TEST")
-
-    source_drain_wrapper(;temp=0)
-    #paras = setpara(;L=12, ex=5)
+    #iter_sd_wrapper()
+    source_drain_wrapper()
+    #paras = setpara(;L=12, N=1, ex=1)
     #main(paras)
     #eigensolver_wrapper()
     #QEdyna_wrapper()
@@ -106,7 +106,7 @@ function top()
       corr_wrapper()
 
     elseif ARGS[1] == "13"
-      source_drain_wrapper(;temp=1)
+      source_drain_wrapper()
 
     else
       println("not a valid operating mode")

@@ -390,3 +390,6 @@ function load_tcd()
 end 
 
 
+function count_ele(config)
+  return count( i-> (i ==2), config) + count( i-> (i == 3), config) + 2 * count( i-> (i == 4), config)
+end 

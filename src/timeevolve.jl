@@ -108,6 +108,12 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
             tcd_dict = load_tcd()
         end 
         
+        if method == "eigen-tcd"
+            tcd_dict = load_tcd()
+            num = minimum( map(maximum, collect(zip(collect(keys(tcd_dict))...))))
+            res_tcd = [[] for _ in 1:num]
+            res_gpi = []
+        end 
 
         for dt in start:τ:fin
 
@@ -126,10 +132,20 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
 
             elseif method == "eigen-occ"
                 
-                
                 phased_overlap = phase .* overlaps
                 occ = get_eigen_occ(tcd_dict, phased_overlap)
                 append!(res, [occ])
+
+            elseif method == "eigen-tcd"
+
+                phased_overlap = phase .* overlaps
+                tcd_gs = get_eigen_tcd(tcd_dict, phased_overlap)
+                gpi_gs = get_eigen_gpi(tcd_gs, paras)
+                
+                append!(res_gpi, gpi_gs)
+                for ex in 1:num
+                    append!( res_tcd[ex], [tcd_gs[ex]])
+                end 
 
             end 
 
@@ -137,6 +153,14 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
 
         if method == "eigen-occ"
             writedlm(prefix * "occ", res)
+        end 
+
+        if method == "eigen-tcd"
+            for ex in 1:num
+                writedlm( prefix * "tcd_gs" * string(ex), res_tcd[ex])
+            end 
+
+            writedlm( prefix * "gpi_gs", res_gpi)
         end 
 
     else
@@ -147,3 +171,6 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
     return nothing
 
 end 
+
+
+

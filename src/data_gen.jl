@@ -85,6 +85,8 @@ function QE_dynamic(simu_para, additional_para)
   start = additional_para["start"]
   fin = additional_para["fin"]
   occ_direct = additional_para["occ_direct"]
+
+  QEmul = additional_para["QEmul"]
   
   if isnothing(energy)
     ex = 2
@@ -103,9 +105,11 @@ function QE_dynamic(simu_para, additional_para)
   if isnothing(energy)
     plasmon_energy = readdlm(workdir * output * "ex" )
     energy = plasmon_energy[end] - plasmon_energy[end - 1]
+
+    energy *= QEmul
   end 
   
-  paras = setpara(;simu_para..., τ=τ, QEen=energy, dynamode="none", output="TE")
+  
   # process wf
 
   if !product_state
@@ -121,10 +125,12 @@ function QE_dynamic(simu_para, additional_para)
     sites = siteinds(ψ)
 
   else
+    paras = setpara(;simu_para...)
     ψ, sites = TE_stateprep(paras)
 
   end 
-
+  
+  paras = setpara(;simu_para..., τ=τ, QEen=energy, dynamode="none", output="TE")
   # further preparation of the initial state, if needed
   #ψ, sites = TE_stateprep(ψ, paras, sites)
   #ψ, sites = TE_stateprep(paras)
@@ -135,7 +141,8 @@ function QE_dynamic(simu_para, additional_para)
   time_evolve(ψ, sites, paras, start, fin, occ_direct)
   
   
-end 
+end
+
 
 
 function NF(t, spdim, dim, Nup, Ndn, geometry)
@@ -237,14 +244,15 @@ function time_corr_plot(paras)
   op1 = paras["op1"]
   op2 = paras["op2"]
   tag = paras["tag"]
+  wftag = paras["wftag"]
 
-  files = glob("teigen-wf*.h5", workdir)
+  files = glob( wftag * "*.h5", workdir)
 
   if length(files) == 0
     error(ArgumentError("no time evolved wf found"))
   end 
 
-  get_time(x) = parse(Float64, x[ length(workdir) + length("teigen-wf" ) + 1:end-3])
+  get_time(x) = parse(Float64, x[ length(workdir) + length(wftag ) + 1:end-3])
   sort!(files, by = x -> get_time(x))
 
   for file in files
@@ -263,9 +271,16 @@ end
 
 function SD_dynamics(simu_para, sd_hop, additional_para)
 
-
+  workdir = getworkdir()
   L = simu_para[:L]
+  N = simu_para[:N]
+
+  source_config = simu_para[:source_config]
+  drain_config  = simu_para[:drain_config]
+
+  Ntotal = N + count_ele(source_config) + count_ele(drain_config)
   Ltotal = prod(L)
+
   if length(L) == 1
     sd_loc = [ [-1.0], [Ltotal]]
     source_site = 1
@@ -281,10 +296,73 @@ function SD_dynamics(simu_para, sd_hop, additional_para)
   sd_hop["source_site"] = source_site
   sd_hop["drain_site"] = drain_site
 
+  
+
+  product_state = additional_para["product_state"]
+  offset_output = "get_offset_bulk"
+  initial_state_output = "initial_state"
+  offset = sd_hop["source_offset"]
+
+
+  τ = additional_para["τ"]
+  start = additional_para["start"]
+  fin = additional_para["fin"]
+  occ_direct = additional_para["occ_direct"]
+  
+  if isnothing(offset) 
+    # if no offset, we find the GS of the bulk
+    if !isfile(workdir * offset_output * ".h5") 
+      # if there no target file, we perform a single GS search, to find the correct offset for the SD
+      println("No offset file, generating")
+      paras = setpara(;simu_para..., N=Ntotal, ex=1, output = offset_output, source_config = [], drain_config = [])
+      main(paras;)
+    else
+      println("offset file found, loading")
+    end 
+
+    offset = readdlm(workdir * offset_output * "ex" )[end]
+    sd_hop["source_offset"] = offset
+    sd_hop["drain_offset"] = offset
+  end 
+
   simu_para[:sd_hop] = sd_hop
 
-  QE_dynamic(simu_para, additional_para)
+  # we prepare the initial state
+  if !product_state
+    # if product state flag is off, we solve fo the GS of the bulk with initial configuration 
 
+    if !isfile( workdir * initial_state_output * ".h5")
+      # if no IS, generate one 
+      paras = setpara(;simu_para..., ex=1, output = initial_state_output, sd_override=true)
+      main(paras;)
 
+    end 
+
+    wf = h5open( workdir * initial_state_output * ".h5", "r")
+
+    if start == τ
+      ψ = read(wf, "psi1", MPS)
+    else 
+      ψ = read(wf, "psi", MPS)
+    end 
+
+    sites = siteinds(ψ)
+
+  else
+    paras = setpara(;simu_para...)
+    ψ, sites = TE_stateprep(paras)
+  end 
+
+  paras = setpara(;simu_para..., τ=τ,  output="TE")
+  # further preparation of the initial state, if needed
+  #ψ, sites = TE_stateprep(ψ, paras, sites)
+  #ψ, sites = TE_stateprep(paras)
+
+  println("length of ψ is:" , length(ψ))
+  println("length of sites", length(sites))
+
+  time_evolve(ψ, sites, paras, start, fin, occ_direct)
+    
+    
 
 end 
