@@ -26,6 +26,9 @@ include("shift_and_invert.jl")
 include("timeevolve.jl")
 include("ham_helper.jl")
 include("wrappers.jl")
+include("QE.jl")
+include("SD_close.jl")
+include("io.jl")
 #include("projection.jl")
 
 """The top level function that controls workflow. Use operation mode to select code function"""
@@ -88,7 +91,7 @@ function top()
       QEdyna_wrapper()
 
     elseif ARGS[1] == "7"
-      temp_occ(ARGS[2])
+      time_obs(ARGS[2], ARGS[3])
 
     elseif ARGS[1] == "8"
       cal_overlap()
@@ -107,6 +110,9 @@ function top()
 
     elseif ARGS[1] == "13"
       source_drain_wrapper()
+
+    elseif ARGS[1] == "14"
+      time_tcd()
 
     else
       println("not a valid operating mode")

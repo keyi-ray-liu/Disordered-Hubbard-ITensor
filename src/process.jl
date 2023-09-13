@@ -139,7 +139,7 @@ function gs_occ()
 end 
 
 """calculates the occ for the available t slices"""
-function temp_occ(num)
+function time_obs(num, obs)
   
   
   function get_time(raw::String)
@@ -162,8 +162,19 @@ function temp_occ(num)
 
   end 
 
-  res = []
-  bonds = []
+  if obs == "occ"
+    occs = []
+    bonds = []
+
+  elseif obs == "tcd"
+
+    qewf, _, _ = load_qe()
+    tcds = [[] for _ in eachindex(qewf)]
+
+  else
+    error("Unrecognized obs")
+  end 
+
   T = []
 
 
@@ -177,24 +188,47 @@ function temp_occ(num)
     close(wf)
 
     t = get_time(file)
-    bond = checkmaxbond(ψ)
-    occ = expect(ψ, "N")
-      
     append!(T, t)
-    append!(bonds, bond)
-    append!(res, [occ])
+
+    if obs == "occ"
+      bond = checkmaxbond(ψ)
+      occ = expect(ψ, "N")
+      append!(bonds, bond)
+      append!(occs, [occ])
+
+    elseif obs == "tcd"
+
+      for ex in eachindex(qewf)
+        append!( tcds[ex], cal_tcd( qewf[ex], ψ))
+      end 
+
+    end 
+
+    
   end 
 
   writedlm(workdir *"time", T)
-  writedlm(workdir * "occ", res)
-  writedlm(workdir * "bonddim", bonds)
 
-  gs = h5open( workdir * "gs.h5", "r")
-  gs_wf = read(gs, "psi1", MPS)
-  close(gs)
+  if obs == "occ"
+    writedlm(workdir * "occ", occs)
+    writedlm(workdir * "bonddim", bonds)
 
-  occ_gs = expect(gs_wf, "N")
-  writedlm( workdir * "gs", occ_gs)
+    gs = h5open( workdir * "gs.h5", "r")
+    gs_wf = read(gs, "psi1", MPS)
+    close(gs)
+  
+    occ_gs = expect(gs_wf, "N")
+    writedlm( workdir * "gs", occ_gs)
+
+  elseif obs == "tcd"
+
+    for ex in 1:eachindex(qewf)
+      writedlm( workdir * "TCD_te_$ex", tcds[ex])
+    end 
+
+  end
+
+
 end 
 
 function eigen_overlap()
@@ -272,7 +306,7 @@ function get_eigen_tcd(tcd_dict, phase_overlap)
 
 end 
 
-function get_eigen_gpi(tcd_gs, paras)
+function get_gpi(tcd_gs, paras)
 
   num = length(tcd_gs)
   L = length(tcd_gs[1])
@@ -296,5 +330,7 @@ function get_eigen_gpi(tcd_gs, paras)
 
   return gpi
 end 
+
+
 
 

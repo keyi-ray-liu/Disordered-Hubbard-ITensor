@@ -123,3 +123,36 @@ function cal_tcd(ψ1, ψ2)
 
   return tcd
 end 
+
+
+function time_corr_plot(paras)
+
+  workdir = getworkdir()
+
+  op1 = paras["op1"]
+  op2 = paras["op2"]
+  tag = paras["tag"]
+  wftag = paras["wftag"]
+
+  files = glob( wftag * "*.h5", workdir)
+
+  if length(files) == 0
+    error(ArgumentError("no time evolved wf found"))
+  end 
+
+  get_time(x) = parse(Float64, x[ length(workdir) + length(wftag ) + 1:end-3])
+  sort!(files, by = x -> get_time(x))
+
+  for file in files
+
+    println("calculating file", file)
+    wf = h5open(file, "r")
+    ψ = read(wf, "psi", MPS)
+
+    NN_corr = abs.(correlation_matrix(ψ, op1, op2))
+    writedlm( workdir * tag * "_corr" * string(get_time(file)), NN_corr )
+  end 
+
+
+end 
+

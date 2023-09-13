@@ -140,7 +140,7 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
 
                 phased_overlap = phase .* overlaps
                 tcd_gs = get_eigen_tcd(tcd_dict, phased_overlap)
-                gpi_gs = get_eigen_gpi(tcd_gs, paras)
+                gpi_gs = get_gpi(tcd_gs, paras)
                 
                 append!(res_gpi, gpi_gs)
                 for ex in 1:num
