@@ -1,6 +1,6 @@
 """Set parameter dictionary for all future calculations, without loading. The system flag now accepts preset parameters defined in here"""
-function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5, 0.5], exch=0.2, 
-  decay=0.2, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
+function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5, 0.5], exch=0.2, 
+  decay=0.0, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
   guess=false, manual=false, itr_dis=[1.0], range=10000, noise=true, method="DMRG", QE=0, scales=[1.0], 
   QN=true,  QEen=1.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
   dynamode="none", TEcutoff=1E-8, TEdim=500, TEmethod="TEBD", product_state=false, TEBDfactor=2,
@@ -14,6 +14,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
   end 
 
   Ltotal = prod(L)
+  allnn = get_nn(L, t; snake =snake, geometry=geometry, spec_hop_struct= spec_hop_struct)
 
   if QE == 0
     dp = []
@@ -52,6 +53,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
   end
 
 
+
   if typeof(N) == Int
     N = [Ltotal - N, N, 0, 0]
   end 
@@ -88,6 +90,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
     "sweepdim" => sweepdim,
     "sweepcnt" => sweepcnt,
     "ex" => ex,
+    "snake" => snake,
     "weight" => weight,
     "guess" => guess,
     "manual" => manual,
@@ -114,17 +117,15 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=1.0, ζ=[0.5,
     "τ" => τ,
     "type" => type,
     "U" => U,
-    "snake" => snake,
     "krylovdim" => krylovdim,
-    "geometry" => geometry,
-    "spec_hop_struct" => spec_hop_struct,
     "screening_int" => screening_int,
     "screening_qe" => screening_qe,
     "source_config" => source_config,
     "drain_config" => drain_config,
     "sd_hop" => sd_hop,
     "sd_override" => sd_override,
-    "range_qe" => range_qe
+    "range_qe" => range_qe,
+    "allnn" => allnn
   )
 
   if (QE > 0) && length(source_config) + length(drain_config) > 0

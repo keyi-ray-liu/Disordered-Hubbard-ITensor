@@ -64,7 +64,7 @@ function cal_obs(ψ1, ψ2)
 end 
 
 """Calculates transition charge density between two wf"""
-function cal_tcd(ψ1, ψ2)
+function cal_tcd(ψ1, ψ2; temp=true)
 
   # ψ1 is left, ψ2 is right
 
@@ -73,33 +73,38 @@ function cal_tcd(ψ1, ψ2)
   tcd = zeros( (L) )
   # get site indices
 
-  s1 = siteinds(ψ1)
+  #s1 = siteinds(ψ1)
   s2 = siteinds(ψ2)
 
   # for j = 1:L
   #   replaceind!(ψ1[j], s1[j], s2[j])
   # end 
 
-  ψdag = dag(ψ1)
   operator = "N"
-  
-  lefts = []
-  rights = []
 
-  left = OneITensor()
-  right = OneITensor()
+  if !temp
 
-  for i = 1:L
+    ψdag = dag(ψ1)
+    
+    
+    lefts = []
+    rights = []
 
-    append!(lefts, [left])
-    append!(rights, [right])
+    left = OneITensor()
+    right = OneITensor()
 
-    left = left *  ψdag[i] * ψ2[i]
-    right = right * ψdag[ end + 1 - i] * ψ2[ end + 1 - i]
+    for i = 1:L
 
+      append!(lefts, [left])
+      append!(rights, [right])
+
+      left = left *  ψdag[i] * ψ2[i]
+      right = right * ψdag[ end + 1 - i] * ψ2[ end + 1 - i]
+
+    end 
+
+    reverse!(rights)
   end 
-
-  reverse!(rights)
 
 
   # explicitly calculate inner product of post-operated states
@@ -109,6 +114,7 @@ function cal_tcd(ψ1, ψ2)
 
     Op = op( operator, s2, i)
     Op /= norm(Op)
+    
     cur =  Op * ψ2[i] 
     noprime!(cur)
 
@@ -117,6 +123,7 @@ function cal_tcd(ψ1, ψ2)
 
     #tcd[i] = (lefts[i] * ψdag[i] * cur * rights[i])[]
     tcd[i] = inner( ψ1', new)
+
   end 
 
   #print(tcd)

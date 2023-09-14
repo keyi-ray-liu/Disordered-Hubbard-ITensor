@@ -124,6 +124,47 @@ function corr_wrapper()
     time_corr_plot(para)
 end
 
+
+function NF_wrapper(t, spdim, dim, Nup, Ndn, geometry)
+
+
+    t = parse(Float64, t)
+    dim = parse(Int, dim) 
+
+    paras = Dict{Any, Any}(
+        :t => t,
+        :N => [1, parse(Int, Nup), parse(Int, Ndn), 0] ,
+        :geometry => geometry,
+        :sweepdim => 1000,
+        :sweepcnt => 30,
+        :ex => 1,
+        :krylovdim => 10,
+        :U => 4.0,
+        :type => "Electron",
+        :int_ee => 0.0,
+        :int_ne => 0.0
+    )
+
+    
+    if geometry == "linear"
+        L = [ dim for _ in 1:parse(Int, spdim)]
+
+    elseif geometry == "twosquare"
+        L = [ 2 * 2 * dim]
+        paras[:spec_hop_struct] = Dict{Int, Dict{Int, Float64}}(
+            2 * dim - 1 => Dict{Int, Float64}(
+                2 * dim + 1 => 1e-10
+            )
+        )
+    end 
+        
+    paras[:L] = L
+
+    NF(paras)
+
+end 
+
+
 function iter_sd_wrapper()
 
     for mul in 1:20
@@ -172,6 +213,48 @@ function source_drain_wrapper(; offset=nothing)
     para[:source_config] = [2]
     para[:drain_config] = [1]
     SD_dynamics(para, sd_hop, additional_para)
+
+
+end 
+
+function transport_wrapper()
+
+    para = Dict{Any, Any}(
+        :L => 1,
+        :N => 0,
+        :sweepdim => 64,
+        :sweepcnt => 50,
+        :QEen => 0.0,
+        :TEmethod => "TDVP",
+        :TEcutoff => 1E-8,
+        :type => "Electron",
+        :krylovdim => 8,
+        :QN=>true,
+        :CN=>1,
+        :int_ee =>0,
+        :int_ne => 0,
+        :U => 1.0
+    )
+    
+    sd_hop = Dict{Any, Any}(
+        "to_chain_hop" => 1/sqrt(2),
+        "internal_hop" => 1.0,
+        "source_offset" => 0.25,
+        "drain_offset" => -0.25,
+        "bulk_bias" => 0.0
+    )
+
+    additional_para = Dict(
+        "τ" => 0.1,
+        "start" => 0.1,
+        "fin" => 100,
+        "product_state" => true,
+        "occ_direct" => false
+    )
+
+    para[:source_config] = [ x in rand(1:128, 64) ? 2 : 3 for x in 1:128]
+    para[:drain_config] = [ x in rand(1:128, 64) ? 2 : 3 for x in 1:128]
+    SD_dynamics_transport(para, sd_hop, additional_para)
 
 
 end 

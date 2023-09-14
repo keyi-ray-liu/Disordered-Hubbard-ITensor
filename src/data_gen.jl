@@ -49,29 +49,10 @@ end
 
 
 
-function NF(t, spdim, dim, Nup, Ndn, geometry)
+function NF(paras)
 
-  t = parse(Float64, t)
-  spdim = parse(Int, spdim)
-  dim = parse(Int, dim)
-  Nup = parse(Int, Nup)
-  Ndn = parse(Int, Ndn)
-
-  L = [dim for _ in 1:spdim]
-  Nupdn = 0
-  N = [Nup, Ndn, Nupdn, 1]
-  ex = 1
-  dim = 1000
-  cnt = 120
-  guess = false
-  noise = false
-  snake = true
-  krylovdim = 10
-
-  paras = setpara(L=L, N=N, ex=ex, int_ee=0, int_ne=0, QE=0, t=t,
-  guess=guess, sweepdim=dim, sweepcnt=cnt, noise=noise, type="Electron", U=4.0, snake=snake, 
-  geometry =geometry, krylovdim = krylovdim)
-  main(paras;)
+  para = setpara(;paras...)
+  main(para;)
 
 end 
 
