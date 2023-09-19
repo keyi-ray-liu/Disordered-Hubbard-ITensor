@@ -29,6 +29,7 @@ include("wrappers.jl")
 include("QE.jl")
 include("SD_close.jl")
 include("io.jl")
+include("time_obs.jl")
 #include("projection.jl")
 
 """The top level function that controls workflow. Use operation mode to select code function"""
@@ -36,7 +37,7 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = true
+  test = false
   disable_blas = true
 
   if disable_blas
@@ -49,18 +50,19 @@ function top()
     println("TEST TEST TEST")
     #iter_sd_wrapper()
     #source_drain_wrapper()
-    transport_wrapper()
+    #transport_wrapper()
     #paras = setpara(;L=12, N=6, ex=2)
     #main(paras)
     #eigensolver_wrapper()
     #QEdyna_wrapper()
     #QE("2", "0.0855")
     #eigen_overlap()
-    #NF_wrapper("0.01", "2", "2", "6", "1", "twosquare")
+    #NF_wrapper("0.01", "2", "4", "14", "1", "linear")
     #QE_dynamic()
     #sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEloc = [[-2.0], [13.0]])
     #sweepcnt=40, noise=false, QE=0, QN=true, QEen=0.0, dp= [] , ζ_dp = [] , QEloc = [])
     #main(paras)
+    time_obs_wrapper("2", "current")
 
 
     
@@ -92,7 +94,7 @@ function top()
       QEdyna_wrapper()
 
     elseif ARGS[1] == "7"
-      time_obs(ARGS[2], ARGS[3])
+      time_obs_wrapper(ARGS[2], ARGS[3])
 
     elseif ARGS[1] == "8"
       cal_overlap()
@@ -117,7 +119,6 @@ function top()
 
     elseif ARGS[1] == "15"
       transport_wrapper()
-
 
 
     else

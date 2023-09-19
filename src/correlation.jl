@@ -70,7 +70,7 @@ function cal_tcd(ψ1, ψ2; temp=true)
 
   L = length(ψ1)
   # type? fix if necessary
-  tcd = zeros( (L) )
+  tcd = zeros( ComplexF64, (L) )
   # get site indices
 
   #s1 = siteinds(ψ1)
@@ -114,7 +114,7 @@ function cal_tcd(ψ1, ψ2; temp=true)
 
     Op = op( operator, s2, i)
     Op /= norm(Op)
-    
+
     cur =  Op * ψ2[i] 
     noprime!(cur)
 
@@ -160,6 +160,32 @@ function time_corr_plot(paras)
     writedlm( workdir * tag * "_corr" * string(get_time(file)), NN_corr )
   end 
 
+
+end 
+
+
+
+function cal_current(ψ, para)
+
+  N = para["N"]
+  v = para["v"]
+
+  Cupup = correlation_matrix(ψ, "Cdagup", "Cup")
+  Cupdn = correlation_matrix(ψ, "Cdagup", "Cdn")
+  Cdndn = correlation_matrix(ψ, "Cdagdn", "Cdn")
+
+  exp_upup = imag(Cupup[1:N, N + 1])
+  exp_dndn = imag(Cdndn[1:N, N + 1])
+  exp_updn = imag(Cupdn[1:N, N + 1])
+  exp_dnup = imag(conj.(transpose(Cupdn))[1:N, N + 1])
+
+  U_matrix = reduce(hcat, [[ Ukj(k, j, N) for j in 1:N ] for k in 1:N])
+  U_k1 = [ Ukj(k, 1, N) for k in 1:N]
+
+  println(  U_matrix * exp_upup)
+  #println([ dot(U_k1, U_matrix, vec) for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
+  I = - 2 * v * sum([ dot(U_k1, U_matrix, vec) for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
+  return I
 
 end 
 

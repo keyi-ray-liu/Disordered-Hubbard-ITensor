@@ -226,36 +226,72 @@ function transport_wrapper()
         :sweepcnt => 50,
         :QEen => 0.0,
         :TEmethod => "TDVP",
-        :TEcutoff => 1E-8,
+        :TEcutoff => 1E-15,
         :type => "Electron",
         :krylovdim => 8,
         :QN=>true,
         :CN=>1,
         :int_ee =>0,
         :int_ne => 0,
-        :U => 1.0
+        :U => 0.0,
+        :t => 1.0
     )
     
     sd_hop = Dict{Any, Any}(
         "to_chain_hop" => 1/sqrt(2),
+        # internal hop scales internal hopping relative to t
         "internal_hop" => 1.0,
         "source_offset" => 0.25,
         "drain_offset" => -0.25,
-        "bulk_bias" => 0.0
+        "bulk_bias" => 1.0
     )
 
     additional_para = Dict(
-        "τ" => 0.1,
-        "start" => 0.1,
+        "τ" => 1.0,
+        "start" => 1.0,
         "fin" => 100,
-        "product_state" => true,
+        "product_state" => false,
         "occ_direct" => false
     )
 
-    para[:source_config] = [ x in rand(1:128, 64) ? 2 : 3 for x in 1:128]
-    para[:drain_config] = [ x in rand(1:128, 64) ? 2 : 3 for x in 1:128]
+    NR = 128
+    para[:source_config] = [ x in rand(1:NR, div(NR, 2)) ? 2 : 3 for x in 1:NR]
+    para[:drain_config] = [ x in rand(1:NR, div(NR, 2)) ? 2 : 3 for x in 1:NR]
+
+    #para[:source_config] = [ 2 for _ in 1:NR]
+    #para[:drain_config] = [ 3 for _ in 1:NR]
     SD_dynamics_transport(para, sd_hop, additional_para)
 
 
 end 
 
+
+function time_obs_wrapper(num, obs)
+
+
+    num = parse(Int, num)
+    if num == 1
+        method = "TEBD"
+
+    elseif num == 2
+        method = "TDVP"
+    end 
+
+    para = Dict{Any, Any}(
+        "obs" => obs,
+        "method" => method
+    )
+
+
+    if obs == "tcd"
+        para["λ_ee"] = 2.0
+        para["ζ"] = 0.5
+    end 
+
+    if obs == "current"
+        para["N"] = 128
+        para["v"] = 1/sqrt(2)
+    end 
+
+    time_obs(para)
+end

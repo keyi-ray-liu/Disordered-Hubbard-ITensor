@@ -13,9 +13,11 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   int_ee = para["int_ee"]
   int_ne = para["int_ne"]
   sd_override = para["sd_override"]
+  U = para["U"]
 
   source_config = para["source_config"]
   drain_config = para["drain_config"]
+  sd_hop = para["sd_hop"]
   
   # if QE > 0, then at least left emitter, and if QN, we account for the AUX site
 
@@ -44,7 +46,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   end 
 
   # if we have spin in the system, add onsite interactions 
-  if type == "Electron"
+  if type == "Electron" && U != 0
     res = add_onsite_hubbard!(res, para, L, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
   end 
   # ##################### end chain hamiltonian ###################################
@@ -77,9 +79,11 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
     res = add_hopping_sd!(res, para, L, disx, disy, sites; if_gate = if_gate, head=head, factor =factor, τ=τ)
     res = add_sd_potential(res, para, sites; if_gate = if_gate,  factor=factor, τ=τ)
-    res = add_onsite_bias!(res, para, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
-
   end 
+
+  if haskey(sd_hop, "bulk_bias")
+    res = add_onsite_bias!(res, para, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+  end
 
   ########################### end SD hamiltonian ###################################
 

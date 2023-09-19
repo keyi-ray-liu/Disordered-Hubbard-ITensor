@@ -8,8 +8,9 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
     method = paras["TEmethod"]
     disorder = paras["disorder"]
     τ = paras["τ"]
-    source_config = paras["source_config"]
-    drain_config = paras["drain_config"]
+    type = paras["type"]
+    #source_config = paras["source_config"]
+    #drain_config = paras["drain_config"]
     
 
     # if QE == 0 && length(source_config) + length(drain)
@@ -76,17 +77,30 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
 
             println("$method time : $dt")
             #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, cutoff, nsite=2)
-            ψ1 = tdvp(H,  -im * τ, ψ;  cutoff, nsite=2, time_step= -im * τ/2, normalize=true)
+            ψ1 = tdvp(H,  -im * τ, ψ;  cutoff, nsite=2, time_step= -im * τ/4, normalize=true)
 
             println( "inner", abs(inner(ψ1, ψ)))
             ψ = ψ1
             
             if occ_direct
-                occ = expect(ψ, "N")
 
-                open(prefix * "occ" * string(τ), "a") do f
-                    writedlm( f, transpose(occ))
-                end 
+                if type == "Electron"
+                    oup = expect(ψ, "Nup")
+                    open(prefix * "occup" * string(τ), "a") do f
+                        writedlm( f, transpose(oup))
+                    end 
+                    
+                    odn = expect(ψ, "Ndn")
+                    open(prefix * "occdn" * string(τ), "a") do f
+                        writedlm( f, transpose(odn))
+                    end 
+
+                elseif type == "Fermion"
+                    occ = expect(ψ, "N")
+                    open(prefix * "occ" * string(τ), "a") do f
+                        writedlm( f, transpose(occ))
+                    end 
+                end
             end 
 
             var = variance(H, ψ1)

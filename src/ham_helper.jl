@@ -232,10 +232,11 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   exch = para["exch"]
   range = para["range"]
   scales = para["scales"]
-  snake = para["snake"]
+  #snake = para["snake"]
   scr = para["screening_int"]
   type = para["type"]
   Ltotal = prod(L)
+  allnn = para["allnn"]
 
   if type == "Fermion"
     ops = "N"
@@ -249,7 +250,8 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
     # E-E
     p1 = j + head
     s1 = sites[p1]
-
+    nns = allnn[j]
+    
     for k= max(1, j - range):j-1
       
       # delta function setting up the exchange between nearest neighbor
@@ -258,7 +260,7 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
 
       # because k < j, we check if j is in the nn of k
 
-      ifexch = (1 -  (j in get_nn(k, L, snake=snake)) * exch )
+      ifexch = (1 -  (j in keys(nns)) * exch )
       r = dis(j, k, L, scales, disx, disy)
       
       screen_factor = exp( - scr * r )

@@ -351,3 +351,8 @@ end
 function count_ele(config)
   return count( i-> (i ==2), config) + count( i-> (i == 3), config) + 2 * count( i-> (i == 4), config)
 end 
+
+function Ukj(k, j, N)
+  return sqrt( 2/ (N + 1)) * sin(  j * k * pi / (N + 1))
+
+end 

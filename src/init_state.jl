@@ -192,6 +192,7 @@ function init_site(para::Dict)
   type = para["type"]
   source_config = para["source_config"]
   drain_config = para["drain_config"]
+  LSR_bruteforce = para["LSR_bruteforce"]
 
   Ltotal = prod(L)
 
@@ -203,7 +204,12 @@ function init_site(para::Dict)
   extras = headoverride > 0 ? 2 * headoverride :  QE * (QN + 1) + length(source_config) + length(drain_config)
 
   #sites = Vector{Index}(undef, L + extras)
-  sites = siteinds(type, Ltotal + extras; conserve_qns =QN)
+
+  if !LSR_bruteforce
+    sites = siteinds(type, Ltotal + extras; conserve_qns =QN)
+
+  else
+    sites = siteinds( n -> n > length(source_config) && n <= Ltotal + length(source_config) ? type : "Boson", Ltotal + extras ; conserve_qns = QN )
   # determines the number of total sites. IF QE and QN, then we have 2 sites for each QE, else 1
   # for s = 1: L + extras
   #   sites[s] =  siteind("Fermion"; addtags="n=$s", conserve_qns =QN)

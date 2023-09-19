@@ -158,10 +158,15 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para)
     # we prepare the initial state
     if !product_state
       # if product state flag is off, we solve fo the GS of the bulk with initial configuration 
-  
+        
+
+      # here we solve for the GS, where initially the chemical potential is turned off
+      gs_para = deepcopy(simu_para)
+      gs_para[ :sd_hop]["source_offset"] = gs_para[ :sd_hop]["drain_offset"] = 0
+
       if !isfile( workdir * initial_state_output * ".h5")
         # if no IS, generate one 
-        paras = setpara(;simu_para..., ex=1, output = initial_state_output, sd_override=true)
+        paras = setpara(;gs_para..., ex=1, output = initial_state_output, sd_override=false)
         main(paras;)
   
       end 
