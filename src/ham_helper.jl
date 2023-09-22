@@ -86,19 +86,28 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   internal_hop = sd_hop["internal_hop"]
   to_chain_hop = sd_hop["to_chain_hop"]
   sd_loc = sd_hop["sd_loc"]
+  LSR_bruteforce = para["LSR_bruteforce"]
+
   # iterate through all sites to get NN
 
   if type == "Fermion"
-    operators = [ ["C", "Cdag"]]
+    bulk_operators = [ ["C", "Cdag"]]
 
   elseif type == "Electron"
-    operators = [ ["Cup", "Cdagup"], ["Cdn", "Cdagdn"]]
+    bulk_operators = [ ["Cup", "Cdagup"], ["Cdn", "Cdagdn"]]
+
+  end 
+
+  if LSR_bruteforce
+    sd_operators = [["A", "Adag"]]
+  else
+    sd_operators = bulk_operators
   end 
 
   #source, internal
-  for i_source =1  : length(s_len) - 1
+  for i_source = 1  : s_len - 1
 
-    println("internal hop, source, $i_source")
+    #println("internal hop, source, $i_source")
     #nns = get_nn(j, L, snake=snake, geometry=geometry, belong="source")
     # for the moment we only consider 1D SD
 
@@ -107,7 +116,7 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
     s1 = sites[p1]
     s2 = sites[p2]
 
-    for operator in operators
+    for operator in sd_operators
 
       op1, op2 = operator 
 
@@ -129,18 +138,18 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   end
 
   #drain, internal
-  for i_drain =1  : length(d_len) - 1
+  for i_drain =1  : d_len - 1
 
     #nns = get_nn(j, L, snake=snake, geometry=geometry, belong="source")
     # for the moment we only consider 1D SD
 
-    println("internal hop, drain, $i_drain")
+    #println("internal hop, drain, $i_drain")
     p1 = i_drain + head + Ltotal 
-    p2 = i_source + head + Ltotal + 1
+    p2 = i_drain + head + Ltotal + 1
     s1 = sites[p1]
     s2 = sites[p2]
 
-    for operator in operators
+    for operator in sd_operators
 
       op1, op2 = operator 
 
@@ -166,28 +175,32 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   r_source = dis(source_site, sd_loc[1], L, scales, disx, disy)
   hop = disorder_hopping(decay, r_source) * to_chain_hop
 
-  p1 = head
-  p2 = source_site + head 
-  s1 = sites[p1]
-  s2 = sites[p2]
+  ps = head
+  pb = source_site + head 
+  ss = sites[ps]
+  sb = sites[pb]
 
-  println("source hop to bulk, $p1, $p2, $hop")
-  for operator in operators
+  
+  for (k, sd_operator) in enumerate(sd_operators)
+    
+    sop1, sop2 = sd_operator
+    bop1, bop2 = bulk_operators[k]
 
-    op1, op2 = operator 
-
+    #println("source hop to bulk, from $ps, $sop1, to $pb, $bop2, $$hop")
+    #println("source hop to bulk, from $pb, $bop2, to $pb, $bop2, $$hop")
     if !if_gate
-      res += -t * hop, op1, p1 ,op2, p2
-      res += -t * hop, op1, p2 ,op2, p1
+      res += -t * hop, sop1, ps ,bop2, pb
+      res += -t * hop, bop1, pb ,sop2, ps
 
     else 
       hj =
-      - t * hop * op(op1, s1) * op(op2, s2) +
-      - t * hop * op(op1, s2) * op(op2, s1)
+      - t * hop * op(sop1, ss) * op(bop2, sb) +
+      - t * hop * op(bop1, sb) * op(sop2, ss)
 
       gatefy!(res, factor, hj, τ)
-
     end 
+
+
 
   end 
 
@@ -196,29 +209,29 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   r_drain = dis(drain_site, sd_loc[2], L, scales, disx, disy)
   hop = disorder_hopping(decay, r_drain) * to_chain_hop
 
-  p1 = drain_site + head
-  p2 = Ltotal + head + 1
+  pb = drain_site + head
+  pd = Ltotal + head + 1
 
-  println("drain hop to bulk, $p1, $p2, $hop")
-  s1 = sites[p1]
-  s2 = sites[p2]
+  #println("drain hop to bulk, $p1, $p2, $hop")
+  sb = sites[pb]
+  sd = sites[pd]
 
-  for operator in operators
-
-    op1, op2 = operator 
-
+  for (k, sd_operator) in enumerate(sd_operators)
+    
+    dop1, dop2 = sd_operator
+    bop1, bop2 = bulk_operators[k]
     if !if_gate
-      res += -t * hop, op1, p1 ,op2, p2
-      res += -t * hop, op1, p2 ,op2, p1
+        res += -t * hop, dop1, pd ,bop2, pb
+        res += -t * hop, bop1, pb ,dop2, pd
 
     else 
       hj =
-      - t * hop * op(op1, s1) * op(op2, s2) +
-      - t * hop * op(op1, s2) * op(op2, s1)
+      - t * hop * op(dop1, sd) * op(bop2, sb) +
+      - t * hop * op(bop1, sb) * op(dop2, sd)
 
       gatefy!(res, factor, hj, τ)
-
     end 
+
 
   end 
 
@@ -564,7 +577,7 @@ function add_onsite_bias!(res, para::Dict, sites; if_gate=false, head=0, factor=
 
   for i = 1:Ltotal
 
-    println("adding bulk bias, $(i + head), $bulk_bias")
+    #println("adding bulk bias, $(i + head), $bulk_bias")
     p = i + head
     si = sites[p]
 
@@ -589,8 +602,9 @@ function add_sd_potential(res, para, sites; if_gate = false, factor=2, τ=0.1)
   L = para["L"]
   type = para["type"]
   Ltotal = prod(L)
+  LSR_bruteforce = para["LSR_bruteforce"]
 
-  if type == "Fermion"
+  if type == "Fermion" || LSR_bruteforce
     ops = "N"
 
   elseif type == "Electron"
@@ -605,7 +619,7 @@ function add_sd_potential(res, para, sites; if_gate = false, factor=2, τ=0.1)
     ps = i_source
     ss = sites[ps]
 
-    println("adding source offset, $ps, $source_offset")
+    #println("adding source offset, $ps, $source_offset, $ops")
     if !if_gate
       res += source_offset, ops, ps
 
@@ -621,7 +635,7 @@ function add_sd_potential(res, para, sites; if_gate = false, factor=2, τ=0.1)
     pd = i_drain + s_len + Ltotal
     sd = sites[pd]
 
-    println("adding drain offset, $pd, $drain_offset")
+    #println("adding drain offset, $pd, $drain_offset. $ops")
 
     if !if_gate
       res += drain_offset, ops, pd

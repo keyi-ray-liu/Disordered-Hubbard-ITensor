@@ -142,7 +142,8 @@ function NF_wrapper(t, spdim, dim, Nup, Ndn, geometry)
         :U => 4.0,
         :type => "Electron",
         :int_ee => 0.0,
-        :int_ne => 0.0
+        :int_ne => 0.0,
+        :cutoff => 1E-20
     )
 
     
@@ -222,11 +223,12 @@ function transport_wrapper()
     para = Dict{Any, Any}(
         :L => 1,
         :N => 0,
-        :sweepdim => 64,
+        :sweepdim => 500,
         :sweepcnt => 50,
         :QEen => 0.0,
         :TEmethod => "TDVP",
         :TEcutoff => 1E-15,
+        :TEdim => 64,
         :type => "Electron",
         :krylovdim => 8,
         :QN=>true,
@@ -234,7 +236,8 @@ function transport_wrapper()
         :int_ee =>0,
         :int_ne => 0,
         :U => 0.0,
-        :t => 1.0
+        :t => 1.0,
+        :LSR_bruteforce => false
     )
     
     sd_hop = Dict{Any, Any}(

@@ -1,10 +1,10 @@
 function get_type_dict(type)
 
   op_str = Dict(
-    1 => "Emp",
-    2 => type == "Fermion" ? "Occ" : "Up",
-    3 => "Dn",
-    4 => "UpDn"
+    1 => type == "Boson" ? "0" : "Emp",
+    2 => type == "Boson" ? "1" : type == "Fermion" ? "Occ" : "Up",
+    3 => type == "Boson" ? "2" : "Dn",
+    4 => type == "Boson" ? "3" : "UpDn"
   )
 
   return op_str

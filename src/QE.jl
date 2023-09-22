@@ -45,7 +45,7 @@ function QE_dynamic(simu_para, additional_para)
     ex = 1
   end 
 
-  if !product_state && !isfile(workdir * output * ".h5") 
+  if (!product_state || isnothing(energy)) && !isfile(workdir * output * ".h5") 
     # if there no target file, we perform a single GS search
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
 

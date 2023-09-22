@@ -11,7 +11,7 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
     type = paras["type"]
     #source_config = paras["source_config"]
     #drain_config = paras["drain_config"]
-    
+    prefix = getworkdir()
 
     # if QE == 0 && length(source_config) + length(drain)
     #     throw(ArgumentError("Dynamics have to include quantum emitter/SD"))
@@ -24,7 +24,12 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
         throw(ArgumentError("reverse parameters not correct"))
     end 
 
-    prefix = getworkdir()
+    if start == τ
+        gs = h5open( prefix * "gs.h5", "w")
+        write(gs, "psi", ψ)
+        close(gs)
+    end 
+
     disx, disy = setdisorder(disorder, L)
 
     #currently only support one case
@@ -77,7 +82,7 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
 
             println("$method time : $dt")
             #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, cutoff, nsite=2)
-            ψ1 = tdvp(H,  -im * τ, ψ;  cutoff, nsite=2, time_step= -im * τ/4, normalize=true)
+            ψ1 = tdvp(H,  -im * τ, ψ; maxdim = maxdim,  cutoff=cutoff, nsite=2, time_step= -im * τ/4, normalize=true)
 
             println( "inner", abs(inner(ψ1, ψ)))
             ψ = ψ1

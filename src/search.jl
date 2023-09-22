@@ -14,7 +14,7 @@ function single_search(para::Dict, sites, disx, disy, λ, states, energies, vars
   method = para["method"]
   tol = 1e-8
   krylovdim = para["krylovdim"]
-  
+  cutoff = para["cutoff"]
   prefix = getworkdir()
   
 
@@ -35,7 +35,7 @@ function single_search(para::Dict, sites, disx, disy, λ, states, energies, vars
         setnoise!(sweeps, 1E-5)
       end 
       
-      setcutoff!(sweeps, 1E-10)
+      setcutoff!(sweeps, cutoff)
 
       _, ψ = dmrg(H, ϕ, sweeps)
       #_, ψ = shift_and_invert(H, ϕ, sweeps)
@@ -87,7 +87,7 @@ function single_search(para::Dict, sites, disx, disy, λ, states, energies, vars
         setnoise!(sweeps, 1E-5)
       end 
 
-      setcutoff!(sweeps, 1E-9)
+      setcutoff!(sweeps, cutoff)
 
       # DMRG method
       # Run the DMRG algorithm, returning energy

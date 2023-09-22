@@ -87,6 +87,8 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   ########################### end SD hamiltonian ###################################
 
+  @show res 
+  
   if !if_gate
     H = MPO(res, sites)
     return H

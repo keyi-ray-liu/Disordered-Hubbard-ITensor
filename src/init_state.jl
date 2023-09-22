@@ -23,6 +23,7 @@ function init_state(para, sites, disx, disy)
   scales = para["scales"]
   snake = para["snake"]
   QEen = para["QEen"]
+  LSR_bruteforce = para["LSR_bruteforce"]
   
   op_str = get_type_dict(type)
   emp = op_str[1]
@@ -42,6 +43,10 @@ function init_state(para, sites, disx, disy)
       state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
 
       if length(source_config) + length(drain_config) > 0
+
+        if LSR_bruteforce
+          op_str = get_type_dict("Boson")
+        end 
 
         source = [ op_str[n] for n in source_config]
         drain = [ op_str[n] for n in drain_config]
@@ -91,7 +96,7 @@ function init_state(para, sites, disx, disy)
 
       end 
 
-      #@show state
+      @show state
       ψ0 = randomMPS(sites,state)
 
     # random MPS if QN is false, making sure no 'stuck' situation
@@ -210,6 +215,8 @@ function init_site(para::Dict)
 
   else
     sites = siteinds( n -> n > length(source_config) && n <= Ltotal + length(source_config) ? type : "Boson", Ltotal + extras ; conserve_qns = QN )
+
+  end 
   # determines the number of total sites. IF QE and QN, then we have 2 sites for each QE, else 1
   # for s = 1: L + extras
   #   sites[s] =  siteind("Fermion"; addtags="n=$s", conserve_qns =QN)

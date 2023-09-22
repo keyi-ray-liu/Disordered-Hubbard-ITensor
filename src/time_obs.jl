@@ -50,8 +50,8 @@ function gs_occ()
 
     workdir = getworkdir()
   
-    gs = h5open( workdir * "target.h5", "r")
-    gs_wf = read(gs, "psi1", MPS)
+    gs = h5open( workdir * "gs.h5", "r")
+    gs_wf = read(gs, "psi", MPS)
     close(gs)
   
     occ_gs = expect(gs_wf, "N")
@@ -89,6 +89,10 @@ function time_obs(para)
     
     current = []
 
+  elseif obs == "EE"
+
+    ee = []
+
   else
     error("Unrecognized obs")
   end 
@@ -107,6 +111,7 @@ function time_obs(para)
 
     t = get_time(file)
     append!(T, t)
+    println("calculating $file")
 
     if obs == "occ"
       bond = checkmaxbond(ψ)
@@ -118,12 +123,8 @@ function time_obs(para)
 
         if !isfile( workdir * "TCD_te_RE$t")
 
-            tcds = []
             println("cal tcd $t")
-
-            for ex in eachindex(qewf)
-            append!( tcds, [cal_tcd( qewf[ex], ψ)])
-            end 
+            tcds =  mapreduce( permutedims, vcat, [cal_tcd( qewf[ex], ψ) for ex in eachindex(qewf)])
         
         else
 
@@ -134,7 +135,7 @@ function time_obs(para)
 
         end 
 
-        gpi = get_gpi(tcds, λ_ee, ζ)
+        gpi = cal_gpi(tcds, λ_ee, ζ)
 
         writedlm( workdir * "gpi_RE$t", real(gpi))
         writedlm( workdir * "gpi_IM$t", imag(gpi))
@@ -148,6 +149,9 @@ function time_obs(para)
         println("current at $t", I)
         append!(current, I)
 
+    elseif obs == "EE"
+
+      append!(ee, entropy_von_neumann(ψ, div(length(ψ), 2) ))
     end 
     
   end 
@@ -163,7 +167,13 @@ function time_obs(para)
   elseif obs == "current"
 
     writedlm(workdir * "current", current)
+
+  elseif obs == "EE"
+
+    writedlm(workdir * "EE-mid", ee)
   end
+
+
 
 
 end 

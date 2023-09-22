@@ -153,28 +153,7 @@ function get_eigen_tcd(tcd_dict, phase_overlap)
 
 end 
 
-function get_gpi(tcd_gs, λ_ee, ζ)
 
-  num = length(tcd_gs)
-  L = length(tcd_gs[1])
-  gpi = zeros(ComplexF64, num)
-
-  for i in 1:num
-
-    tcd = tcd_gs[i]
-    for j in 1:L
-      for k in 1:L
-        
-        if j != k
-          gpi[i] += tcd[j] * tcd[k] * λ_ee / (abs(j - k) + ζ)
-
-        end 
-      end 
-    end 
-  end 
-
-  return gpi
-end 
 
 
 
