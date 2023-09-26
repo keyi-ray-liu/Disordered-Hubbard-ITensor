@@ -26,7 +26,7 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
 
     if start == τ
         gs = h5open( prefix * "gs.h5", "w")
-        write(gs, "psi", ψ)
+        write(gs, "psi1", ψ)
         close(gs)
     end 
 

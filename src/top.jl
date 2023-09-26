@@ -1,5 +1,6 @@
 # load variables specifically in linsolve
 using ITensors: linkind, siteinds, check_hascommoninds, OneITensor
+using StatsBase
 #using ITensors: @debug_check, @timeit_debug, @printf
 #using KrylovKit: eigsolve, linsolve
 #import ITensors: permute, position!
@@ -37,7 +38,7 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = false
+  test = true
   disable_blas = true
 
   if disable_blas
@@ -119,7 +120,6 @@ function top()
 
     elseif ARGS[1] == "15"
       transport_wrapper()
-
 
     else
       println("not a valid operating mode")

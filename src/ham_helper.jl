@@ -189,13 +189,13 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
     #println("source hop to bulk, from $ps, $sop1, to $pb, $bop2, $$hop")
     #println("source hop to bulk, from $pb, $bop2, to $pb, $bop2, $$hop")
     if !if_gate
-      res += -t * hop, sop1, ps ,bop2, pb
-      res += -t * hop, bop1, pb ,sop2, ps
+      res += t * hop, sop1, ps ,bop2, pb
+      res += t * hop, bop1, pb ,sop2, ps
 
     else 
       hj =
-      - t * hop * op(sop1, ss) * op(bop2, sb) +
-      - t * hop * op(bop1, sb) * op(sop2, ss)
+      t * hop * op(sop1, ss) * op(bop2, sb) +
+      t * hop * op(bop1, sb) * op(sop2, ss)
 
       gatefy!(res, factor, hj, τ)
     end 
@@ -221,13 +221,13 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
     dop1, dop2 = sd_operator
     bop1, bop2 = bulk_operators[k]
     if !if_gate
-        res += -t * hop, dop1, pd ,bop2, pb
-        res += -t * hop, bop1, pb ,dop2, pd
+        res += t * hop, dop1, pd ,bop2, pb
+        res += t * hop, bop1, pb ,dop2, pd
 
     else 
       hj =
-      - t * hop * op(dop1, sd) * op(bop2, sb) +
-      - t * hop * op(bop1, sb) * op(dop2, sd)
+      t * hop * op(dop1, sd) * op(bop2, sb) +
+      t * hop * op(bop1, sb) * op(dop2, sd)
 
       gatefy!(res, factor, hj, τ)
     end 

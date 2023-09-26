@@ -182,13 +182,28 @@ function cal_current(ψ, para)
 
 end 
 
-function cal_gpi(tcd_gs::Matrix, λ_ee, ζ)
+function cal_gpi(tcd_gs::Matrix, λ_ee, ζ, section)
 
   num, L = size(tcd_gs)
-  gpi = zeros(ComplexF64, num)
+  gpi = zeros(ComplexF64, num, section)
+  
+  if typeof(section) == Int
+
+    #gap = div(L, length(section))
+
+
+  end 
+  
 
   EE_matrix = reduce(hcat, [ [λ_ee / (abs(j - k) + ζ) for j in 1:L] for k in 1:L])
   EE_matrix -= Diagonal(EE_matrix)
+
+  sec_matrix = zeros(L, L)
+  for (start, fin) in section
+
+    sec_matrix[ start : fin, start : fin ] = EE_matrix[ start:fin, start:fin]
+  end 
+
 
   for i in 1:num
 
@@ -210,3 +225,34 @@ function entropy_von_neumann(psi::MPS, b::Int)
   end
   return SvN
 end
+
+function cal_ee(ψ::MPS, system)
+
+  L = length(ψ)
+
+  soi = []
+
+  if system == "QE"
+    append!(soi, 1)
+    append!(soi, 2)
+    append!(soi, 3)
+
+    step = 10
+    seg = div( L -4, step)
+
+    for s in 1:seg 
+      append!(soi, 2 + step * s)
+    end 
+
+    append!(soi, L + 3)
+    append!(soi, L + 4)
+
+  elseif system == "SD"
+
+    append!(soi, div(L, 2) + 1)
+
+  end 
+
+  return [ entropy_von_neumann(ψ, step * i ) for i in soi], [ size(ψ[ step * j]) for j in soi], soi
+
+end 

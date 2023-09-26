@@ -51,7 +51,7 @@ function gs_occ()
     workdir = getworkdir()
   
     gs = h5open( workdir * "gs.h5", "r")
-    gs_wf = read(gs, "psi", MPS)
+    gs_wf = read(gs, "psi1", MPS)
     close(gs)
   
     occ_gs = expect(gs_wf, "N")
@@ -74,16 +74,27 @@ function time_obs(para)
   workdir = getworkdir()
   method = para["method"]
   obs = para["obs"]
+  
+  type = para["type"]
+  system = para["system"]
 
   if obs == "occ"
-    occs = []
-    bonds = []
+    
+    if type == "Electron"
+      occup = []
+      occdn = []
+
+    else
+      occs =[]
+
+    end 
 
   elseif obs == "tcd"
 
     qewf, _, _ = load_qe()
     λ_ee = para["λ_ee"]
     ζ = para["ζ"]
+    section = para["section"]
 
   elseif obs == "current"
     
@@ -91,7 +102,8 @@ function time_obs(para)
 
   elseif obs == "EE"
 
-    ee = []
+    bonds = []
+    ees = []
 
   else
     error("Unrecognized obs")
@@ -114,10 +126,17 @@ function time_obs(para)
     println("calculating $file")
 
     if obs == "occ"
-      bond = checkmaxbond(ψ)
-      occ = expect(ψ, "N")
-      append!(bonds, bond)
-      append!(occs, [occ])
+      
+
+      if type == "Electron"
+        append!(occup, [expect(ψ, "Nup")])
+        append!(occdn, [expect(ψ, "Ndn")])
+
+      else
+        occ = expect(ψ, "N")
+        append!(occs, [occ])
+
+      end 
 
     elseif obs == "tcd"
 
@@ -135,7 +154,9 @@ function time_obs(para)
 
         end 
 
-        gpi = cal_gpi(tcds, λ_ee, ζ)
+
+        
+        gpi = cal_gpi(tcds, λ_ee, ζ, section)
 
         writedlm( workdir * "gpi_RE$t", real(gpi))
         writedlm( workdir * "gpi_IM$t", imag(gpi))
@@ -151,7 +172,10 @@ function time_obs(para)
 
     elseif obs == "EE"
 
-      append!(ee, entropy_von_neumann(ψ, div(length(ψ), 2) ))
+      ee, bond, soi = cal_ee(ψ, system)
+      append!(ees, [ee])
+      append!(bonds, [bond])
+    
     end 
     
   end 
@@ -159,8 +183,14 @@ function time_obs(para)
   writedlm(workdir *"time", T)
 
   if obs == "occ"
-    writedlm(workdir * "occ", occs)
-    writedlm(workdir * "bonddim", bonds)
+
+    if type == "Electron"
+      writedlm(workdir * "occup", occup)   
+      writedlm(workdir * "occdn", occdn)   
+
+    else
+      writedlm(workdir * "occ", occs)   
+    end 
 
     gs_occ()
 
@@ -170,7 +200,9 @@ function time_obs(para)
 
   elseif obs == "EE"
 
-    writedlm(workdir * "EE-mid", ee)
+    writedlm(workdir * "EE", ees)
+    writedlm(workdir * "SOI", soi)
+    writedlm(workdir * "bonds", bonds)
   end
 
 

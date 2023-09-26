@@ -258,8 +258,8 @@ function transport_wrapper()
     )
 
     NR = 128
-    para[:source_config] = [ x in rand(1:NR, div(NR, 2)) ? 2 : 3 for x in 1:NR]
-    para[:drain_config] = [ x in rand(1:NR, div(NR, 2)) ? 2 : 3 for x in 1:NR]
+    para[:source_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 2 : 3 for x in 1:NR]
+    para[:drain_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 2 : 3 for x in 1:NR]
 
     #para[:source_config] = [ 2 for _ in 1:NR]
     #para[:drain_config] = [ 3 for _ in 1:NR]
@@ -282,13 +282,17 @@ function time_obs_wrapper(num, obs)
 
     para = Dict{Any, Any}(
         "obs" => obs,
-        "method" => method
+        "method" => method,
+        "system" => "QE",
+        "type" => "Fermion"
     )
+
 
 
     if obs == "tcd"
         para["λ_ee"] = 2.0
         para["ζ"] = 0.5
+        para["section"] = 10
     end 
 
     if obs == "current"
@@ -298,3 +302,5 @@ function time_obs_wrapper(num, obs)
 
     time_obs(para)
 end
+
+

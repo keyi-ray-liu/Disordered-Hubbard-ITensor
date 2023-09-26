@@ -240,16 +240,20 @@ end
 
 
 """ check max bond dim of MPS """
-function checkmaxbond(ψ)
+function checkmaxbond(ψ, step, cnt)
 
-  s = length(ψ)
-  maxbond = 0
+  # s = length(ψ)
+  # maxbond = 0
 
-  for i = 1:s
-    maxbond = max( maxbond, maximum(size(ψ[i])))
-  end 
+  # for i = 1:s
+  #   maxbond = max( maxbond, maximum(size(ψ[i])))
+  # end 
 
-  return maxbond
+  # return maxbond
+  start = 1 + step * (cnt  - 1)
+  fin = min( length(ψ), step * cnt)
+
+  return maximum([ size(tensor) for tensor in ψ[start:fin]])
 end 
 
 """ defines X operator"""
