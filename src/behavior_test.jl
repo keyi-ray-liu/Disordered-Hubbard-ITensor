@@ -246,16 +246,22 @@ using ITensors.HDF5
 
 # end 
 
-# unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
+unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 
-# s_len = 128
-# d_len = 128
-# t =  1.0
-# source_offset =0.25
-# drain_offset = -0.25
+s_len = 128
+d_len = 128
+t =  1.0
+source_offset =0.25
+drain_offset = -0.25
 
-# source_energies = [ (2 * t * cos( k * pi / (s_len + 1) )+ source_offset, k) for k in 1:s_len] 
-# drain_energies = [ (2 * t * cos( k * pi / (d_len + 1) ) + drain_offset, k) for k in 1:d_len] 
+source_energies = [ (2 * t * cos( k * pi / (s_len + 1) )+ source_offset, k, 1) for k in 1:s_len] 
+drain_energies = [ (2 * t * cos( k * pi / (d_len + 1) ) + drain_offset, k, 2) for k in 1:d_len] 
 
-# energies, ks = unzip(sort( vcat(source_energies, drain_energies) ))
-# print(energies, ks)
+energies, ks, LR = unzip(sort( vcat(source_energies, drain_energies) ))
+print(energies, ks, LR)
+
+# s = siteinds("Fermion", 10)
+# M = randomMPS(s)
+
+# sites = siteinds(M)
+# hastags(sites, "Fermion")

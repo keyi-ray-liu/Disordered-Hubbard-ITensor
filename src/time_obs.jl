@@ -168,7 +168,7 @@ function time_obs(para)
     elseif obs == "current"
 
         I = cal_current(ψ, para)
-        println("current at $t", I)
+        #println("current at $t", I)
         append!(current, I)
 
     elseif obs == "EE"

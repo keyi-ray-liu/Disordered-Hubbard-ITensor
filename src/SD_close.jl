@@ -159,7 +159,10 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
     # we will keep this basis even for the μ = 0 GS calculations for consistency
     if mix_basis
-      mix_basis_energies, ks = get_mix_energy(simu_para)
+      mix_basis_energies, ks, LR = get_mix_energy(simu_para)
+
+    else
+      mix_basis_energies = ks = []
     end 
   
     # we prepare the initial state
@@ -171,10 +174,17 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
       gs_para = deepcopy(simu_para)
       gs_para[ :sd_hop]["source_offset"] = gs_para[ :sd_hop]["drain_offset"] = 0
 
+      if mix_basis
+        mix_basis_gs , _, _ = get_mix_energy(gs_para; ks=ks, LR=LR)
+
+      else
+        mix_basis_gs = []
+      end 
+
       if !isfile( workdir * initial_state_output * ".h5")
         # if no IS, generate one 
         paras = setpara(;gs_para..., ex=1, output = initial_state_output, sd_override=false)
-        main(paras; mix_basis_energies = mix_basis_energies, ks= ks)
+        main(paras; mix_basis_energies = mix_basis_gs, ks= ks)
   
       end 
   
@@ -200,10 +210,17 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
   
     println("length of ψ is:" , length(ψ))
     println("length of sites", length(sites))
-  
+    
+    if mix_basis
+
+      writedlm(workdir * "mix_basis_energies", mix_basis_energies)
+      writedlm( workdir * "mix_basis_gs", mix_basis_gs)
+      wirtedlm( workdir * "ks", ks)
+    end 
+
     time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs..., mix_basis_energies = mix_basis_energies, ks=ks)
       
-      
+    
   
 end 
 

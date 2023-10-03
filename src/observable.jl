@@ -164,20 +164,46 @@ function cal_current(ψ, para)
   N = para["N"]
   v = para["v"]
 
-  Cupup = correlation_matrix(ψ, "Cdagup", "Cup")
-  Cupdn = correlation_matrix(ψ, "Cdagup", "Cdn")
-  Cdndn = correlation_matrix(ψ, "Cdagdn", "Cdn")
-
-  exp_upup = imag(Cupup[1:N, N + 1])
-  exp_dndn = imag(Cdndn[1:N, N + 1])
-  exp_updn = imag(Cupdn[1:N, N + 1])
-  exp_dnup = imag(conj.(transpose(Cupdn))[1:N, N + 1])
-
   U_matrix = reduce(hcat, [[ Ukj(k, j, N) for j in 1:N ] for k in 1:N])
   U_k1 = [ Ukj(k, 1, N) for k in 1:N]
 
-  #println([ dot(U_k1, U_matrix, vec) for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
-  I = - 2 * v * sum([ transpose(U_k1) * U_matrix * vec for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
+  sites = siteinds(ψ)
+  fermionic = hastags(sites, "Fermion")
+
+  if !fermionic
+    Cupup = correlation_matrix(ψ, "Cdagup", "Cup")
+    Cupdn = correlation_matrix(ψ, "Cdagup", "Cdn")
+    Cdndn = correlation_matrix(ψ, "Cdagdn", "Cdn")
+
+    exp_upup = imag(Cupup[1:N, N + 1])
+    exp_dndn = imag(Cdndn[1:N, N + 1])
+    exp_updn = imag(Cupdn[1:N, N + 1])
+    exp_dnup = imag(conj.(transpose(Cupdn))[1:N, N + 1])
+
+    #println([ dot(U_k1, U_matrix, vec) for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
+    I = - 2 * v * sum([ transpose(U_k1) * U_matrix * vec for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
+
+  else
+
+    CC = correlation_matrix(ψ, "Cdag", "C")
+    exp = imag(CC[1:N, N + 1])
+
+    I = - 2 * v * ( transpose(U_k1) * U_matrix * exp )
+
+
+    # alternative 
+    Itemp = 0
+
+    for k in 1:N
+      for j in 1:N
+        Itemp += - 2 * v * Ukj(k, 1, N) * Ukj(k, j, N) * imag(CC[j, N + 1])
+      end
+    end
+
+    println(I, Itemp)
+
+  end 
+
   return I
 
 end 

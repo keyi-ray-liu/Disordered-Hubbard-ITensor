@@ -362,9 +362,10 @@ function Ukj(k, j, N)
 end 
 
 
-function get_mix_energy(para)
+function get_mix_energy(para; ks = [], LR = [])
 
   unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
+
   sd_hop = para[:sd_hop]
   s_len = length(para[:source_config])
   d_len = length(para[:drain_config])
@@ -373,9 +374,25 @@ function get_mix_energy(para)
   source_offset = sd_hop["source_offset"]
   drain_offset = sd_hop["drain_offset"]
 
-  source_energies = [ (2 * t * cos( k * pi / (s_len + 1) )+ source_offset, k) for k in 1:s_len] 
-  drain_energies = [ (2 * t * cos( k * pi / (d_len + 1) ) + drain_offset, k) for k in 1:d_len] 
-  
-  energies, ks = unzip(sort( vcat(source_energies, drain_energies) ))
-  return energies, ks
+  if length(ks) != length(LR)
+    error("input dimension does not match")
+  end 
+
+  # no ordering to follow, new calculations
+  if length(ks) != s_len + d_len
+    source_vals = [ (2 * t * cos( k * pi / (s_len + 1) )+ source_offset, k, 1) for k in 1:s_len] 
+    drain_vals = [ (2 * t * cos( k * pi / (d_len + 1) ) + drain_offset, k, 2) for k in 1:d_len] 
+    
+    energies, ks, LR= unzip(sort( vcat(source_vals, drain_vals) ))
+
+  # ks is supplied, keep ordering
+  else
+    
+    offset(x) = x == 1 ? source_offset : drain_offset
+    lens = [ s_len, d_len]
+
+    energies = [ 2 * t * cos( ks[i] * pi / (lens[LR[i]] + 1) ) + offset(LR[i]) for i in 1: (s_len + d_len)]
+  end 
+
+  return energies, ks, LR
 end 
