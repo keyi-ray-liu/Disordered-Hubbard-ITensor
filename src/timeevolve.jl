@@ -1,5 +1,5 @@
 """worker function perfomring time evolution"""
-function time_evolve(ψ, sites, paras, start, fin, occ_direct)
+function time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs...)
 
     QE = paras["QE"]
     L = paras["L"]
@@ -39,7 +39,7 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
     if method == "TEBD"
 
 
-        gates = init_ham(paras, L, disx, disy, sites, if_gate=true)
+        gates = init_ham(paras, L, disx, disy, sites; kwargs..., if_gate=true)
         H = init_ham(paras, L, disx, disy, sites )
         
 
@@ -75,14 +75,14 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct)
     elseif method == "TDVP"
 
         # same as DMRG, we set up H first
-        H = init_ham( paras, L, disx, disy, sites)
+        H = init_ham( paras, L, disx, disy, sites; kwargs...)
         #forward evolution
 
         for dt in start:τ:fin
 
             println("$method time : $dt")
             #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, cutoff, nsite=2)
-            ψ1 = tdvp(H,  -im * τ, ψ; maxdim = maxdim,  cutoff=cutoff, nsite=2, time_step= -im * τ/4, normalize=true)
+            ψ1 = tdvp(H,  -im * τ, ψ; maxdim = maxdim,  cutoff=cutoff, nsite=2, time_step= -im * τ/2, normalize=true)
 
             println( "inner", abs(inner(ψ1, ψ)))
             ψ = ψ1

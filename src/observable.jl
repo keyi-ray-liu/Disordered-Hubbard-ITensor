@@ -189,26 +189,21 @@ function cal_gpi(tcd_gs::Matrix, λ_ee, ζ, section)
   
   if typeof(section) == Int
 
-    #gap = div(L, length(section))
-
+    gap = div(L, section)
+    section = [ ( 1 + 2 + gap * (i - 1), 2 + min(L - 4, gap * i)) for i in 1:section]
 
   end 
   
+  print(section)
 
   EE_matrix = reduce(hcat, [ [λ_ee / (abs(j - k) + ζ) for j in 1:L] for k in 1:L])
   EE_matrix -= Diagonal(EE_matrix)
-
-  sec_matrix = zeros(L, L)
-  for (start, fin) in section
-
-    sec_matrix[ start : fin, start : fin ] = EE_matrix[ start:fin, start:fin]
-  end 
 
 
   for i in 1:num
 
     tcd = tcd_gs[i,:]
-    gpi[i] = transpose(tcd) * EE_matrix * tcd
+    gpi[i, :] = [transpose(tcd[start:fin]) * EE_matrix[start:fin, start:fin] * tcd[start:fin] for (start, fin) in section]
   end 
 
   return gpi
@@ -233,7 +228,6 @@ function cal_ee(ψ::MPS, system)
   soi = []
 
   if system == "QE"
-    append!(soi, 1)
     append!(soi, 2)
     append!(soi, 3)
 
@@ -244,8 +238,7 @@ function cal_ee(ψ::MPS, system)
       append!(soi, 2 + step * s)
     end 
 
-    append!(soi, L + 3)
-    append!(soi, L + 4)
+    append!(soi, L - 1)
 
   elseif system == "SD"
 
@@ -253,6 +246,6 @@ function cal_ee(ψ::MPS, system)
 
   end 
 
-  return [ entropy_von_neumann(ψ, step * i ) for i in soi], [ size(ψ[ step * j]) for j in soi], soi
+  return [ entropy_von_neumann(ψ, i ) for i in soi], [ maximum(size(ψ[ j])) for j in soi], soi
 
 end 

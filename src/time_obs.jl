@@ -104,6 +104,7 @@ function time_obs(para)
 
     bonds = []
     ees = []
+    sois = []
 
   else
     error("Unrecognized obs")
@@ -175,6 +176,7 @@ function time_obs(para)
       ee, bond, soi = cal_ee(ψ, system)
       append!(ees, [ee])
       append!(bonds, [bond])
+      append!(sois, [soi])
     
     end 
     
@@ -201,8 +203,8 @@ function time_obs(para)
   elseif obs == "EE"
 
     writedlm(workdir * "EE", ees)
-    writedlm(workdir * "SOI", soi)
     writedlm(workdir * "bonds", bonds)
+    writedlm(workdir * "SOI", sois)
   end
 
 

@@ -1,6 +1,10 @@
 """Completes one iteration of searches based on the number of excited states. Will return states only when all energies are in ascending order."""
-function single_search(para::Dict, sites, disx, disy, λ, states, energies, vars)
-  # Create N fermion indices
+function single_search(para::Dict, sites, disx, disy, states, vars; kwargs...)
+
+  prefix = getworkdir()
+
+  energies = get(kwargs, :energies, [])
+  λ = get(kwargs, :λ, -20.0)
 
   sweepdim = para["sweepdim"]
   sweepcnt = para["sweepcnt"]
@@ -16,13 +20,16 @@ function single_search(para::Dict, sites, disx, disy, λ, states, energies, vars
   krylovdim = para["krylovdim"]
   cutoff = para["cutoff"]
   prefix = getworkdir()
+
+
+
   
 
   # if we gradually increasing the disorder strength
   if length(itr_dis) > 1
 
     # initial state with no disorder
-    H = init_ham(para, para["L"], disx.* 0.0, disy.* 0.0, sites)
+    H = init_ham(para, para["L"], disx.* 0.0, disy.* 0.0, sites; kwargs...)
     ϕ = init_state(para, sites, disx.*0.0, disy.*0.0)
 
     # iteratively build up the GS guess wavefunction
@@ -40,7 +47,7 @@ function single_search(para::Dict, sites, disx, disy, λ, states, energies, vars
       _, ψ = dmrg(H, ϕ, sweeps)
       #_, ψ = shift_and_invert(H, ϕ, sweeps)
 
-      H = init_ham(para, para["L"], disx.* scale, disy.* scale, sites)
+      H = init_ham(para, para["L"], disx.* scale, disy.* scale, sites; kwargs...)
       ϕ = ψ
 
     end 
@@ -50,7 +57,7 @@ function single_search(para::Dict, sites, disx, disy, λ, states, energies, vars
 
   else
     # init with no modification to disorder
-    H = init_ham(para, para["L"], disx, disy, sites)
+    H = init_ham(para, para["L"], disx, disy, sites; kwargs...)
     ϕ = init_state(para, sites, disx, disy)
   end 
 

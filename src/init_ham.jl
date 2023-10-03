@@ -1,5 +1,5 @@
 """Generates the hamiltonian MPO for the given system configuration, both 1D and higher geometry"""
-function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false)
+function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; kwargs...)
   # parameters 
 
   println("H init start")
@@ -18,7 +18,12 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   source_config = para["source_config"]
   drain_config = para["drain_config"]
   sd_hop = para["sd_hop"]
+
+
+  if_gate = get(kwargs, :if_gate, false)
   
+  mix_basis = get(sd_hop, "mix_basis", false)
+  bulk_bias = get(sd_hop, "bulk_bias", 0)
   # if QE > 0, then at least left emitter, and if QN, we account for the AUX site
 
   # head denotes the position of QE1: 0 if QE == 0, 1 if QE but not QN, 2 if QE and QN
@@ -77,18 +82,36 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   if length(source_config) + length(drain_config) > 0 && sd_override == false
 
-    res = add_hopping_sd!(res, para, L, disx, disy, sites; if_gate = if_gate, head=head, factor =factor, τ=τ)
-    res = add_sd_potential(res, para, sites; if_gate = if_gate,  factor=factor, τ=τ)
+    if mix_basis
+      
+      energies = get(kwargs, :mix_basis_energies, [])
+      ks = get(kwargs, :ks, [])
+
+      if length(source_config) + length(drain_config) != length(energies)
+        error("Mix basis and SD(LR) does not match")
+      end 
+
+      if if_gate
+        error("Does not support TEBD")
+      end 
+      # no TEBD support
+      res = add_mix_sd(res, para, energies, ks; head=head)
+
+
+    else
+      res = add_hopping_sd!(res, para, L, disx, disy, sites; if_gate = if_gate, head=head, factor =factor, τ=τ)
+      res = add_sd_potential(res, para, sites; if_gate = if_gate,  factor=factor, τ=τ)
+    end 
   end 
 
-  if haskey(sd_hop, "bulk_bias")
-    res = add_onsite_bias!(res, para, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
+  if bulk_bias != 0
+    res = add_onsite_bias!(res, para, sites, bulk_bias, if_gate=if_gate, head=head, factor= factor, τ=τ)
   end
 
   ########################### end SD hamiltonian ###################################
 
   @show res 
-  
+
   if !if_gate
     H = MPO(res, sites)
     return H

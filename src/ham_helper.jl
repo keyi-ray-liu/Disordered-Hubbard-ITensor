@@ -86,7 +86,6 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   internal_hop = sd_hop["internal_hop"]
   to_chain_hop = sd_hop["to_chain_hop"]
   sd_loc = sd_hop["sd_loc"]
-  LSR_bruteforce = para["LSR_bruteforce"]
 
   # iterate through all sites to get NN
 
@@ -98,11 +97,8 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
 
   end 
 
-  if LSR_bruteforce
-    sd_operators = [["A", "Adag"]]
-  else
-    sd_operators = bulk_operators
-  end 
+
+  sd_operators = bulk_operators
 
   #source, internal
   for i_source = 1  : s_len - 1
@@ -560,13 +556,11 @@ end
 
 
 """ adding bulk bias"""
-function add_onsite_bias!(res, para::Dict, sites; if_gate=false, head=0, factor=2, τ=0.1)
+function add_onsite_bias!(res, para::Dict, sites, bulk_bias; if_gate=false, head=0, factor=2, τ=0.1)
 
-  sd_hop = para["sd_hop"]
   L = para["L"]
   Ltotal = prod(L)
   type = para["type"]
-  bulk_bias = sd_hop["bulk_bias"]
 
   if type == "Fermion"
     ops = "N"
@@ -602,9 +596,8 @@ function add_sd_potential(res, para, sites; if_gate = false, factor=2, τ=0.1)
   L = para["L"]
   type = para["type"]
   Ltotal = prod(L)
-  LSR_bruteforce = para["LSR_bruteforce"]
 
-  if type == "Fermion" || LSR_bruteforce
+  if type == "Fermion" 
     ops = "N"
 
   elseif type == "Electron"
@@ -650,3 +643,63 @@ function add_sd_potential(res, para, sites; if_gate = false, factor=2, τ=0.1)
   return res
 
 end 
+
+
+"""add mixed basis hopping to chain"""
+function add_mix_sd(res, para, energies, ks; head=0)
+
+
+  sd_hop = para["sd_hop"]
+  t = para["t"]
+  s_len = length(para["source_config"])
+  d_len = length(para["drain_config"])
+  L = para["L"]
+  type = para["type"]
+
+  source_site = sd_hop["source_site"]
+  drain_site = sd_hop["drain_site"]
+
+  to_chain_hop = sd_hop["to_chain_hop"]
+
+  Ltotal = prod(L)
+
+  # source, i.e. L
+  for k in 1:s_len
+
+    mixed_k = ks[k]
+    hopping = t * to_chain_hop * Ukj(mixed_k, 1, s_len)
+
+    if type == "Fermion"
+
+      # hop to system
+      res +=  hopping, "Cdag", head + source_site, "C", k
+      res +=  hopping, "Cdag", k, "C", head + source_site
+
+      # diagonal
+      res += energies[k], "N", k
+    end 
+  end 
+
+  # drain, i.e. R
+  for k in 1:d_len
+
+    mixed_k = ks[k + s_len]
+    hopping = t * to_chain_hop * Ukj(mixed_k, 1, d_len)
+
+    if type == "Fermion"
+
+      # hop to system
+      res +=  hopping, "Cdag", head + drain_site, "C", k + head + Ltotal
+      res +=  hopping, "Cdag", k + head + Ltotal, "C", head + drain_site
+
+      # diagonal
+      res += energies[k + s_len], "N", k + head + Ltotal
+
+    end 
+  end 
+
+  return res
+
+  
+end
+

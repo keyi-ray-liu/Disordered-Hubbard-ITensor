@@ -212,36 +212,50 @@ using ITensors.HDF5
 
 
 
-tcds = rand(10, 100) +  1im* rand(10, 100)
+# tcds = rand(10, 100) +  1im* rand(10, 100)
 
-num, L = size(tcds)
+# num, L = size(tcds)
 
-λ_ee = 2.0
-ζ=0.5
+# λ_ee = 2.0
+# ζ=0.5
 
-EE_matrix = reduce(hcat, [ [λ_ee / (abs(j - k) + ζ) for j in 1:L] for k in 1:L])
-EE_matrix -= Diagonal(EE_matrix)
-M = zeros(L, L)
-for i in 1:num
+# EE_matrix = reduce(hcat, [ [λ_ee / (abs(j - k) + ζ) for j in 1:L] for k in 1:L])
+# EE_matrix -= Diagonal(EE_matrix)
+# M = zeros(L, L)
+# for i in 1:num
 
-  tcd = tcds[i, :]
+#   tcd = tcds[i, :]
 
-  r1 = dot(tcd, EE_matrix, tcd)
+#   r1 = dot(tcd, EE_matrix, tcd)
 
-  r3 = transpose(tcd) * EE_matrix * tcd
+#   r3 = transpose(tcd) * EE_matrix * tcd
 
-  r2 = 0
-  for j in 1:L
-    for k in 1:L
+#   r2 = 0
+#   for j in 1:L
+#     for k in 1:L
 
-      if j != k
-        r2 += tcd[j] * tcd[k] * λ_ee / (abs(j - k) + ζ)
-        M[j, k] = λ_ee / (abs(j - k) + ζ)
+#       if j != k
+#         r2 += tcd[j] * tcd[k] * λ_ee / (abs(j - k) + ζ)
+#         M[j, k] = λ_ee / (abs(j - k) + ζ)
 
-      end
-    end
-  end
+#       end
+#     end
+#   end
 
-  println(r1,  "    ", r2, "   ", r3)
+#   println(r1,  "    ", r2, "   ", r3)
 
-end 
+# end 
+
+# unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
+
+# s_len = 128
+# d_len = 128
+# t =  1.0
+# source_offset =0.25
+# drain_offset = -0.25
+
+# source_energies = [ (2 * t * cos( k * pi / (s_len + 1) )+ source_offset, k) for k in 1:s_len] 
+# drain_energies = [ (2 * t * cos( k * pi / (d_len + 1) ) + drain_offset, k) for k in 1:d_len] 
+
+# energies, ks = unzip(sort( vcat(source_energies, drain_energies) ))
+# print(energies, ks)

@@ -97,7 +97,7 @@ function SD_dynamics(simu_para, sd_hop, additional_para)
 end 
 
 
-function SD_dynamics_transport(simu_para, sd_hop, additional_para)
+function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
     workdir = getworkdir()
     L = simu_para[:L]
@@ -123,19 +123,21 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para)
     sd_hop["sd_loc"] = sd_loc
     sd_hop["source_site"] = source_site
     sd_hop["drain_site"] = drain_site
-  
     
+    offset = sd_hop["source_offset"]
+    mix_basis = sd_hop["mix_basis"]
+    
+
   
     product_state = additional_para["product_state"]
-    offset_output = "get_offset_bulk"
-    initial_state_output = "initial_state"
-    offset = sd_hop["source_offset"]
-  
-  
     τ = additional_para["τ"]
     start = additional_para["start"]
     fin = additional_para["fin"]
     occ_direct = additional_para["occ_direct"]
+
+    offset_output = "get_offset_bulk"
+    initial_state_output = "initial_state"
+    
     
     if isnothing(offset) 
       # if no offset, we find the GS of the bulk
@@ -154,6 +156,11 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para)
     end 
   
     simu_para[:sd_hop] = sd_hop
+
+    # we will keep this basis even for the μ = 0 GS calculations for consistency
+    if mix_basis
+      mix_basis_energies, ks = get_mix_energy(simu_para)
+    end 
   
     # we prepare the initial state
     if !product_state
@@ -167,7 +174,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para)
       if !isfile( workdir * initial_state_output * ".h5")
         # if no IS, generate one 
         paras = setpara(;gs_para..., ex=1, output = initial_state_output, sd_override=false)
-        main(paras;)
+        main(paras; mix_basis_energies = mix_basis_energies, ks= ks)
   
       end 
   
@@ -194,7 +201,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para)
     println("length of ψ is:" , length(ψ))
     println("length of sites", length(sites))
   
-    time_evolve(ψ, sites, paras, start, fin, occ_direct)
+    time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs..., mix_basis_energies = mix_basis_energies, ks=ks)
       
       
   

@@ -81,7 +81,7 @@ function QE_dynamic(simu_para, additional_para)
 
   end 
   
-  paras = setpara(;simu_para..., τ=τ, QEen=energy, dynamode="none", output="TE")
+  paras = setpara(;simu_para..., τ=τ, QEen=energy, output="TE")
   # further preparation of the initial state, if needed
   #ψ, sites = TE_stateprep(ψ, paras, sites)
   #ψ, sites = TE_stateprep(paras)

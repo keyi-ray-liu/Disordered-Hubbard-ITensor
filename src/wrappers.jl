@@ -44,10 +44,9 @@ function QEdyna_wrapper()
         :sweepdim => 400,
         :sweepcnt => 30,
         :QE => 2,
-        :QEen => nothing,
+        :QEen => 0.1030502,
         :dynamode => "left",
         :TEmethod => "TDVP",
-        :TEdim => 150,
         :TEcutoff => 1E-9,
         :type => "Fermion",
         :krylovdim => 8,
@@ -223,21 +222,20 @@ function transport_wrapper()
     para = Dict{Any, Any}(
         :L => 1,
         :N => 0,
-        :sweepdim => 500,
+        :sweepdim => 64,
         :sweepcnt => 50,
         :QEen => 0.0,
         :TEmethod => "TDVP",
-        :TEcutoff => 1E-15,
+        :TEcutoff => 1E-7,
         :TEdim => 64,
-        :type => "Electron",
+        :type => "Fermion",
         :krylovdim => 8,
         :QN=>true,
         :CN=>1,
         :int_ee =>0,
         :int_ne => 0,
         :U => 0.0,
-        :t => 1.0,
-        :LSR_bruteforce => false
+        :t => 1.0
     )
     
     sd_hop = Dict{Any, Any}(
@@ -246,20 +244,21 @@ function transport_wrapper()
         "internal_hop" => 1.0,
         "source_offset" => 0.25,
         "drain_offset" => -0.25,
-        "bulk_bias" => 1.0
+        "bulk_bias" => 1.0,
+        "mix_basis" => true
     )
 
     additional_para = Dict(
-        "τ" => 1.0,
-        "start" => 1.0,
+        "τ" => 0.5,
+        "start" => 0.5,
         "fin" => 100,
         "product_state" => false,
         "occ_direct" => false
     )
 
     NR = 128
-    para[:source_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 2 : 3 for x in 1:NR]
-    para[:drain_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 2 : 3 for x in 1:NR]
+    para[:source_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 1 : 2 for x in 1:NR]
+    para[:drain_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 1 : 2 for x in 1:NR]
 
     #para[:source_config] = [ 2 for _ in 1:NR]
     #para[:drain_config] = [ 3 for _ in 1:NR]

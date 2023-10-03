@@ -360,3 +360,22 @@ function Ukj(k, j, N)
   return sqrt( 2/ (N + 1)) * sin(  j * k * pi / (N + 1))
 
 end 
+
+
+function get_mix_energy(para)
+
+  unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
+  sd_hop = para[:sd_hop]
+  s_len = length(para[:source_config])
+  d_len = length(para[:drain_config])
+  t = para[:t]
+
+  source_offset = sd_hop["source_offset"]
+  drain_offset = sd_hop["drain_offset"]
+
+  source_energies = [ (2 * t * cos( k * pi / (s_len + 1) )+ source_offset, k) for k in 1:s_len] 
+  drain_energies = [ (2 * t * cos( k * pi / (d_len + 1) ) + drain_offset, k) for k in 1:d_len] 
+  
+  energies, ks = unzip(sort( vcat(source_energies, drain_energies) ))
+  return energies, ks
+end 
