@@ -185,7 +185,7 @@ end
 
 
 """return the sites indices for further use, can add quantum emitters """
-function init_site(para::Dict)
+function init_site(para::Dict; kwargs...)
   L = para["L"]
   QE = para["QE"]
   QN = para["QN"]
@@ -196,6 +196,7 @@ function init_site(para::Dict)
 
   Ltotal = prod(L)
 
+  addtags = get(kwargs, :addtags, "")
   # set however many extra sites regarding the condition
   # experimental feature, QN AND QE
   # if we have both, then need AUX sites
@@ -206,7 +207,7 @@ function init_site(para::Dict)
   #sites = Vector{Index}(undef, L + extras)
 
 
-  sites = siteinds(type, Ltotal + extras; conserve_qns =QN)
+  sites = siteinds(type, Ltotal + extras; conserve_qns =QN, addtags = addtags)
 
     #sites = siteinds( n -> n > length(source_config) && n <= Ltotal + length(source_config) ? type : "Boson", Ltotal + extras ; conserve_qns = QN )
 
@@ -221,9 +222,9 @@ end
 
 
 """preparing a product state for TE"""
-function TE_stateprep(para)
+function TE_stateprep(para; kwargs...)
 
-  sites = init_site(para)
+  sites = init_site(para; kwargs...)
   L = para["L"]
   N = para["N"]
   QE = para["QE"]
@@ -239,6 +240,7 @@ function TE_stateprep(para)
   op_str = get_type_dict(type)
   emp = op_str[1]
   occ = op_str[2]
+
   
   if QN
     state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]

@@ -38,7 +38,13 @@ function top()
 
   # test handle for more streamlined testing environment in julia REPL
   #test = false
-  test = false
+  
+  if ARGS != []
+    test = false
+  else
+    test = true
+  end 
+
   disable_blas = true
 
   if disable_blas
@@ -51,7 +57,7 @@ function top()
     println("TEST TEST TEST")
     #iter_sd_wrapper()
     #source_drain_wrapper()
-    transport_wrapper()
+    #transport_wrapper()
     #paras = setpara(;L=12, N=6, ex=2)
     #main(paras)
     #eigensolver_wrapper()
@@ -63,15 +69,13 @@ function top()
     #sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEloc = [[-2.0], [13.0]])
     #sweepcnt=40, noise=false, QE=0, QN=true, QEen=0.0, dp= [] , ζ_dp = [] , QEloc = [])
     #main(paras)
-    #time_obs_wrapper("2", "current")
+    time_obs_wrapper("2", "current")
 
 
     
   else
-    if ARGS == []
-      println("must specify operating mode.")
 
-    elseif ARGS[1] == "0"
+    if ARGS[1] == "0"
       plasmonstat( ARGS[2], ARGS[3])
 
     elseif ARGS[1] == "1"

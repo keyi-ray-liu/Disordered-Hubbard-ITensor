@@ -19,7 +19,7 @@ function main(para; kwargs...)
   # in this version, jobs are parallelized and BLAS is not 
 
   if states == []
-    sites = init_site(para)
+    sites = init_site(para; kwargs...)
   else
     sites = siteinds( states[1])
   end

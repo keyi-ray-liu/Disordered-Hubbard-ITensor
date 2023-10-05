@@ -164,47 +164,81 @@ function cal_current(ψ, para)
   N = para["N"]
   v = para["v"]
 
-  U_matrix = reduce(hcat, [[ Ukj(k, j, N) for j in 1:N ] for k in 1:N])
-  U_k1 = [ Ukj(k, 1, N) for k in 1:N]
-
+  workdir = getworkdir()
   sites = siteinds(ψ)
   fermionic = hastags(sites, "Fermion")
+  mix_basis = hastags(sites, "mix")
+
+  if !mix_basis
+    U_matrix = reduce(hcat, [[ Ukj(k, j, N) for j in 1:N ] for k in 1:N])
+    indices = 1:N + 1
+    leftid = 1:N
+
+    rightsite = N + 1
+    U_k1 = [ Ukj(k, N, N) for k in 1:N]
+
+  else
+    U_matrix = I
+    
+    # get the indices for the left sites in the energy basis
+    LR = vec(readdlm(workdir * "LR"))
+    ks = vec(readdlm(workdir * "ks"))
+
+    left_reservoir = findall(x-> x==1, LR)
+
+
+    mps_id = [ left > N ? left + 1 : left for left in left_reservoir]
+    indices = first(mps_id) : max(last(mps_id), N + 1)
+
+    leftid = mps_id .- first(mps_id) .+ 1
+    rightsite = N + 1 - first(mps_id) + 1
+
+    U_k1 = [Ukj(k, N, N) for k in ks[left_reservoir]]
+
+    # println(left_reservoir)
+    # println(mps_id)
+    # println(leftid)
+  end 
+
+  
+
+
 
   if !fermionic
-    Cupup = correlation_matrix(ψ, "Cdagup", "Cup")
-    Cupdn = correlation_matrix(ψ, "Cdagup", "Cdn")
-    Cdndn = correlation_matrix(ψ, "Cdagdn", "Cdn")
+    Cupup = correlation_matrix(ψ, "Cdagup", "Cup"; sites=indices)
+    Cupdn = correlation_matrix(ψ, "Cdagup", "Cdn"; sites=indices)
+    Cdndn = correlation_matrix(ψ, "Cdagdn", "Cdn"; sites=indices)
 
-    exp_upup = imag(Cupup[1:N, N + 1])
-    exp_dndn = imag(Cdndn[1:N, N + 1])
-    exp_updn = imag(Cupdn[1:N, N + 1])
-    exp_dnup = imag(conj.(transpose(Cupdn))[1:N, N + 1])
+    exp_upup = imag(Cupup[leftid,  rightsite])
+    exp_dndn = imag(Cdndn[leftid, rightsite])
+    exp_updn = imag(Cupdn[leftid, rightsite])
+    exp_dnup = imag(conj.(transpose(Cupdn))[leftid, rightsite])
 
     #println([ dot(U_k1, U_matrix, vec) for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
-    I = - 2 * v * sum([ transpose(U_k1) * U_matrix * vec for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
+    current = - 2 * v * sum([ transpose(U_k1) * U_matrix * vec for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
 
   else
 
-    CC = correlation_matrix(ψ, "Cdag", "C")
-    exp = imag(CC[1:N, N + 1])
+    CC = correlation_matrix(ψ, "Cdag", "C"; sites=indices)
+    exp = imag(CC[leftid, rightsite])
 
-    I = - 2 * v * ( transpose(U_k1) * U_matrix * exp )
+    current = - 2 * v * ( transpose(U_k1) * U_matrix * exp )
 
 
-    # alternative 
-    Itemp = 0
+    # # alternative 
+    # Itemp = 0
 
-    for k in 1:N
-      for j in 1:N
-        Itemp += - 2 * v * Ukj(k, 1, N) * Ukj(k, j, N) * imag(CC[j, N + 1])
-      end
-    end
+    # for k in 1:N
+    #   for j in 1:N
+    #     Itemp += - 2 * v * Ukj(k, 1, N) * Ukj(k, j, N) * imag(CC[j, N + 1])
+    #   end
+    # end
 
-    println(I, Itemp)
+    # println(I, Itemp)
 
   end 
 
-  return I
+  return current
 
 end 
 
