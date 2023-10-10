@@ -198,6 +198,7 @@ function cal_current(ψ, para)
     # println(left_reservoir)
     # println(mps_id)
     # println(leftid)
+    println(rightsite)
   end 
 
   

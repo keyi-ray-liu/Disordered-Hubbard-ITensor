@@ -124,41 +124,29 @@ function corr_wrapper()
 end
 
 
-function NF_wrapper(t, spdim, dim, Nup, Ndn, geometry)
+#function NF_wrapper(t, spdim, dim, Nup, Ndn, geometry)
+function NF_wrapper()
 
 
-    t = parse(Float64, t)
-    dim = parse(Int, dim) 
+    cur_dir = pwd()
+    additional_paras= JSON.parsefile( cur_dir * "/NFpara.json")
 
     paras = Dict{Any, Any}(
-        :t => t,
-        :N => [1, parse(Int, Nup), parse(Int, Ndn), 0] ,
-        :geometry => geometry,
-        :sweepdim => 1000,
-        :sweepcnt => 30,
+        :t => get(additional_paras, "t", -1.0),
+        :N => get(additional_paras, "N", 0) ,
+        :geometry => get(additional_paras, "geometry", "linear"),
+        :L => get(additional_paras, "L", 0),
+        :sweepdim => 500,
+        :sweepcnt => 150,
         :ex => 1,
-        :krylovdim => 10,
+        :krylovdim => 20,
         :U => 4.0,
         :type => "Electron",
         :int_ee => 0.0,
         :int_ne => 0.0,
-        :cutoff => 1E-20
+        :cutoff => 1E-9
     )
 
-    
-    if geometry == "linear"
-        L = [ dim for _ in 1:parse(Int, spdim)]
-
-    elseif geometry == "twosquare"
-        L = [ 2 * 2 * dim]
-        paras[:spec_hop_struct] = Dict{Int, Dict{Int, Float64}}(
-            2 * dim - 1 => Dict{Int, Float64}(
-                2 * dim + 1 => 1e-10
-            )
-        )
-    end 
-        
-    paras[:L] = L
 
     NF(paras)
 
@@ -256,7 +244,7 @@ function transport_wrapper()
         "occ_direct" => false
     )
 
-    NR = 128
+    NR = 256
     para[:source_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 1 : 2 for x in 1:NR]
     para[:drain_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 1 : 2 for x in 1:NR]
 

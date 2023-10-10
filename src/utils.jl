@@ -117,18 +117,28 @@ function get_nn(L::Vector{Int}, t; snake=false, geometry ="linear", spec_hop_str
         nn[ 3 * div(site - 1, 3) + 4] = t
       end 
 
-    elseif geometry == "twosquare"
 
-      each = div(total , 2)
-      
-      if site % each == 0
-        #append!(nn, (1, t))
-        nn[site - each + 1] = t
+
+    elseif geometry == "tworing"
+
+      #for two rings, 1, 2 are the shared sites
+      # for the first ring, start 1, 2, 3, .... N//2 + 1
+      # for the second ring, start 1, 2, N//2 + 2, ..., N
+      half = div(total, 2)
+      if site == 1
+        nn[2] = t
+
+      elseif site == 2
+        nn[3] = t
+        nn[ half + 2] = t
+
+      elseif site == half + 1 || site == total
+        nn[1] = t
 
       else
-        nn[site + 1] = t
+        nn[site + 1]= t
+      end
 
-      end 
 
     else
       error(ArgumentError("undefined geometry"))
@@ -385,6 +395,9 @@ function get_mix_energy(para; ks = [], LR = [])
     
     energies, ks, LR= unzip(sort( vcat(source_vals, drain_vals) ))
 
+    # this is where the site starts in the whole lattice
+    zeropoint = searchsortedfirst( energies, 0)
+
   # ks is supplied, keep ordering
   else
     
@@ -392,7 +405,9 @@ function get_mix_energy(para; ks = [], LR = [])
     lens = [ s_len, d_len]
 
     energies = [ 2 * t * cos( ks[i] * pi / (lens[LR[i]] + 1) ) + offset(LR[i]) for i in 1: (s_len + d_len)]
+
+    zeropoint = -1
   end 
 
-  return energies, ks, LR
+  return energies, ks, LR, zeropoint
 end 

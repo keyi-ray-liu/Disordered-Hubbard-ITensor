@@ -12,6 +12,7 @@ using Suppressor, Glob
 using ITensors.HDF5
 using LinearAlgebra
 using ITensorGaussianMPS: correlation_matrix_to_mps, slater_determinant_to_mps
+using JSON
 
 include("main.jl")
 include("setpara.jl")
@@ -64,12 +65,12 @@ function top()
     #QEdyna_wrapper()
     #QE("2", "0.0855")
     #eigen_overlap()
-    #NF_wrapper("0.01", "2", "4", "14", "1", "linear")
+    NF_wrapper()
     #QE_dynamic()
     #sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEloc = [[-2.0], [13.0]])
     #sweepcnt=40, noise=false, QE=0, QN=true, QEen=0.0, dp= [] , ζ_dp = [] , QEloc = [])
     #main(paras)
-    time_obs_wrapper("2", "current")
+    #time_obs_wrapper("2", "current")
 
 
     
@@ -89,7 +90,7 @@ function top()
 
     # test NF
     elseif ARGS[1] == "4"
-      NF_wrapper(ARGS[2], ARGS[3], ARGS[4], ARGS[5], ARGS[6], ARGS[7])
+      NF_wrapper()
 
     # testing QE
     elseif ARGS[1] == "5"

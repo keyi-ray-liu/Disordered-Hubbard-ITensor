@@ -159,9 +159,10 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
     # we will keep this basis even for the μ = 0 GS calculations for consistency
     if mix_basis
-      mix_basis_energies, ks, LR = get_mix_energy(simu_para)
+      mix_basis_energies, ks, LR, zeropoint = get_mix_energy(simu_para)
       addtags = "mix"
 
+      println("zeropoint", zeropoint)
     else
       addtags = ""
       mix_basis_energies = ks = []
@@ -177,7 +178,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
       gs_para[ :sd_hop]["source_offset"] = gs_para[ :sd_hop]["drain_offset"] = 0
 
       if mix_basis
-        mix_basis_gs , _, _ = get_mix_energy(gs_para; ks=ks, LR=LR)
+        mix_basis_gs , _, _, _= get_mix_energy(gs_para; ks=ks, LR=LR)
 
       else
         mix_basis_gs = []
