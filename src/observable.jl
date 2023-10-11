@@ -175,7 +175,7 @@ function cal_current(ψ, para)
     leftid = 1:N
 
     rightsite = N + 1
-    U_k1 = [ Ukj(k, N, N) for k in 1:N]
+    U_k1 = [ Ukj(k, 1, N) for k in 1:N]
 
   else
     U_matrix = I
@@ -193,7 +193,7 @@ function cal_current(ψ, para)
     leftid = mps_id .- first(mps_id) .+ 1
     rightsite = N + 1 - first(mps_id) + 1
 
-    U_k1 = [Ukj(k, N, N) for k in ks[left_reservoir]]
+    U_k1 = [Ukj(k, 1, N) for k in ks[left_reservoir]]
 
     # println(left_reservoir)
     # println(mps_id)

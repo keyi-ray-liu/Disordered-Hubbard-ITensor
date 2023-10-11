@@ -663,20 +663,28 @@ function add_mix_sd(res, para, energies, ks; head=0)
 
   Ltotal = prod(L)
 
+  if type == "Fermion"
+    ops = [ ["Cdag", "C"]]
+    opn = "N"
+
+  elseif type == "Electron"
+    ops = [ ["Cdagup", "Cup"], ["Cdagdn", "Cdn"]]
+    opn = "Ntot"
+
+  end 
   # source, i.e. L
   for k in 1:s_len
 
     mixed_k = ks[k]
     hopping = t * to_chain_hop * Ukj(mixed_k, 1, s_len)
 
-    if type == "Fermion"
-
+    for (op1, op2) in ops
       # hop to system
-      res +=  hopping, "Cdag", head + source_site, "C", k
-      res +=  hopping, "Cdag", k, "C", head + source_site
+      res +=  hopping, op1, head + source_site, op2, k
+      res +=  hopping, op1, k, op2, head + source_site
 
       # diagonal
-      res += energies[k], "N", k
+      res += energies[k], opn, k
     end 
   end 
 
@@ -686,14 +694,14 @@ function add_mix_sd(res, para, energies, ks; head=0)
     mixed_k = ks[k + s_len]
     hopping = t * to_chain_hop * Ukj(mixed_k, 1, d_len)
 
-    if type == "Fermion"
+    for (op1, op2) in ops
 
       # hop to system
-      res +=  hopping, "Cdag", head + drain_site, "C", k + head + Ltotal
-      res +=  hopping, "Cdag", k + head + Ltotal, "C", head + drain_site
+      res +=  hopping, op1, head + drain_site, op2, k + head + Ltotal
+      res +=  hopping, op1, k + head + Ltotal, op2, head + drain_site
 
       # diagonal
-      res += energies[k + s_len], "N", k + head + Ltotal
+      res += energies[k + s_len], opn, k + head + Ltotal
 
     end 
   end 

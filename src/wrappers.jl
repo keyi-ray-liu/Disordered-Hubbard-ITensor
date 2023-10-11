@@ -210,19 +210,19 @@ function transport_wrapper()
     para = Dict{Any, Any}(
         :L => 1,
         :N => 0,
-        :sweepdim => 64,
+        :sweepdim => 128,
         :sweepcnt => 50,
         :QEen => 0.0,
         :TEmethod => "TDVP",
-        :TEcutoff => 1E-7,
-        :TEdim => 64,
-        :type => "Fermion",
+        :TEcutoff => 1E-9,
+        :TEdim => 128,
+        :type => "Electron",
         :krylovdim => 8,
         :QN=>true,
         :CN=>1,
         :int_ee =>0,
         :int_ne => 0,
-        :U => 0.0,
+        :U => 5.0,
         :t => 1.0
     )
     
@@ -232,21 +232,24 @@ function transport_wrapper()
         "internal_hop" => 1.0,
         "source_offset" => 0.25,
         "drain_offset" => -0.25,
-        "bulk_bias" => 1.0,
+        "bulk_bias" => 0.0,
         "mix_basis" => true
     )
 
     additional_para = Dict(
-        "τ" => 0.5,
-        "start" => 0.5,
+        "τ" => 1.0,
+        "start" => 1.0,
         "fin" => 100,
         "product_state" => false,
         "occ_direct" => false
     )
 
+    occ1 = 1 + (para[:type] == "Fermion" ? 0 : 1)
+    occ2 = occ1 + 1
+
     NR = 256
-    para[:source_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 1 : 2 for x in 1:NR]
-    para[:drain_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? 1 : 2 for x in 1:NR]
+    para[:source_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR]
+    para[:drain_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR]
 
     #para[:source_config] = [ 2 for _ in 1:NR]
     #para[:drain_config] = [ 3 for _ in 1:NR]
