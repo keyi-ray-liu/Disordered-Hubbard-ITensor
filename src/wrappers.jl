@@ -136,15 +136,15 @@ function NF_wrapper()
         :N => get(additional_paras, "N", 0) ,
         :geometry => get(additional_paras, "geometry", "linear"),
         :L => get(additional_paras, "L", 0),
-        :sweepdim => 500,
-        :sweepcnt => 150,
+        :sweepdim => get(additional_paras, "sweepdim", 500),
+        :sweepcnt => get(additional_paras, "sweepcnt", 100),
         :ex => 1,
-        :krylovdim => 20,
+        :krylovdim => get(additional_paras, "krylovdim", 10),
         :U => 4.0,
         :type => "Electron",
         :int_ee => 0.0,
         :int_ne => 0.0,
-        :cutoff => 1E-9
+        :cutoff => get(additional_paras, "cutoff", 1E-16)
     )
 
 
@@ -207,34 +207,29 @@ end
 
 function transport_wrapper()
 
+    cur_dir = pwd()
+    transport_para = JSON.parsefile( cur_dir * "/transportpara.json")
+    
     para = Dict{Any, Any}(
-        :L => 1,
-        :N => 0,
-        :sweepdim => 128,
-        :sweepcnt => 50,
+        :L => get(transport_para, "L", 1),
+        :N => get(transport_para, "N", 0),
+        :sweepdim => get(transport_para, "sweepdim", 128),
+        :sweepcnt => get(transport_para, "sweepcnt", 150),
         :QEen => 0.0,
         :TEmethod => "TDVP",
-        :TEcutoff => 1E-9,
-        :TEdim => 128,
-        :type => "Electron",
-        :krylovdim => 8,
+        :TEcutoff => get(transport_para, "TEcutoff", 1E-9),
+        :TEdim => get(transport_para, "TEdim", 128),
+        :type => get(transport_para, "type", "Electron"),
+        :krylovdim => get(transport_para, "krylovdim", 128),
         :QN=>true,
-        :CN=>1,
-        :int_ee =>0,
-        :int_ne => 0,
-        :U => 5.0,
-        :t => 1.0
+        :CN=> get(transport_para, "CN", 0),
+        :int_ee => get(transport_para, "int_ee", 0.0),
+        :int_ne => get(transport_para, "int_ne", 0.0),
+        :U => get(transport_para, "U", 0.0),
+        :t => get(transport_para, "t", 1.0),
     )
     
-    sd_hop = Dict{Any, Any}(
-        "to_chain_hop" => 1/sqrt(2),
-        # internal hop scales internal hopping relative to t
-        "internal_hop" => 1.0,
-        "source_offset" => 0.25,
-        "drain_offset" => -0.25,
-        "bulk_bias" => 0.0,
-        "mix_basis" => true
-    )
+    sd_hop = JSON.parsefile( cur_dir * "/sdpara.json")
 
     additional_para = Dict(
         "τ" => 1.0,
@@ -247,7 +242,7 @@ function transport_wrapper()
     occ1 = 1 + (para[:type] == "Fermion" ? 0 : 1)
     occ2 = occ1 + 1
 
-    NR = 256
+    NR = get(sd_hop, "NR", 128)
     para[:source_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR]
     para[:drain_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR]
 
@@ -286,8 +281,11 @@ function time_obs_wrapper(num, obs)
     end 
 
     if obs == "current"
-        para["N"] = 128
-        para["v"] = 1/sqrt(2)
+        cur_dir = pwd()
+        sd_hop = JSON.parsefile( cur_dir * "/sdpara.json")
+        
+        para["N"] = sd_hop["NR"]
+        para["v"] = sd_hop["to_chain_hop"]
     end 
 
     time_obs(para)

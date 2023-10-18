@@ -102,11 +102,13 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     workdir = getworkdir()
     L = simu_para[:L]
     N = simu_para[:N]
-  
+
     source_config = simu_para[:source_config]
     drain_config  = simu_para[:drain_config]
-  
-    Ntotal = N + count_ele(source_config) + count_ele(drain_config)
+
+    N_sys = N[2] + N[3] + 2 * N[4]
+
+    Ntotal = N_sys + count_ele(source_config) + count_ele(drain_config)
     Ltotal = prod(L)
   
     if length(L) == 1
@@ -116,8 +118,8 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     else
       y = (minimum(L) - 1) / 2
       sd_loc = [ [y, -1.0 ], [y, maximum(L)]]
-      source_site = div(L, 2) + 1
-      drain_site = Ltotal - div(L, 2)
+      source_site = div( minimum(L) - 1, 2) + 1
+      drain_site = Ltotal - div( minimum(L) - 1,  2)
     end 
   
     sd_hop["sd_loc"] = sd_loc

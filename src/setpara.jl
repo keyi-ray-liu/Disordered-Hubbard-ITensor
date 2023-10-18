@@ -13,6 +13,8 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
     L = [L]
   end 
 
+  L = convert(Vector{Int}, L)
+
   Ltotal = prod(L)
   allnn = get_nn(L, t; snake =snake, geometry=geometry, spec_hop_struct= spec_hop_struct)
 

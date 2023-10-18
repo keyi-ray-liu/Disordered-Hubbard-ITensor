@@ -157,7 +157,30 @@ function time_corr_plot(paras)
 
 end 
 
+function gs_occ()
 
+  workdir = getworkdir()
+
+  gs = h5open( workdir * "gs.h5", "r")
+  gs_wf = read(gs, "psi1", MPS)
+  close(gs)
+
+  fermionic = hastags(siteinds(gs_wf), "Fermion")
+
+  if fermionic
+    
+    occ_gs = expect(gs_wf, "N")
+    writedlm( workdir * "gs", occ_gs)
+
+  else
+
+    occ_gsup = expect(gs_wf, "Nup")
+    occ_gsdn = expect(gs_wf, "Ndn")
+
+    writedlm( workdir * "gsup", occ_gsup)
+    writedlm( workdir * "gsdn", occ_gsdn)
+  end
+end 
 
 function cal_current(ψ, para)
 
@@ -212,11 +235,11 @@ function cal_current(ψ, para)
 
     exp_upup = imag(Cupup[leftid,  rightsite])
     exp_dndn = imag(Cdndn[leftid, rightsite])
-    exp_updn = imag(Cupdn[leftid, rightsite])
-    exp_dnup = imag(conj.(transpose(Cupdn))[leftid, rightsite])
+    #exp_updn = imag(Cupdn[leftid, rightsite])
+    #exp_dnup = imag(conj.(transpose(Cupdn))[leftid, rightsite])
 
     #println([ dot(U_k1, U_matrix, vec) for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
-    current = - 2 * v * sum([ transpose(U_k1) * U_matrix * vec for vec in (exp_upup, exp_dndn, exp_updn, exp_dnup)])
+    current = - 2 * v * sum([ transpose(U_k1) * U_matrix * vec for vec in (exp_upup, exp_dndn)])
 
   else
 
