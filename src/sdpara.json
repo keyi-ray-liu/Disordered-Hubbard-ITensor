@@ -1,0 +1,9 @@
+{
+    "to_chain_hop" : 0.707106781,
+    "internal_hop" : 1.0,
+    "source_offset" : 0.25,
+    "drain_offset" : -0.25,
+    "bulk_bias" : 0.0,
+    "mix_basis" : true,
+    "NR" : 256
+}

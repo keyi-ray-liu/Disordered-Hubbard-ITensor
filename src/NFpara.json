@@ -1,0 +1,10 @@
+{
+    "t": -0.001,
+    "L": 26,
+    "N": [21, 4, 1, 0],
+    "geometry": "tworing",
+    "sweepdim": 500,
+    "sweepcnt" : 100,
+    "cutoff" : 1e-16,
+    "krylovdim" : 10
+}
