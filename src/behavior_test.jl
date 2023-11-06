@@ -183,32 +183,32 @@ using ITensors.HDF5
 # end
 
 
-# let 
-#   function f(n, source, bulk)
-#     if n > length(source) && n <= length(source) + length(bulk)
-#       return "Electron"
+let 
+  function f(n, source, bulk)
+    if n > length(source) && n <= length(source) + bulk
+      return "Electron"
 
-#     else
-#       return "Boson"
-#     end
-#   end 
+    else
+      return "Boson"
+    end
+  end 
 
-#   source = [2, 2]
-#   drain = [1, 1]
-#   bulk = 1
+  source = [2, 2]
+  drain = [1, 1]
+  bulk = 2
 
 
 
-#   sites = siteinds( n -> f(n, source, bulk), length(source) + length(drain) + length(bulk))
+  sites = siteinds( n -> f(n, source, bulk), length(source) + length(drain) + bulk)
 
-#   h = OpSum()
-#   h += 1.0, "Adag", length(source), "Cup", length(source) + 1
-#   h += 1.0, "Cdagup", length(source) + 1, "A", length(source)
+  h = OpSum()
+  h += 1.0, "Adag", length(source), "Cup", length(source) + 1
+  h += 1.0, "Cdagup", length(source) + 1, "A", length(source)
 
-#   H = MPO(h, sites)
+  H = MPO(h, sites)
 
   
-# end 
+end 
 
 
 
@@ -260,6 +260,6 @@ using ITensors.HDF5
 # energies, ks, LR = unzip(sort( vcat(source_energies, drain_energies) ))
 # print(energies, ks, LR)
 
-LR = [1,1, 0, 0, 1, 0, 1]
+# LR = [1,1, 0, 0, 1, 0, 1]
 
-findall( x-> x==1, LR)
+# findall( x-> x==1, LR)

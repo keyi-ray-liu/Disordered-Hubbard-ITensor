@@ -372,11 +372,36 @@ function Ukj(k, j, N)
 end 
 
 
+
+function sd_gen(sd_hop; kwargs...)
+
+  which = get(kwargs, :which, "source")
+
+  type = get(kwargs, :type, "Fermion")
+  NR = get(sd_hop, "NR", 128)
+  inelastic = get(sd_hop, "inelastic", false)
+
+  occ1 = 1 + (type == "Fermion" ? 0 : 1)
+  occ2 = occ1 + 1
+
+  if !inelastic
+    config = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR]
+  end 
+
+
+  return config
+end 
+
+""" 
+function that sort energies of the reservoirs, either from scratch (ks = [] and LR = []), or with given order of ks. The latter is used when you want to set up the reservoir that's obtained with a different chemical potential that the current one.
+"""
 function get_mix_energy(para; ks = [], LR = [])
 
   unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 
   sd_hop = para[:sd_hop]
+
+
   s_len = length(para[:source_config])
   d_len = length(para[:drain_config])
   t = para[:t]

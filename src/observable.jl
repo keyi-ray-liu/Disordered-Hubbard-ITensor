@@ -186,6 +186,7 @@ function cal_current(ψ, para)
 
   N = para["N"]
   v = para["v"]
+  syssize = length(ψ) - 2 * N
 
   workdir = getworkdir()
   sites = siteinds(ψ)
@@ -210,7 +211,7 @@ function cal_current(ψ, para)
     left_reservoir = findall(x-> x==1, LR)
 
 
-    mps_id = [ left > N ? left + 1 : left for left in left_reservoir]
+    mps_id = [ left > N ? left + syssize : left for left in left_reservoir]
     indices = first(mps_id) : max(last(mps_id), N + 1)
 
     leftid = mps_id .- first(mps_id) .+ 1
@@ -230,11 +231,12 @@ function cal_current(ψ, para)
 
   if !fermionic
     Cupup = correlation_matrix(ψ, "Cdagup", "Cup"; sites=indices)
-    Cupdn = correlation_matrix(ψ, "Cdagup", "Cdn"; sites=indices)
     Cdndn = correlation_matrix(ψ, "Cdagdn", "Cdn"; sites=indices)
 
     exp_upup = imag(Cupup[leftid,  rightsite])
     exp_dndn = imag(Cdndn[leftid, rightsite])
+
+    #Cupdn = correlation_matrix(ψ, "Cdagup", "Cdn"; sites=indices)
     #exp_updn = imag(Cupdn[leftid, rightsite])
     #exp_dnup = imag(conj.(transpose(Cupdn))[leftid, rightsite])
 

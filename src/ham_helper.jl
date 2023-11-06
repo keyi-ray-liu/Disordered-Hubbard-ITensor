@@ -682,10 +682,10 @@ function add_mix_sd(res, para, energies, ks; head=0)
       # hop to system
       res +=  hopping, op1, head + source_site, op2, k
       res +=  hopping, op1, k, op2, head + source_site
+    end
 
       # diagonal
-      res += energies[k], opn, k
-    end 
+    res += energies[k], opn, k
   end 
 
   # drain, i.e. R
@@ -700,10 +700,11 @@ function add_mix_sd(res, para, energies, ks; head=0)
       res +=  hopping, op1, head + drain_site, op2, k + head + Ltotal
       res +=  hopping, op1, k + head + Ltotal, op2, head + drain_site
 
-      # diagonal
-      res += energies[k + s_len], opn, k + head + Ltotal
-
     end 
+
+    # diagonal
+    res += energies[k + s_len], opn, k + head + Ltotal
+    
   end 
 
   return res

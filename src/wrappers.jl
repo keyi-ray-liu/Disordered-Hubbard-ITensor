@@ -137,7 +137,7 @@ function NF_wrapper()
         :geometry => get(additional_paras, "geometry", "linear"),
         :L => get(additional_paras, "L", 0),
         :sweepdim => get(additional_paras, "sweepdim", 500),
-        :sweepcnt => get(additional_paras, "sweepcnt", 100),
+        :sweepcnt => get(additional_paras, "sweepcnt", 150),
         :ex => 1,
         :krylovdim => get(additional_paras, "krylovdim", 10),
         :U => 4.0,
@@ -219,7 +219,7 @@ function transport_wrapper()
         :TEmethod => "TDVP",
         :TEcutoff => get(transport_para, "TEcutoff", 1E-9),
         :TEdim => get(transport_para, "TEdim", 128),
-        :type => get(transport_para, "type", "Electron"),
+        :type => get(transport_para, "type", "Fermion"),
         :krylovdim => get(transport_para, "krylovdim", 128),
         :QN=>true,
         :CN=> get(transport_para, "CN", 0),
@@ -239,12 +239,9 @@ function transport_wrapper()
         "occ_direct" => false
     )
 
-    occ1 = 1 + (para[:type] == "Fermion" ? 0 : 1)
-    occ2 = occ1 + 1
 
-    NR = get(sd_hop, "NR", 128)
-    para[:source_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR]
-    para[:drain_config] = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR]
+    para[:source_config] = sd_gen(sd_hop, which="source", type=para[:type])
+    para[:drain_config] = sd_gen(sd_hop, which ="drain", type=para[:type])
 
     #para[:source_config] = [ 2 for _ in 1:NR]
     #para[:drain_config] = [ 3 for _ in 1:NR]
@@ -283,9 +280,10 @@ function time_obs_wrapper(num, obs)
     if obs == "current"
         cur_dir = pwd()
         sd_hop = JSON.parsefile( cur_dir * "/sdpara.json")
-        
+
         para["N"] = sd_hop["NR"]
         para["v"] = sd_hop["to_chain_hop"]
+
     end 
 
     time_obs(para)
