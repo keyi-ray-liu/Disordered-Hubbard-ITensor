@@ -3,7 +3,13 @@
     "internal_hop" : 1.0,
     "source_offset" : 0.25,
     "drain_offset" : -0.25,
-    "bulk_bias" : 0.0,
+    "bulk_bias" : 1.0,
     "mix_basis" : true,
-    "NR" : 256
+    "NR" : 256,
+    "inelastic" : true,
+    "inelastic_para":{
+        "kcnt" : 0,
+        "deltak" : 0
+    },
+    "interacting" : false
 }

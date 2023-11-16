@@ -12,7 +12,7 @@ using Suppressor, Glob
 using ITensors.HDF5
 using LinearAlgebra
 using ITensorGaussianMPS: correlation_matrix_to_mps, slater_determinant_to_mps
-using JSON
+using JSON3
 
 include("main.jl")
 include("setpara.jl")
@@ -100,7 +100,7 @@ function top()
       QEdyna_wrapper()
 
     elseif ARGS[1] == "7"
-      time_obs_wrapper(ARGS[2], ARGS[3])
+      time_obs_wrapper( ARGS[2])
 
     elseif ARGS[1] == "8"
       cal_overlap()

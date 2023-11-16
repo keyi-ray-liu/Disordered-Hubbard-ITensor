@@ -328,7 +328,9 @@ function cal_ee(ψ::MPS, system)
 
   elseif system == "SD"
 
-    append!(soi, div(L, 2) + 1)
+    for s in 2:L - 1
+      append!(soi, s)
+    end 
 
   end 
 

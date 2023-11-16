@@ -1,0 +1,7 @@
+{
+    "t" : 0.5,
+    "start" :0.5,
+    "fin":100.0,
+    "product_state":false,
+    "occ_direct" :false
+}

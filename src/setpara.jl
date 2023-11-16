@@ -3,9 +3,9 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
   decay=0.0, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
   guess=false, manual=false, itr_dis=[1.0], range=10000, noise=true, method="DMRG", QE=0, scales=[1.0], 
   QN=true,  QEen=1.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
-  dynamode="none", cutoff=1E-12, TEcutoff=1E-8, TEdim=1E8, TEmethod="TEBD", product_state=false, TEBDfactor=2,
+  dynamode="none", cutoff=1E-12, TEcutoff=1E-8, TEdim=300, TEmethod="TEBD", product_state=false, TEBDfactor=2,
   τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3, geometry = "linear", spec_hop_struct = Dict{Int64, Float64}(),
-  screening_int=0.0, screening_qe=0.0,  source_config = Int[], drain_config = Int[], sd_hop = Dict{Any, Any}(), 
+  screening_int=0.0, screening_qe=0.0,  s_len = 0, d_len = 0, sd_hop = Dict{Any, Any}(), 
   sd_override=false, range_qe=1000)
 
   # process L so that it's consistent with the new definition
@@ -123,15 +123,15 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
     "krylovdim" => krylovdim,
     "screening_int" => screening_int,
     "screening_qe" => screening_qe,
-    "source_config" => source_config,
-    "drain_config" => drain_config,
+    "s_len" => s_len,
+    "d_len" => d_len,
     "sd_hop" => sd_hop,
     "sd_override" => sd_override,
     "range_qe" => range_qe,
     "allnn" => allnn
   )
 
-  if (QE > 0) && length(source_config) + length(drain_config) > 0
+  if (QE > 0) && s_len + d_len > 0
     error("QE and SD cannot both be non zero")
   end 
 
@@ -144,7 +144,12 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
   # end 
   
   workdir = getworkdir()
-  writedlm( workdir * output * "parameters", para)
+
+  open(workdir * output * "parameters.json","w") do f
+    JSON3.pretty(f, para)
+  end
+
+  #writedlm( workdir * output * "parameters", para)
   return para
 end
 

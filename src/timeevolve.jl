@@ -13,7 +13,7 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs...)
     #drain_config = paras["drain_config"]
     prefix = getworkdir()
 
-    # if QE == 0 && length(source_config) + length(drain)
+    # if QE == 0 && s_len + length(drain)
     #     throw(ArgumentError("Dynamics have to include quantum emitter/SD"))
 
     if QE > 2

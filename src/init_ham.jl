@@ -15,8 +15,8 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   sd_override = para["sd_override"]
   U = para["U"]
 
-  source_config = para["source_config"]
-  drain_config = para["drain_config"]
+  s_len = para["s_len"]
+  d_len = para["d_len"]
   sd_hop = para["sd_hop"]
 
 
@@ -28,7 +28,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   # head denotes the position of QE1: 0 if QE == 0, 1 if QE but not QN, 2 if QE and QN
   # we add a head override function for the situation where we need 'empty' site indices
-  head = headoverride > 0 ? headoverride : (QE > 0) * (QN + 1) + length(source_config)
+  head = headoverride > 0 ? headoverride : (QE > 0) * (QN + 1) + s_len
   println("head position is now at", head)
 
   if !if_gate
@@ -80,14 +80,15 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   ########################### end penalty ###################################
   ##################### begin SD hamiltonian ###################################
 
-  if length(source_config) + length(drain_config) > 0 && sd_override == false
+  if s_len + d_len > 0 && sd_override == false
 
     if mix_basis
       
       energies = get(kwargs, :mix_basis_energies, [])
       ks = get(kwargs, :ks, [])
+      LR = get(kwargs, :LR, [])
 
-      if length(source_config) + length(drain_config) != length(energies)
+      if s_len + d_len != length(energies)
         error("Mix basis and SD(LR) does not match")
       end 
 
@@ -95,7 +96,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
         error("Does not support TEBD")
       end 
       # no TEBD support
-      res = add_mix_sd(res, para, energies, ks; head=head)
+      res = add_mix_sd(res, para, energies, ks, LR; head=head)
 
 
     else
@@ -114,6 +115,8 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   if !if_gate
     H = MPO(res, sites)
+
+    @show maxlinkdim(H)
     return H
 
   else

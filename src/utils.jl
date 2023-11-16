@@ -372,10 +372,10 @@ function Ukj(k, j, N)
 end 
 
 
-
+"""generates the source and drain. Depending on the inelastic mix basis set up, we might add additional sites corresponding to adding Δk to k_i. Current operating mode: keyword for "inelastic_mode": "standard" """
 function sd_gen(sd_hop; kwargs...)
 
-  which = get(kwargs, :which, "source")
+  #which = get(kwargs, :which, "source")
 
   type = get(kwargs, :type, "Fermion")
   NR = get(sd_hop, "NR", 128)
@@ -386,7 +386,15 @@ function sd_gen(sd_hop; kwargs...)
 
   if !inelastic
     config = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR]
+
+  else
+
+    inelastic_para = get(sd_hop, "inelastic_para", Dict())
+    kcnt = get(inelastic_para, "kcnt", 0)
+    
+    config = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR * (kcnt + 1)]
   end 
+
 
 
   return config
@@ -402,8 +410,8 @@ function get_mix_energy(para; ks = [], LR = [])
   sd_hop = para[:sd_hop]
 
 
-  s_len = length(para[:source_config])
-  d_len = length(para[:drain_config])
+  s_len = para[:s_len]
+  d_len = para[:d_len]
   t = para[:t]
 
   source_offset = sd_hop["source_offset"]
@@ -435,4 +443,14 @@ function get_mix_energy(para; ks = [], LR = [])
   end 
 
   return energies, ks, LR, zeropoint
+end 
+
+
+function load_JSON(location)
+
+  #temp_string = read(location, String)
+  data = JSON3.read(location, Dict{String, Any} )
+
+  print(typeof(data))
+  return data
 end 

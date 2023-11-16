@@ -1,6 +1,6 @@
 """Returns a initial state.
 Can either generate a random MPS or a guess free fermion initial state"""
-function init_state(para, sites, disx, disy)
+function init_state(para, sites, disx, disy; kwargs...)
 
   L = para["L"]
   N = para["N"]
@@ -15,9 +15,15 @@ function init_state(para, sites, disx, disy)
   headoverride = para["headoverride"]
   mode = para["dynamode"]
   type = para["type"]
+  s_len = para["s_len"]
+  d_len = para["d_len"]
   
-  source_config = para["source_config"]
-  drain_config = para["drain_config"]
+  source_config = get(kwargs, :source_config, [])
+  drain_config = get(kwargs, :drain_config, [])
+
+  if s_len != length(source_config) || d_len != length(drain_config)
+    error("sd configs does not match inputs")
+  end 
 
   Ltotal = prod(L)
   scales = para["scales"]
@@ -41,7 +47,7 @@ function init_state(para, sites, disx, disy)
 
       state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
 
-      if length(source_config) + length(drain_config) > 0
+      if s_len + d_len > 0
 
 
         source = [ op_str[n] for n in source_config]
@@ -191,8 +197,8 @@ function init_site(para::Dict; kwargs...)
   QN = para["QN"]
   headoverride = para["headoverride"]
   type = para["type"]
-  source_config = para["source_config"]
-  drain_config = para["drain_config"]
+  s_len = para["s_len"]
+  d_len = para["d_len"]
 
   Ltotal = prod(L)
 
@@ -202,14 +208,14 @@ function init_site(para::Dict; kwargs...)
   # if we have both, then need AUX sites
 
   # we have previously check condition that SD and QE cannot both be greater than 0
-  extras = headoverride > 0 ? 2 * headoverride :  QE * (QN + 1) + length(source_config) + length(drain_config)
+  extras = headoverride > 0 ? 2 * headoverride :  QE * (QN + 1) + s_len + d_len
 
   #sites = Vector{Index}(undef, L + extras)
 
 
   sites = siteinds(type, Ltotal + extras; conserve_qns =QN, addtags = addtags)
 
-    #sites = siteinds( n -> n > length(source_config) && n <= Ltotal + length(source_config) ? type : "Boson", Ltotal + extras ; conserve_qns = QN )
+    #sites = siteinds( n -> n > s_len && n <= Ltotal + s_len ? type : "Boson", Ltotal + extras ; conserve_qns = QN )
 
   # determines the number of total sites. IF QE and QN, then we have 2 sites for each QE, else 1
   # for s = 1: L + extras
@@ -230,8 +236,8 @@ function TE_stateprep(para; kwargs...)
   QE = para["QE"]
   QN = para["QN"]
 
-  source_config = para["source_config"]
-  drain_config = para["drain_config"]
+  source_config = get(kwargs, :source_config, [])
+  drain_config = get(kwargs, :drain_config, [])
 
   mode = para["dynamode"]
   Ltotal = prod(L)
@@ -241,11 +247,18 @@ function TE_stateprep(para; kwargs...)
   emp = op_str[1]
   occ = op_str[2]
 
+  s_len = para["s_len"]
+  d_len = para["d_len"]
+
+  if s_len != length(source_config) || d_len != length(drain_config)
+    error("sd configs does not match inputs")
+  end 
+
   
   if QN
     state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
 
-    if length(source_config) + length(drain_config) > 0
+    if s_len + d_len > 0
 
       source = [ op_str[n] for n in source_config]
       drain = [ op_str[n] for n in drain_config]

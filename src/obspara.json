@@ -1,0 +1,5 @@
+{
+    "type" : "Fermion",
+    "method" : "TDVP",
+    "system" : "SD"
+}

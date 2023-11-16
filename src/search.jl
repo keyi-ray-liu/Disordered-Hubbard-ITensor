@@ -30,7 +30,7 @@ function single_search(para::Dict, sites, disx, disy, states, vars; kwargs...)
 
     # initial state with no disorder
     H = init_ham(para, para["L"], disx.* 0.0, disy.* 0.0, sites; kwargs...)
-    ϕ = init_state(para, sites, disx.*0.0, disy.*0.0)
+    ϕ = init_state(para, sites, disx.*0.0, disy.*0.0; kwargs...)
 
     # iteratively build up the GS guess wavefunction
     for scale in itr_dis
@@ -58,7 +58,7 @@ function single_search(para::Dict, sites, disx, disy, states, vars; kwargs...)
   else
     # init with no modification to disorder
     H = init_ham(para, para["L"], disx, disy, sites; kwargs...)
-    ϕ = init_state(para, sites, disx, disy)
+    ϕ = init_state(para, sites, disx, disy; kwargs...)
   end 
 
   

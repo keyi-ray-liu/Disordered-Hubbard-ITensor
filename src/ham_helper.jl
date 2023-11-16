@@ -79,8 +79,8 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   sd_hop = para["sd_hop"]
 
   println(sd_hop)
-  s_len = length(para["source_config"])
-  d_len = length(para["drain_config"])
+  s_len = para["s_len"]
+  d_len = para["d_len"]
   source_site = sd_hop["source_site"]
   drain_site = sd_hop["drain_site"]
   internal_hop = sd_hop["internal_hop"]
@@ -590,8 +590,8 @@ end
 """add source-drain potential"""
 function add_sd_potential(res, para, sites; if_gate = false, factor=2, τ=0.1)
 
-  s_len = length(para["source_config"])
-  d_len = length(para["drain_config"])
+  s_len = para["s_len"]
+  d_len = para["d_len"]
   sd_hop = para["sd_hop"]
   L = para["L"]
   type = para["type"]
@@ -646,13 +646,13 @@ end
 
 
 """add mixed basis hopping to chain"""
-function add_mix_sd(res, para, energies, ks; head=0)
+function add_mix_sd(res, para, energies, ks, LR; head=0)
 
-
+  offsetLR(v) = v > s_len ? Ltotal : 0
   sd_hop = para["sd_hop"]
   t = para["t"]
-  s_len = length(para["source_config"])
-  d_len = length(para["drain_config"])
+  s_len = para["s_len"]
+  d_len = para["d_len"]
   L = para["L"]
   type = para["type"]
 
@@ -660,7 +660,8 @@ function add_mix_sd(res, para, energies, ks; head=0)
   drain_site = sd_hop["drain_site"]
 
   to_chain_hop = sd_hop["to_chain_hop"]
-
+  interacting = sd_hop["interacting"]
+  inelastic = sd_hop["inelastic"]
   Ltotal = prod(L)
 
   if type == "Fermion"
@@ -670,7 +671,6 @@ function add_mix_sd(res, para, energies, ks; head=0)
   elseif type == "Electron"
     ops = [ ["Cdagup", "Cup"], ["Cdagdn", "Cdn"]]
     opn = "Ntot"
-
   end 
   # source, i.e. L
   for k in 1:s_len
@@ -685,7 +685,8 @@ function add_mix_sd(res, para, energies, ks; head=0)
     end
 
       # diagonal
-    res += energies[k], opn, k
+    res += energies[k], opn, k 
+
   end 
 
   # drain, i.e. R
@@ -704,8 +705,33 @@ function add_mix_sd(res, para, energies, ks; head=0)
 
     # diagonal
     res += energies[k + s_len], opn, k + head + Ltotal
-    
+
   end 
+
+  # testing inelastic, we add a hopping between the nearest neighbor mode between L and r
+
+  if inelastic
+    for k1 in 1: (s_len + d_len)
+
+      key = LR[k1] == 1 ? 2 : 1
+      diff = findfirst(==(key), LR[ k1 + 1:end])
+
+      
+      # we add a pair of interaction term
+      if !isnothing(diff)
+        
+        k2 = k1 + diff
+
+        for (op1, op2) in ops
+          hopping = t  * exp( - 2.0 * abs( energies[k1] - energies[k2]))
+          
+          res += hopping, op1, k1 + offsetLR(k1), op2, k2 + offsetLR(k2)
+          res += hopping, op1, k2 + offsetLR(k2) , op2, k1 + offsetLR(k1)
+        end
+      end 
+
+    end 
+  end
 
   return res
 

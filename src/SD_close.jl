@@ -4,8 +4,8 @@ function SD_dynamics(simu_para, sd_hop, additional_para)
     L = simu_para[:L]
     N = simu_para[:N]
   
-    source_config = simu_para[:source_config]
-    drain_config  = simu_para[:drain_config]
+    source_config = additional_para["source_config"]
+    drain_config  = additional_para["drain_config"]
   
     Ntotal = N + count_ele(source_config) + count_ele(drain_config)
     Ltotal = prod(L)
@@ -43,8 +43,8 @@ function SD_dynamics(simu_para, sd_hop, additional_para)
       if !isfile(workdir * offset_output * ".h5") 
         # if there no target file, we perform a single GS search, to find the correct offset for the SD
         println("No offset file, generating")
-        paras = setpara(;simu_para..., N=Ntotal, ex=1, output = offset_output, source_config = [], drain_config = [])
-        main(paras;)
+        paras = setpara(;simu_para..., N=Ntotal, ex=1, output = offset_output, s_len = 0, d_len = 0)
+        main(paras; source_config = [], drain_config = [])
       else
         println("offset file found, loading")
       end 
@@ -63,7 +63,7 @@ function SD_dynamics(simu_para, sd_hop, additional_para)
       if !isfile( workdir * initial_state_output * ".h5")
         # if no IS, generate one 
         paras = setpara(;simu_para..., ex=1, output = initial_state_output, sd_override=true)
-        main(paras;)
+        main(paras; source_config = source_config, drain_config = drain_config)
   
       end 
   
@@ -79,7 +79,7 @@ function SD_dynamics(simu_para, sd_hop, additional_para)
   
     else
       paras = setpara(;simu_para...)
-      ψ, sites = TE_stateprep(paras)
+      ψ, sites = TE_stateprep(paras; source_config = source_config, drain_config = drain_config )
     end 
   
     paras = setpara(;simu_para..., τ=τ,  output="TE")
@@ -103,8 +103,8 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     L = simu_para[:L]
     N = simu_para[:N]
 
-    source_config = simu_para[:source_config]
-    drain_config  = simu_para[:drain_config]
+    source_config = additional_para["source_config"]
+    drain_config  = additional_para["drain_config"]
 
     N_sys = N[2] + N[3] + 2 * N[4]
 
@@ -132,7 +132,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
   
     product_state = additional_para["product_state"]
-    τ = additional_para["τ"]
+    τ = additional_para["t"]
     start = additional_para["start"]
     fin = additional_para["fin"]
     occ_direct = additional_para["occ_direct"]
@@ -146,8 +146,8 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
       if !isfile(workdir * offset_output * ".h5") 
         # if there no target file, we perform a single GS search, to find the correct offset for the SD
         println("No offset file, generating")
-        paras = setpara(;simu_para..., N=Ntotal, ex=1, output = offset_output, source_config = [], drain_config = [])
-        main(paras;)
+        paras = setpara(;simu_para..., N=Ntotal, ex=1, output = offset_output, s_len =0, d_len = 0)
+        main(paras; source_config = [], drain_config = [])
       else
         println("offset file found, loading")
       end 
@@ -189,7 +189,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
       if !isfile( workdir * initial_state_output * ".h5")
         # if no IS, generate one 
         paras = setpara(;gs_para..., ex=1, output = initial_state_output, sd_override=false)
-        main(paras; mix_basis_energies = mix_basis_gs, ks= ks, addtags = addtags)
+        main(paras; mix_basis_energies = mix_basis_gs, ks= ks, LR =LR, addtags = addtags, source_config = source_config, drain_config = drain_config)
   
       end 
   
@@ -205,7 +205,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
   
     else
       paras = setpara(;simu_para...)
-      ψ, sites = TE_stateprep(paras; addtags=addtags)
+      ψ, sites = TE_stateprep(paras; addtags=addtags, source_config = source_config, drain_config = drain_config)
     end 
   
     paras = setpara(;simu_para..., τ=τ,  output="TE")
@@ -225,7 +225,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
       writedlm( workdir * "LR", LR)
     end 
 
-    time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs..., mix_basis_energies = mix_basis_energies, ks=ks)
+    time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs..., mix_basis_energies = mix_basis_energies, ks=ks, LR=LR)
       
     
   

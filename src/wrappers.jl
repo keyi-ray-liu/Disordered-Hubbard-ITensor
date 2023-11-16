@@ -37,31 +37,42 @@ end
 
 
 function QEdyna_wrapper()
+    cur_dir = pwd()
+
+
+    #qedyna_string = read( cur_dir * "/QEdynapara.json", String)
+    qedyna_paras = load_JSON(cur_dir * "/QEdynapara.json")
 
     para = Dict(
-        :L => 100,
-        :N => 25,
-        :sweepdim => 400,
-        :sweepcnt => 30,
-        :QE => 2,
-        :QEen => 0.1030502,
-        :dynamode => "left",
-        :TEmethod => "TDVP",
-        :TEcutoff => 1E-9,
-        :type => "Fermion",
-        :krylovdim => 8,
-        :QN=>true,
-        :range=>1000,
-        :range_qe => 1000
+        :L => get(qedyna_paras, "L", 100),
+        :N => get(qedyna_paras, "N", 50),
+        :sweepdim => get(qedyna_paras, "sweepdim", 400),
+        :sweepcnt => get(qedyna_paras, "sweepcnt", 30),
+        :QE => get(qedyna_paras, "QE", 2),
+        :QEen => get(qedyna_paras, "QEen", nothing),
+        :dynamode => get(qedyna_paras, "dynamode", "left"),
+        :TEmethod => get(qedyna_paras, "TEmethod", "TDVP"),
+        :TEdim => get(qedyna_paras, "TEdim", 400),
+        :TEcutoff => get(qedyna_paras, "TEcutoff", 1E-9),
+        :type => get(qedyna_paras, "type", "Fermion"),
+        :krylovdim => get(qedyna_paras, "krylovdim", 8),
+        :QN=> get(qedyna_paras, "QN", true),
+        :range=>get(qedyna_paras, "range", 1000),
+        :range_qe => get(qedyna_paras, "range_qe", 1000),
+        :int_ne => get(qedyna_paras, "int_ne", 2.0),
+        :int_ee => get(qedyna_paras, "int_ee", 2.0),
     )
 
+    
+    add_para = load_JSON(cur_dir * "/addpara.json")
+
     additional_para = Dict(
-        "τ" => 0.5,
-        "start" => 0.5,
-        "fin" => 100.0,
-        "product_state" => false,
-        "occ_direct" => false,
-        "QEmul" => 1.0
+        "τ" => get(add_para, "t", 0.5),
+        "start" => get(add_para, "start", 0.5),
+        "fin" => get(add_para, "fin", 100.0),
+        "product_state" => get(add_para, "product_state", false),
+        "occ_direct" => get(add_para, "occ_direct", false),
+        "QEmul" => get(add_para, "QEmul", 1.0)
     )
 
     QE_dynamic(para, additional_para)
@@ -129,7 +140,7 @@ function NF_wrapper()
 
 
     cur_dir = pwd()
-    additional_paras= JSON.parsefile( cur_dir * "/NFpara.json")
+    additional_paras= load_JSON( cur_dir * "/NFpara.json")
 
     paras = Dict{Any, Any}(
         :t => get(additional_paras, "t", -1.0),
@@ -208,7 +219,7 @@ end
 function transport_wrapper()
 
     cur_dir = pwd()
-    transport_para = JSON.parsefile( cur_dir * "/transportpara.json")
+    transport_para = load_JSON(cur_dir * "/transportpara.json")
     
     para = Dict{Any, Any}(
         :L => get(transport_para, "L", 1),
@@ -217,7 +228,8 @@ function transport_wrapper()
         :sweepcnt => get(transport_para, "sweepcnt", 150),
         :QEen => 0.0,
         :TEmethod => "TDVP",
-        :TEcutoff => get(transport_para, "TEcutoff", 1E-9),
+        :cutoff => get(transport_para, "cutoff", 1E-10),
+        :TEcutoff => get(transport_para, "TEcutoff", 1E-10),
         :TEdim => get(transport_para, "TEdim", 128),
         :type => get(transport_para, "type", "Fermion"),
         :krylovdim => get(transport_para, "krylovdim", 128),
@@ -229,47 +241,38 @@ function transport_wrapper()
         :t => get(transport_para, "t", 1.0),
     )
     
-    sd_hop = JSON.parsefile( cur_dir * "/sdpara.json")
-
-    additional_para = Dict(
-        "τ" => 1.0,
-        "start" => 1.0,
-        "fin" => 100,
-        "product_state" => false,
-        "occ_direct" => false
-    )
+    sd_hop = load_JSON(cur_dir * "/sdpara.json")
+    add_para = load_JSON(cur_dir * "/addpara.json")
 
 
-    para[:source_config] = sd_gen(sd_hop, which="source", type=para[:type])
-    para[:drain_config] = sd_gen(sd_hop, which ="drain", type=para[:type])
+    source_config = sd_gen(sd_hop, which="source", type=para[:type])
+    drain_config = sd_gen(sd_hop, which ="drain", type=para[:type])
+
+    para[:s_len] = length(source_config)
+    para[:d_len] = length(drain_config)
+
+    add_para["source_config"] = source_config
+    add_para["drain_config"] = drain_config
 
     #para[:source_config] = [ 2 for _ in 1:NR]
     #para[:drain_config] = [ 3 for _ in 1:NR]
-    SD_dynamics_transport(para, sd_hop, additional_para)
+    SD_dynamics_transport(para, sd_hop, add_para)
 
 
 end 
 
 
-function time_obs_wrapper(num, obs)
+function time_obs_wrapper( obs)
 
-
-    num = parse(Int, num)
-    if num == 1
-        method = "TEBD"
-
-    elseif num == 2
-        method = "TDVP"
-    end 
+    cur_dir = pwd()
+    obs_para = load_JSON(cur_dir * "/obspara.json")
 
     para = Dict{Any, Any}(
         "obs" => obs,
-        "method" => method,
-        "system" => "QE",
-        "type" => "Fermion"
+        "method" => get(obs_para, "method", "TDVP"),
+        "system" => get(obs_para, "system", "QE"),
+        "type" => get(obs_para, "type", "Fermion"),
     )
-
-
 
     if obs == "tcd"
         para["λ_ee"] = 2.0
@@ -278,9 +281,9 @@ function time_obs_wrapper(num, obs)
     end 
 
     if obs == "current"
-        cur_dir = pwd()
-        sd_hop = JSON.parsefile( cur_dir * "/sdpara.json")
+        
 
+        sd_hop = load_JSON(cur_dir * "/sdpara.json")
         para["N"] = sd_hop["NR"]
         para["v"] = sd_hop["to_chain_hop"]
 
