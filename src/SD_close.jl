@@ -132,7 +132,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
   
     product_state = additional_para["product_state"]
-    τ = additional_para["t"]
+    τ = additional_para["τ"]
     start = additional_para["start"]
     fin = additional_para["fin"]
     occ_direct = additional_para["occ_direct"]

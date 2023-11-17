@@ -182,8 +182,15 @@ using ITensors.HDF5
 
 # end
 
+function benchmark()
 
-let 
+  paras = setpara(;L=12, N=6, ex=2)
+  main(paras)
+
+end 
+
+
+function boson_fermion_test()
   function f(n, source, bulk)
     if n > length(source) && n <= length(source) + bulk
       return "Electron"

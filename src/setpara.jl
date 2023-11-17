@@ -2,8 +2,8 @@
 function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5, 0.5], exch=0.2, 
   decay=0.0, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
   guess=false, manual=false, itr_dis=[1.0], range=10000, noise=true, method="DMRG", QE=0, scales=[1.0], 
-  QN=true,  QEen=1.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
-  dynamode="none", cutoff=1E-12, TEcutoff=1E-8, TEdim=300, TEmethod="TEBD", product_state=false, TEBDfactor=2,
+  QN=true,  QEen=0.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
+  dynamode="none", cutoff=1E-12, TEcutoff=1E-8, TEdim=300, TEmethod="TDVP", product_state=false, TEBDfactor=2,
   τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3, geometry = "linear", spec_hop_struct = Dict{Int64, Float64}(),
   screening_int=0.0, screening_qe=0.0,  s_len = 0, d_len = 0, sd_hop = Dict{Any, Any}(), 
   sd_override=false, range_qe=1000)

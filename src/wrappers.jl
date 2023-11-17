@@ -244,6 +244,14 @@ function transport_wrapper()
     sd_hop = load_JSON(cur_dir * "/sdpara.json")
     add_para = load_JSON(cur_dir * "/addpara.json")
 
+    additional_para = Dict{String, Any}(
+        "τ" => get(add_para, "t", 0.5),
+        "start" => get(add_para, "start", 0.5),
+        "fin" => get(add_para, "fin", 100.0),
+        "product_state" => get(add_para, "product_state", false),
+        "occ_direct" => get(add_para, "occ_direct", false)
+    )
+
 
     source_config = sd_gen(sd_hop, which="source", type=para[:type])
     drain_config = sd_gen(sd_hop, which ="drain", type=para[:type])
@@ -251,12 +259,12 @@ function transport_wrapper()
     para[:s_len] = length(source_config)
     para[:d_len] = length(drain_config)
 
-    add_para["source_config"] = source_config
-    add_para["drain_config"] = drain_config
+    additional_para["source_config"] = source_config
+    additional_para["drain_config"] = drain_config
 
     #para[:source_config] = [ 2 for _ in 1:NR]
     #para[:drain_config] = [ 3 for _ in 1:NR]
-    SD_dynamics_transport(para, sd_hop, add_para)
+    SD_dynamics_transport(para, sd_hop, additional_para)
 
 
 end 

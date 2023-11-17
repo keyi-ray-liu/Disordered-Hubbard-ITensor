@@ -154,7 +154,9 @@ function get_nn(L::Vector{Int}, t; snake=false, geometry ="linear", spec_hop_str
     for new in keys(to_override)
       nns[spe][new] = to_override[new]
     end 
-  end 
+  end   
+
+  print(nns)
 
   return nns
 end 

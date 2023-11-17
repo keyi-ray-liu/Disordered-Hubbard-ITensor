@@ -14,6 +14,7 @@ using LinearAlgebra
 using ITensorGaussianMPS: correlation_matrix_to_mps, slater_determinant_to_mps
 using JSON3
 
+include("behavior_test.jl")
 include("main.jl")
 include("setpara.jl")
 include("setdisorder.jl")
@@ -26,7 +27,12 @@ include("data_gen.jl")
 include("process.jl")
 include("shift_and_invert.jl")
 include("timeevolve.jl")
-include("ham_helper.jl")
+include("ham_hop.jl")
+include("ham_coul.jl")
+include("ham_onsite.jl")
+include("ham_qe.jl")
+include("ham_qn.jl")
+include("ham_sd.jl")
 include("wrappers.jl")
 include("QE.jl")
 include("SD_close.jl")
@@ -56,20 +62,18 @@ function top()
   if test
 
     println("TEST TEST TEST")
+
+    #benchmark()
     #iter_sd_wrapper()
     #source_drain_wrapper()
-    transport_wrapper()
+    #transport_wrapper()
     #paras = setpara(;L=12, N=6, ex=2)
     #main(paras)
     #eigensolver_wrapper()
+    time_obs_wrapper( "occ")
     #QEdyna_wrapper()
-    #QE("2", "0.0855")
     #eigen_overlap()
     #NF_wrapper()
-    #QE_dynamic()
-    #sweepcnt=40, noise=false, QE=2, QN=true, QEen=0.6, dp= [-1.0, 1.0] , ζ_dp = [0.5, 0.5] , QEloc = [[-2.0], [13.0]])
-    #sweepcnt=40, noise=false, QE=0, QN=true, QEen=0.0, dp= [] , ζ_dp = [] , QEloc = [])
-    #main(paras)
     #time_obs_wrapper("2", "current")
 
 
