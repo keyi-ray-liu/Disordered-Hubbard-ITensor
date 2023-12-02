@@ -2,6 +2,7 @@
 """add mixed basis hopping to chain"""
 function add_mix_sd(res, para, energies, ks, LR; head=0)
 
+  println("Adding mixed basis SD")
   offsetLR(v) = v > s_len ? Ltotal : 0
   sd_hop = para["sd_hop"]
   t = para["t"]

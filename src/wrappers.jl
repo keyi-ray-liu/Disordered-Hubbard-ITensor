@@ -52,7 +52,7 @@ function QEdyna_wrapper()
         :QEen => get(qedyna_paras, "QEen", nothing),
         :dynamode => get(qedyna_paras, "dynamode", "left"),
         :TEmethod => get(qedyna_paras, "TEmethod", "TDVP"),
-        :TEdim => get(qedyna_paras, "TEdim", 400),
+        :TEdim => get(qedyna_paras, "TEdim", 300),
         :TEcutoff => get(qedyna_paras, "TEcutoff", 1E-9),
         :type => get(qedyna_paras, "type", "Fermion"),
         :krylovdim => get(qedyna_paras, "krylovdim", 8),
@@ -61,6 +61,7 @@ function QEdyna_wrapper()
         :range_qe => get(qedyna_paras, "range_qe", 1000),
         :int_ne => get(qedyna_paras, "int_ne", 2.0),
         :int_ee => get(qedyna_paras, "int_ee", 2.0),
+        :exch => get(qedyna_paras, "exch", 0.2)
     )
 
     

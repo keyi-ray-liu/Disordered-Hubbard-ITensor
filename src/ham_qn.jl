@@ -1,6 +1,8 @@
 
 """add QN terms if necessary"""
 function add_qn!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, head=0, factor=2, τ=0.1, Λ=30)
+  
+  println("Adding QN conserving")
   N = para["N"]
   Ltotal = prod(L)
 

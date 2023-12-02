@@ -2,6 +2,7 @@
 """E-E interaction term"""
 function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
+  println("Adding EE")
   λ_ee = para["int_ee"]
   ζ_ee = para["ζ"][2]
   exch = para["exch"]
@@ -63,6 +64,8 @@ end
 """N-E interaction term"""
 function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
+  println("Adding NE")
+  
   λ_ne = para["int_ne"]
   ζ_ne = para["ζ"][1]
   self = para["self_nuc"]

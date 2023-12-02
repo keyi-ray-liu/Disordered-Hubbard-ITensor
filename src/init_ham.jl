@@ -39,19 +39,25 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   
   ############################ begin chain hamiltonian ###################################
+
+  
   res = add_hopping_bulk!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
 
   # in case the 0 cases still adds overhead to hamiltonian
   if int_ee != 0
+
     res = add_ee!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
   end 
 
   if int_ne != 0
+
     res = add_ne!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
   end 
 
   # if we have spin in the system, add onsite interactions 
   if type == "Electron" && U != 0
+
+    
     res = add_onsite_hubbard!(res, para, L, sites, if_gate=if_gate, head=head, factor= factor, τ=τ)
   end 
   # ##################### end chain hamiltonian ###################################
@@ -59,11 +65,13 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   # QE part
   # left QE
   if QE > 0 && headoverride == 0
+
     res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=1)
   end 
 
   # right QE
   if QE > 1 && headoverride == 0
+
     res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=2)
   end 
 

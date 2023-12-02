@@ -167,7 +167,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
       println("zeropoint", zeropoint)
     else
       addtags = ""
-      mix_basis_energies = ks = []
+      mix_basis_energies = ks = LR = []
     end 
   
     # we prepare the initial state

@@ -1,6 +1,7 @@
 
 """add on-site interaction in the case of electrons"""
 function add_onsite_hubbard!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, head=0, factor=2, τ=0.1)
+  println("Adding on-site Hubbard")
 
   U = para["U"]
   Ltotal = prod(L)
@@ -26,6 +27,7 @@ end
 """ adding bulk bias"""
 function add_onsite_bias!(res, para::Dict, sites, bulk_bias; if_gate=false, head=0, factor=2, τ=0.1)
 
+  println("Adding on-site bias")
   L = para["L"]
   Ltotal = prod(L)
   type = para["type"]
@@ -58,6 +60,7 @@ end
 """add source-drain potential"""
 function add_sd_potential(res, para, sites; if_gate = false, factor=2, τ=0.1)
 
+  println("Adding SD bias")
   s_len = para["s_len"]
   d_len = para["d_len"]
   sd_hop = para["sd_hop"]

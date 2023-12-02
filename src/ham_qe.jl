@@ -2,6 +2,7 @@
 """add QE terms"""
 function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1, which=1)
 
+  println("Adding QE", which)
   QEen = para["QEen"]
   dp = para["dp"]
   ζ_dp = para["ζ_dp"]

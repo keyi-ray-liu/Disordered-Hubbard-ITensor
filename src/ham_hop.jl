@@ -1,6 +1,8 @@
 """bulk hopping term"""
 function add_hopping_bulk!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
+  println("Adding bulk hopping")
+
   decay = para["decay"]
   Ltotal = prod(L)
   scales = para["scales"]
@@ -70,6 +72,7 @@ end
 """sd hopping term"""
 function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1)
 
+  println("Adding SD hopping")
   t = para["t"]
   decay = para["decay"]
   Ltotal = prod(L)
