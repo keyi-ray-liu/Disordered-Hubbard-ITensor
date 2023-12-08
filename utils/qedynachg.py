@@ -2,7 +2,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 import sys
-from matplotlib import axes
+
 from matplotlib.animation import FuncAnimation
 import matplotlib.animation as animation
 from matplotlib.ticker import MaxNLocator
@@ -203,7 +203,7 @@ def expecteigen():
         r = cnt // col
         c = cnt % col
 
-        cur_ax : axes.Axes = ax[r][c]
+        cur_ax : plt.Axes = ax[r][c]
 
         chain = np.arange(1, len(ex) - 3)
         qe = [0, len(ex) - 3]
@@ -362,44 +362,63 @@ def plot_corr():
 
     def animate(i):
         print("frame {}".format(i))
-        ax.clear()
-        cax.clear()
 
-        im = ax.imshow( Corrs[i], vmin=lo, vmax=hi)
-        
-        if op == "NN":
-            label = r'$\langle \hat{n}_i \hat{n}_j \rangle$'
+        for k, ax in enumerate(axes):
+            
+            cax : plt.Axes = caxes[k]
+            ax.clear()
+            cax.clear()
 
-        elif op == "CC":
-            label = r'$\langle c^+_i c_j \rangle$'
+            im = ax.imshow( Corrs[k][i])
+            
+            #ax[1][ax_pos[j]].axis('off')
+            ax.set_title( vals[k])
+            fig.colorbar(im, cax=cax,  orientation='horizontal' )
 
-        #ax[1][ax_pos[j]].axis('off')
-        fig.colorbar(im, cax=cax, orientation='horizontal', label=label )
 
 
     file = sys.argv[2]
     outdir = os.getcwd() + '/vids/' 
     
     op = sys.argv[3]
-    key = "/" + op + "_corr*"
 
-    NNs = sorted( glob.glob( file + key), key= lambda x: float(x[ len(file) + len(key)  - 1: ]))
+    if op == "CC":
+        vals = ('kcorrRE', 'kcorrIM', 'corrRE', 'corrIM')
+        keys = ["/corr/CC_{}*".format(val) for val in vals]
+
+    elif op =="NN":
+        vals = ('NN')
+        keys = ["/corr/NN_corr*"]
+
+    NNs = [sorted( glob.glob( file + key), key= lambda x: float(x[ len(file) + len(key)  - 1: ])) for key in keys]
 
     #print(NNs)
-    Corrs = [[] for _ in range(len(NNs))]
+    Corrs = [[[] for _ in range(len(NNs[0]))] for _ in range(len(NNs))]
 
-    for i, f in enumerate(NNs):
-        Corrs[i] = np.loadtxt(f)
+    for i, NN in enumerate(NNs):
+
+        print(len(NN))
+        for j, f in enumerate(NN):
+            raw = np.loadtxt(f)
+
+            if 'kcorr' not in f:
+                raw = raw[2 :-2, 2:-2]
+
+            Corrs[i][j] = raw
 
     Corrs = np.array(Corrs)
-    lo = np.amin(Corrs)
-    hi = np.amax(Corrs)
+    lo = np.amin(Corrs, axis=0)
+    hi = np.amax(Corrs, axis=0)
 
-    fig, ax = plt.subplots()
-    divider = make_axes_locatable(ax)
-    cax = divider.append_axes('bottom', size='10%',  pad=0.05) 
+    print(Corrs.shape, lo.shape, hi.shape)
 
-    anim = FuncAnimation(fig, animate, frames=len(Corrs))
+    fig, axes = plt.subplots(4, figsize = (20, 5))
+
+    axes : list[plt.Axes]
+    dividers = [make_axes_locatable(ax) for ax in axes]
+    caxes = [divider.append_axes('bottom', size='10%',  pad=0.05) for divider in dividers]
+
+    anim = FuncAnimation(fig, animate, frames=len(Corrs[0]))
 
     writervideo = animation.FFMpegWriter(fps=10)
     anim.save( outdir + '{}Corr{}.mp4'.format( op, file), writer=writervideo)
@@ -530,24 +549,37 @@ def occ_direct():
     def animate(i):
         print("frame {}".format(i))
         ax.clear()
-        ax.scatter( ref, occup[i], c='blue')
-        ax.scatter( ref, -occdn[i], c ='red')
+        ax.scatter( ref, occ[i], c='blue')
+
+        if systype == "Electron":
+            ax.scatter( ref, -occdn[i], c ='red')
 
         ax.set_ylim( lo, hi)
+        ax.set_title('Charge density per site vs. time')
 
-
+    systype = sys.argv[3]
     file = sys.argv[2]
     outdir = os.getcwd() + '/vids/' 
 
-    occup = np.loadtxt(file + '/occup')
-    occdn = np.loadtxt(file + '/occdn')
 
-    lo = -np.amax( occdn)    
-    hi = np.amax( occup)
+    if systype == "Electron":
+        occup = np.loadtxt(file + '/occup')
+        occdn = np.loadtxt(file + '/occdn')
+        lo = -np.amax( occdn)    
+        hi = np.amax( occup)
+        occ = occup
+        
 
-    ref = np.arange( occup.shape[-1])
+    else:
+        occ = np.loadtxt(file + '/occ')
+        lo = np.amin(occ)
+        hi = np.amax(occ)
+
+        
+    ref = np.arange(occ.shape[-1])
+    
     fig, ax = plt.subplots()
-    anim = FuncAnimation(fig, animate, frames=occup.shape[0])
+    anim = FuncAnimation(fig, animate, frames=occ.shape[0])
 
     writervideo = animation.FFMpegWriter(fps=10)
     anim.save( outdir + 'occ_direct{}.mp4'.format( file), writer=writervideo)
@@ -774,11 +806,213 @@ def ee():
 
     fig.savefig('plots/EE.pdf')
         
+
+def current():
+
+    SCALE_STRING = "1"
+    SCALE_FACTOR = eval(SCALE_STRING)
+    file = sys.argv[2]
+    fig, ax = plt.subplots(figsize= (10, 6))
+    ax: plt.Axes = ax
+    timestep = float(sys.argv[3])
+
+    try:
+        raw = np.loadtxt(file + '/current')
+        raw = np.insert(raw, 0, 0) 
+        ref = np.arange( raw.shape[-1]) * timestep
+
+        ax.plot(ref, raw * SCALE_FACTOR, label= r'Spatial basis: from $ I = -2  \sum_{k} v_k Im \langle  a_k c_S \rangle $')
+
+
+    except FileNotFoundError:
+        print("No current file")
+        pass
+
+    try:
+        raw = np.loadtxt(file + '/mixcurrent')
+        raw = np.insert(raw, 0, 0)
+        ref = np.arange( raw.shape[-1]) * timestep
+
+        ax.plot(ref, raw * SCALE_FACTOR, label= r'Mix basis: from $ I = -2  \sum_{k} v_k Im \langle  a_k c_S \rangle $')
+
+    except FileNotFoundError:
+        print("No mix current file")
+        pass
+
+    try:
+        if os.path.exists(file + '/occ'):
+            tags = ['']
+
+        else:
+            tags = ['up', 'dn']
+
+        for tag in tags:
+            rawocc = np.loadtxt(file + '/occ' + tag)
+            gs = np.loadtxt(file + '/gs' + tag)
+
+            rawocc = np.insert(rawocc, 0, gs, axis=0)
+            LR = np.loadtxt( file + '/LR')
+
+            times, _ = rawocc.shape
+            N = LR.shape[0] // 2
+            pseudo = np.zeros( times - 1)
+
+            
+            ranges = range(N)
+
+            ref = np.arange( pseudo.shape[0]) * timestep
+            #calculate the current from occ
+            for t in range(1, times - 1):
+                pseudo[t ] +=  - (np.sum(rawocc[t + 1, ranges]) - np.sum(rawocc[t - 1, ranges])) / (2 * timestep)
+
+        ax.plot( ref, pseudo * SCALE_FACTOR, label='Spatial basis: From charge density')
+
+
+    except FileNotFoundError:
+        print("No occ file")
+        pass
+
+    try:
+
+        if os.path.exists(file + '/mixocc'):
+            tags = ['']
+
+        else:
+            tags = ['up', 'dn']
+
+        pseudos = []
+
+        for tag in tags:
+            rawocc = np.loadtxt(file + '/mixocc' + tag)
+            gs = np.loadtxt(file + '/mixgs' + tag)
+
+            rawocc = np.insert(rawocc, 0, gs, axis=0)  
+            LR = np.loadtxt( file + '/LR')
+
+            times, alldim = rawocc.shape
+            N_LR = LR.shape[0] // 2
+            syssize = alldim - N_LR * 2
+
+            print(N_LR, syssize)
+            pseudo = np.zeros( times - 1)
+            
+            
+            ids = np.where( LR == 1)[0]
+
+            ranges = [ val + syssize if val >= N_LR else val for val in ids]
+
+            ref = np.arange( pseudo.shape[0]) * timestep
+            #calculate the current from occ
+            for t in range(1, times - 1):
+                pseudo[t ] =  - (np.sum(rawocc[t + 1, ranges]) - np.sum(rawocc[t - 1, ranges])) / ( 2 * timestep)
+
+            pseudos.append( [pseudo])
+
+        ax.plot( ref, np.sum( np.array(pseudos), axis=0).flatten() * SCALE_FACTOR, label='Mix basis: From charge density')
+
+
+    except FileNotFoundError:
+        print("no mix occ file")
+        pass
+
+    ax.legend()
+    ax.set_title('Current as a function of time, CURRENT_SCALE_FACTOR = ' + (SCALE_STRING))
+    ax.set_xlabel('time')
+    ax.set_ylabel('I')
+    
+    fig.tight_layout()
+    fig.savefig('plots/current{}.pdf'.format(file))
+
+
+
+def time_bond_ee(plot_energy=False):
+
+    files = sys.argv[2:]
+
+    if plot_energy:
+        fig, axes = plt.subplots( 5, len(files), figsize = (8 * len(files), 20))
+        axes = [ [ax] for ax in axes] if len(files) == 1 else axes
+
+    else:
+        fig, axes = plt.subplots( 4, len(files), figsize = ( 8 * len(files), 15))
+        axes = [[ax] for ax in axes] if len(files) == 1 else axes
+
+    for i, file in enumerate(files):
+        ee = np.loadtxt(file + '/EE')
+        bond = np.loadtxt(file + '/bonds')
+        occ = np.loadtxt(file + '/expN')
+
+        sites= ee.shape[1]
+        time = ee.shape[0]
+
+        timescale = np.loadtxt(file + '/timescale')
+
+        if plot_energy:
+            energy = np.loadtxt(file + '/mix_basis_energies')
+
+            ax : plt.Axes = axes[-2][i]
+
+            ref = np.arange(1, energy.shape[0] - 1)
+            ax.plot(ref, energy[1:-1])
+            ax.hlines(0.25, xmin= ref[0], xmax = ref[-1], label='Bias L', colors = 'red')
+            ax.hlines(-0.25, xmin= ref[0], xmax = ref[-1], label='Bias R', colors= 'green')
+            ax.vlines( energy[ energy < -0.25].shape[0], ymin = energy[0], ymax = energy[-1], colors='orange', linestyles ='dotted')
+            ax.vlines( energy[ energy < 0.25].shape[0] + 1, ymin = energy[0], ymax = energy[-1], colors='orange', linestyles ='dotted')
+            ax.legend()
+        
+        ax : plt.Axes =axes[0][i]
+        
+        xlabel = "Time"
+        ylabel = "Site Number"
+        extent = [ 1 * timescale, time * timescale, 2, sites + 1]
+
+        im = ax.imshow(bond.transpose(), aspect="auto", extent=extent, interpolation='none')
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title('Max bond dim. vs. t, each site, {}'.format(file))
+        fig.colorbar(im)
+
+        ax : plt.Axes =axes[1][i]
+
+        im = ax.imshow(ee.transpose(), aspect="auto", extent=extent, interpolation='none')
+        ax.set_xlabel(xlabel)
+        ax.set_ylabel(ylabel)
+        ax.set_title('Von Neumann Entropy on bipartite cut. vs. t. {}'.format(file))
+        fig.colorbar(im)
+
+        ax : plt.Axes =axes[2][i]
+
+        seff = np.log( np.power( np.sum( np.exp( 3 * ee) , axis=1) / (ee.shape[-1] -1 ), 1/3))
+        times = np.arange( ee.shape[0]) * timescale
+        ax.scatter(times, seff)
+        ax.set_xlabel('Time')
+        ax.set_ylabel('S_eff')
+        ax.set_title('Effectly Entropy vs. t. {}'.format(file))
+
+        ax : plt.Axes =axes[-1][i]
+
+        exl = occ[:, 1]
+        exr = occ[:, -2]
+
+        times = np.arange( occ.shape[0]) * timescale
+        ax.scatter(times, exl, label='QE left')
+        ax.scatter(times, exr, label='QE right')
+        ax.set_xlabel('Time')
+        ax.set_ylabel('QE level')
+        ax.set_title('QE levels vs. t. {}'.format(file))
+
+        ax.legend()
+
+
+    fig.tight_layout()
+    fig.savefig('plots/{}allEEvtime.pdf'.format('_'.join(files)))
+
+
+
 if __name__ == '__main__':
     
     control = int(sys.argv[1])
 
-    timechange = 1e10
     #comment = "Timechange at {}, Left: bond dim capped at 150. Right: bond dim capped at 300".format(timechange)
 
     if control == 1:
@@ -826,3 +1060,9 @@ if __name__ == '__main__':
 
     elif control == 15:
         ee()
+
+    elif control == 16:
+        current()
+
+    elif control == 17:
+        time_bond_ee()
