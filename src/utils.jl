@@ -456,3 +456,38 @@ function load_JSON(location)
   print(typeof(data))
   return data
 end 
+
+
+
+"""function that calculates partial trace of MPO. The leftend indicates where the left partial trace ends ( include), default 0 (no left partial trace); similar for right end ( include), default to 1e4 (no right partial trace)"""
+function partial_tr( M::MPO; leftend::Int =0, rightend::Int=10^4, plev::Pair{Int,Int}=0 => 1, tags::Pair=ts"" => ts"")
+
+
+  if leftend > rightend 
+    error("leftend cannot be greater or equal to rightend")
+  end 
+
+  if leftend >= rightend - 1
+    return tr(M; plev=plev, tags=tags)
+  end 
+
+  sys = deepcopy(M[ leftend + 1: rightend - 1])
+
+  L = R = 1
+  N = length(M)
+
+  for left = 1:leftend
+    L *= M[left]
+    L = tr(L; plev=plev, tags=tags)
+  end 
+
+  for right =rightend:N
+    R *= M[right]
+    R = tr(R; plev=plev, tags=tags)
+  end
+
+  sys[1] *= L
+  sys[end] *= R
+
+  return sys
+end

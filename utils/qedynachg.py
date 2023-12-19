@@ -363,24 +363,27 @@ def plot_corr():
     def animate(i):
         print("frame {}".format(i))
 
-        for k, ax in enumerate(axes):
-            
-            cax : plt.Axes = caxes[k]
-            ax.clear()
-            cax.clear()
+        # axes has shape (r, c) where each col represents a case
+        for j, row in enumerate(axes):
+            for k, ax in enumerate(row):
+                
+                #print(j, k)
+                cax : plt.Axes = caxes[j][k]
+                ax.clear()
+                cax.clear()
 
-            im = ax.imshow( Corrs[k][i])
-            
-            #ax[1][ax_pos[j]].axis('off')
-            ax.set_title( vals[k])
-            fig.colorbar(im, cax=cax,  orientation='horizontal' )
+                im = ax.imshow( Corrs[j, k, i], vmin = lo[j,k], vmax=  hi[j,k])
+                
+                #ax[1][ax_pos[j]].axis('off')
+                ax.set_title( vals[j] + files[k])
+                fig.colorbar(im, cax=cax,  orientation='horizontal' )
 
 
 
-    file = sys.argv[2]
+    files = sys.argv[3:]
     outdir = os.getcwd() + '/vids/' 
     
-    op = sys.argv[3]
+    op = sys.argv[2]
 
     if op == "CC":
         vals = ('kcorrRE', 'kcorrIM', 'corrRE', 'corrIM')
@@ -390,38 +393,46 @@ def plot_corr():
         vals = ('NN')
         keys = ["/corr/NN_corr*"]
 
-    NNs = [sorted( glob.glob( file + key), key= lambda x: float(x[ len(file) + len(key)  - 1: ])) for key in keys]
+    NNs = [[sorted( glob.glob( file + key), key= lambda x: float(x[ len(file) + len(key)  - 1: ])) for file in files] for key in keys]
 
+    minval = 1e10
+    for i, NNkey in enumerate(NNs):
+        for j, NNcase in enumerate(NNkey):
+            minval = min(minval, len(NNcase))
+            
     #print(NNs)
-    Corrs = [[[] for _ in range(len(NNs[0]))] for _ in range(len(NNs))]
+    Corrs = [[[[] for _ in range(minval)] for _ in range(len(NNs[0]))] for _ in range(len(NNs))]
 
-    for i, NN in enumerate(NNs):
 
-        print(len(NN))
-        for j, f in enumerate(NN):
-            raw = np.loadtxt(f)
+    for i, NNkey in enumerate(NNs):
+        for j, NNcase in enumerate(NNkey):
+            for k, f in enumerate(NNcase[:minval]):
+                raw = np.loadtxt(f)
+                if 'kcorr' not in f:
+                    raw = raw[2 :-2, 2:-2]
 
-            if 'kcorr' not in f:
-                raw = raw[2 :-2, 2:-2]
-
-            Corrs[i][j] = raw
+                Corrs[i][j][k] = raw
+                
 
     Corrs = np.array(Corrs)
-    lo = np.amin(Corrs, axis=0)
-    hi = np.amax(Corrs, axis=0)
+    lo = np.amin(Corrs, axis=tuple(range(2, Corrs.ndim)))
+    hi = np.amax(Corrs, axis=tuple(range(2, Corrs.ndim)))
 
     print(Corrs.shape, lo.shape, hi.shape)
 
-    fig, axes = plt.subplots(4, figsize = (20, 5))
+    fig, axes = plt.subplots(4, Corrs.shape[1], figsize = (5* Corrs.shape[1], 20))
 
-    axes : list[plt.Axes]
-    dividers = [make_axes_locatable(ax) for ax in axes]
-    caxes = [divider.append_axes('bottom', size='10%',  pad=0.05) for divider in dividers]
+    if Corrs.shape[1] == 1:
+        axes = [[ax] for ax in axes]
 
-    anim = FuncAnimation(fig, animate, frames=len(Corrs[0]))
+    axes : list[list[plt.Axes]]
+    dividers = [[make_axes_locatable(ax) for ax in row] for row in axes]
+    caxes = [[divider.append_axes('bottom', size='10%',  pad=0.05) for divider in row] for row in dividers]
+
+    anim = FuncAnimation(fig, animate, frames=Corrs.shape[2])
 
     writervideo = animation.FFMpegWriter(fps=10)
-    anim.save( outdir + '{}Corr{}.mp4'.format( op, file), writer=writervideo)
+    anim.save( outdir + '{}Corr{}.mp4'.format( op, '_'.join(files)), writer=writervideo)
 
 def plot_qe():
 
@@ -925,7 +936,7 @@ def current():
 
 
 
-def time_bond_ee(plot_energy=False):
+def time_bond_ee(plot_energy=False, plot_qe=False):
 
     files = sys.argv[2:]
 
@@ -938,14 +949,27 @@ def time_bond_ee(plot_energy=False):
         axes = [[ax] for ax in axes] if len(files) == 1 else axes
 
     for i, file in enumerate(files):
+        
         ee = np.loadtxt(file + '/EE')
         bond = np.loadtxt(file + '/bonds')
+
+        if not plot_qe:
+            ee = ee[:, 1:-2]
+            bond = bond[:, 1:-2]
+
         occ = np.loadtxt(file + '/expN')
 
+        
         sites= ee.shape[1]
         time = ee.shape[0]
 
-        timescale = np.loadtxt(file + '/timescale')
+        print(sites, time)
+
+        if os.path.exists( file + '/timescale' ):
+            timescale = np.loadtxt(file + '/timescale')
+        
+        else:
+            timescale = float(file.split('_')[-1])
 
         if plot_energy:
             energy = np.loadtxt(file + '/mix_basis_energies')
@@ -966,10 +990,11 @@ def time_bond_ee(plot_energy=False):
         ylabel = "Site Number"
         extent = [ 1 * timescale, time * timescale, 2, sites + 1]
 
+        titlefile = '_'.join(file.split('_')[:-1]) + ' timescale: {}'.format(timescale) + ' plot_qe: {}'.format(plot_qe)
         im = ax.imshow(bond.transpose(), aspect="auto", extent=extent, interpolation='none')
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-        ax.set_title('Max bond dim. vs. t, each site, {}'.format(file))
+        ax.set_title('Max bond dim. vs. t, each site, {}'.format(titlefile))
         fig.colorbar(im)
 
         ax : plt.Axes =axes[1][i]
@@ -977,17 +1002,18 @@ def time_bond_ee(plot_energy=False):
         im = ax.imshow(ee.transpose(), aspect="auto", extent=extent, interpolation='none')
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-        ax.set_title('Von Neumann Entropy on bipartite cut. vs. t. {}'.format(file))
+        ax.set_title('Von Neumann Entropy on bipartite cut. vs. t. {}'.format(titlefile))
         fig.colorbar(im)
 
         ax : plt.Axes =axes[2][i]
 
         seff = np.log( np.power( np.sum( np.exp( 3 * ee) , axis=1) / (ee.shape[-1] -1 ), 1/3))
         times = np.arange( ee.shape[0]) * timescale
-        ax.scatter(times, seff)
+        
+        ax.plot(times, seff)
         ax.set_xlabel('Time')
         ax.set_ylabel('S_eff')
-        ax.set_title('Effectly Entropy vs. t. {}'.format(file))
+        ax.set_title('Effectly Entropy vs. t. {}'.format(titlefile))
 
         ax : plt.Axes =axes[-1][i]
 
@@ -995,11 +1021,11 @@ def time_bond_ee(plot_energy=False):
         exr = occ[:, -2]
 
         times = np.arange( occ.shape[0]) * timescale
-        ax.scatter(times, exl, label='QE left')
-        ax.scatter(times, exr, label='QE right')
+        ax.plot(times, exl, label='QE left')
+        ax.plot(times, exr, label='QE right')
         ax.set_xlabel('Time')
         ax.set_ylabel('QE level')
-        ax.set_title('QE levels vs. t. {}'.format(file))
+        ax.set_title('QE levels vs. t. {}'.format(titlefile))
 
         ax.legend()
 

@@ -1,5 +1,5 @@
 # load variables specifically in linsolve
-using ITensors: linkind, siteinds, check_hascommoninds, OneITensor
+using ITensors: linkind, siteinds, check_hascommoninds, OneITensor, tr
 using StatsBase
 #using ITensors: @debug_check, @timeit_debug, @printf
 #using KrylovKit: eigsolve, linsolve
@@ -38,6 +38,7 @@ include("QE.jl")
 include("SD_close.jl")
 include("io.jl")
 include("time_obs.jl")
+include("gqs.jl")
 #include("projection.jl")
 
 """The top level function that controls workflow. Use operation mode to select code function"""
@@ -63,6 +64,7 @@ function top()
 
     println("TEST TEST TEST")
 
+    GQS_dyna_wrapper()
     #benchmark()
     #iter_sd_wrapper()
     #source_drain_wrapper()
@@ -71,7 +73,7 @@ function top()
     #main(paras)
     #eigensolver_wrapper()
     #time_obs_wrapper( "occ")
-    QEdyna_wrapper()
+    #QEdyna_wrapper()
     #eigen_overlap()
     #NF_wrapper()
     #time_obs_wrapper("2", "current")
@@ -129,6 +131,9 @@ function top()
 
     elseif ARGS[1] == "15"
       transport_wrapper()
+
+    elseif ARGS[1] == "16"
+      GQS_dyna_wrapper()
 
     else
       println("not a valid operating mode")

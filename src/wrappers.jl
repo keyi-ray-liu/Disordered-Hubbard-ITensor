@@ -50,10 +50,11 @@ function QEdyna_wrapper()
         :sweepcnt => get(qedyna_paras, "sweepcnt", 30),
         :QE => get(qedyna_paras, "QE", 2),
         :QEen => get(qedyna_paras, "QEen", nothing),
+        :cutoff => get(qedyna_paras, "cutoff" , 1E-8),
         :dynamode => get(qedyna_paras, "dynamode", "left"),
         :TEmethod => get(qedyna_paras, "TEmethod", "TDVP"),
         :TEdim => get(qedyna_paras, "TEdim", 300),
-        :TEcutoff => get(qedyna_paras, "TEcutoff", 1E-9),
+        :TEcutoff => get(qedyna_paras, "TEcutoff", 1E-8),
         :type => get(qedyna_paras, "type", "Fermion"),
         :krylovdim => get(qedyna_paras, "krylovdim", 8),
         :QN=> get(qedyna_paras, "QN", true),
@@ -130,6 +131,8 @@ function corr_wrapper()
         "op2" => "C",
         "tag" => "CC",
         "wftag" => "tTDVP", 
+        "momentum" => true,
+        "QE" => 2
     )
 
     time_corr_plot(para)
@@ -302,3 +305,39 @@ function time_obs_wrapper( obs)
 end
 
 
+function GQS_dyna_wrapper()
+    cur_dir = pwd()
+
+    #qedyna_string = read( cur_dir * "/QEdynapara.json", String)
+    gqs_dynas = load_JSON(cur_dir * "/GQS_para.json")
+
+    para = Dict(
+        :L => get(gqs_dynas, "L", 100),
+        :N => get(gqs_dynas, "N", 50),
+        :sweepdim => get(gqs_dynas, "sweepdim", 400),
+        :sweepcnt => get(gqs_dynas, "sweepcnt", 30),
+        :cutoff => get(gqs_dynas, "cutoff" , 1E-8),
+        :TEmethod => get(gqs_dynas, "TEmethod", "TDVP"),
+        :TEdim => get(gqs_dynas, "TEdim", 300),
+        :TEcutoff => get(gqs_dynas, "TEcutoff", 1E-8),
+        :type => get(gqs_dynas, "type", "Fermion"),
+        :krylovdim => get(gqs_dynas, "krylovdim", 8),
+        :range=>get(gqs_dynas, "range", 1000),
+        :int_ne => get(gqs_dynas, "int_ne", 2.0),
+        :int_ee => get(gqs_dynas, "int_ee", 2.0),
+        :exch => get(gqs_dynas, "exch", 0.2)
+    )
+
+    
+    add_para = load_JSON(cur_dir * "/addpara.json")
+
+    additional_para = Dict(
+        "τ" => get(add_para, "t", 0.5),
+        "start" => get(add_para, "start", 0.5),
+        "fin" => get(add_para, "fin", 100.0),
+        "occ_direct" => get(add_para, "occ_direct", false),
+        "init_state" => get(add_para, "init_state", "all_left_spinless"),
+    )
+
+    GQS_dynamic(para, additional_para)
+end 

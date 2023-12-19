@@ -134,6 +134,8 @@ function time_corr_plot(paras)
   op2 = paras["op2"]
   tag = paras["tag"]
   wftag = paras["wftag"]
+  momentum = paras["momentum"]
+  QE = paras["QE"]
 
   files = glob( wftag * "*.h5", workdir)
 
@@ -150,8 +152,27 @@ function time_corr_plot(paras)
     wf = h5open(file, "r")
     ψ = read(wf, "psi", MPS)
 
-    NN_corr = abs.(correlation_matrix(ψ, op1, op2))
-    writedlm( workdir * tag * "_corr" * string(get_time(file)), NN_corr )
+    NN_corr = correlation_matrix(ψ, op1, op2)
+
+    writedlm( workdir * tag * "_corrRE" * string(get_time(file)), real(NN_corr) )
+    writedlm( workdir * tag * "_corrIM" * string(get_time(file)), imag(NN_corr) )
+
+    if momentum
+
+      if !occursin( "Cdag", op1) &&  !occursin("Cdag", op2)
+        error( "Cannot have operator other than cdag and momentum")
+      end 
+      
+      N = length(ψ) - QE * 2
+      U_matrix = reduce(hcat, [[ Ukj(k, j, N) for j in 1:N ] for k in 1:N])
+      
+      KK_corr = U_matrix * NN_corr[ 1 + QE : end - QE, 1 + QE : end - QE] * U_matrix
+
+      writedlm( workdir * tag * "_kcorrRE" * string(get_time(file)), real(KK_corr) )
+      writedlm( workdir * tag * "_kcorrIM" * string(get_time(file)), imag(KK_corr) )
+
+
+    end 
   end 
 
 
@@ -313,26 +334,26 @@ function cal_ee(ψ::MPS, system)
 
   soi = []
 
-  if system == "QE"
-    append!(soi, 2)
-    append!(soi, 3)
+  # if system == "QE"
+  #   append!(soi, 2)
+  #   append!(soi, 3)
 
-    step = 10
-    seg = div( L -4, step)
+  #   step = 10
+  #   seg = div( L -4, step)
 
-    for s in 1:seg 
-      append!(soi, 2 + step * s)
-    end 
+  #   for s in 1:seg 
+  #     append!(soi, 2 + step * s)
+  #   end 
 
-    append!(soi, L - 1)
+  #   append!(soi, L - 1)
 
-  elseif system == "SD"
+  # elseif system == "SD"
 
     for s in 2:L - 1
       append!(soi, s)
     end 
 
-  end 
+  # end 
 
   return [ entropy_von_neumann(ψ, i ) for i in soi], [ maximum(size(ψ[ j])) for j in soi], soi
 
