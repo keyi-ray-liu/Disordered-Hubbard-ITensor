@@ -95,6 +95,11 @@ function time_obs(para)
     ees = []
     sois = []
 
+
+  elseif obs == "GQS"
+
+    prob = []
+    
   else
     error("Unrecognized obs")
   end 
@@ -167,6 +172,11 @@ function time_obs(para)
       append!(bonds, [bond])
       append!(sois, [soi])
     
+
+    elseif obs == "GQS"
+
+      cur_prob = GQS_measure(ψ)
+      append!(prob, [cur_prob])
     end 
     
   end 
@@ -194,7 +204,20 @@ function time_obs(para)
     writedlm(workdir * "EE", ees)
     writedlm(workdir * "bonds", bonds)
     writedlm(workdir * "SOI", sois)
+
+
+  elseif obs == "GQS"
+
+    prob = stack(prob, dims=1)
+    @show size(prob)
+    @show typeof(prob)
+
+    h5open(workdir * "GQSprob.hdf5", "w") do file
+      file["prob"]= prob
+    end
+
   end
+
 
 
 

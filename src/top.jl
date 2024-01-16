@@ -1,18 +1,16 @@
 # load variables specifically in linsolve
-using ITensors: linkind, siteinds, check_hascommoninds, OneITensor, tr
-using StatsBase
-#using ITensors: @debug_check, @timeit_debug, @printf
-#using KrylovKit: eigsolve, linsolve
-#import ITensors: permute, position!
-using ITensorTDVP
-# now load the rest of the functions 
-using ITensors
 using DelimitedFiles
-using Suppressor, Glob
-using ITensors.HDF5
-using LinearAlgebra
+using Glob
 using ITensorGaussianMPS: correlation_matrix_to_mps, slater_determinant_to_mps
+using ITensorTDVP
+using ITensors
+using ITensors.HDF5
+using ITensors: OneITensor, check_hascommoninds, linkind, siteinds, tr
 using JSON3
+using LinearAlgebra
+using StatsBase
+using Suppressor
+
 
 include("behavior_test.jl")
 include("main.jl")
@@ -64,7 +62,7 @@ function top()
 
     println("TEST TEST TEST")
 
-    GQS_dyna_wrapper()
+    #GQS_dyna_wrapper()
     #benchmark()
     #iter_sd_wrapper()
     #source_drain_wrapper()
@@ -73,10 +71,10 @@ function top()
     #main(paras)
     #eigensolver_wrapper()
     #time_obs_wrapper( "occ")
-    #QEdyna_wrapper()
+    QEdyna_wrapper()
     #eigen_overlap()
     #NF_wrapper()
-    #time_obs_wrapper("2", "current")
+    #time_obs_wrapper("GQS")
 
 
     

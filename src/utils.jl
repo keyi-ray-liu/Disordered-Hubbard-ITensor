@@ -459,7 +459,7 @@ end
 
 
 
-"""function that calculates partial trace of MPO. The leftend indicates where the left partial trace ends ( include), default 0 (no left partial trace); similar for right end ( include), default to 1e4 (no right partial trace)"""
+"""function that calculates partial trace of MPO. The leftend indicates where the left partial trace ends ( traced up to, include), default 0 (no left partial trace); similar for right end ( include), default to 1e4 (no right partial trace)"""
 function partial_tr( M::MPO; leftend::Int =0, rightend::Int=10^4, plev::Pair{Int,Int}=0 => 1, tags::Pair=ts"" => ts"")
 
 
@@ -472,7 +472,6 @@ function partial_tr( M::MPO; leftend::Int =0, rightend::Int=10^4, plev::Pair{Int
   end 
 
   sys = deepcopy(M[ leftend + 1: rightend - 1])
-
   L = R = 1
   N = length(M)
 
@@ -489,5 +488,41 @@ function partial_tr( M::MPO; leftend::Int =0, rightend::Int=10^4, plev::Pair{Int
   sys[1] *= L
   sys[end] *= R
 
-  return sys
+  return MPO(sys)
 end
+
+function partial_contract(ψ::MPS, leftend::Int, rightend::Int)
+  if leftend > rightend 
+    error("leftend cannot be greater than rightend")
+  end 
+
+  if leftend >= rightend - 1
+    return inner(ψ, ψ)
+  end 
+
+  sys = deepcopy(ψ[ leftend + 1: rightend - 1])
+
+  ψdag = prime(linkinds, dag(ψ))
+  L = R = ITensor(1.)
+
+  for left = 1:leftend
+
+    L *= ψ[left]
+    L *= ψdag[left]
+    #L *= prime(linkinds, dag(ψ[left]))
+
+  end 
+
+
+  for right =rightend:length(ψ)
+
+    R *= ψ[right]
+    R *= ψdag[right]
+    
+  end
+
+  sys[1] *= L
+  sys[end] *= R
+
+  return sys
+end 

@@ -26,6 +26,15 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
     dp = dp * [1.0]
     ζ_dp = ζ_dp * [1.0]
 
+    if QEloc == []
+      if length(L) == 1
+        QEloc = [ [-2.0]]
+      else
+        y = (minimum(L) - 1) / 2
+        QEloc = [ [y, -2.0 ]]
+      end 
+    end 
+
   elseif QE == 2
     dp = dp * [1.0, 1.0]
     ζ_dp = ζ_dp * [1.0, 1.0]

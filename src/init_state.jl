@@ -98,7 +98,7 @@ function init_state(para, sites, disx, disy; kwargs...)
 
       end 
 
-      @show state
+      @show length(state), length(sites)
       ψ0 = randomMPS(sites,state)
 
     # random MPS if QN is false, making sure no 'stuck' situation
@@ -208,7 +208,7 @@ function init_site(para::Dict; kwargs...)
   # if we have both, then need AUX sites
 
   # we have previously check condition that SD and QE cannot both be greater than 0
-  extras = headoverride > 0 ? 2 * headoverride :  QE * (QN + 1) + s_len + d_len
+  extras = headoverride > 0 ? QE * headoverride :  QE * (QN + 1) + s_len + d_len
 
   #sites = Vector{Index}(undef, L + extras)
 
