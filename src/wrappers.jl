@@ -62,7 +62,8 @@ function QEdyna_wrapper()
         :range_qe => get(qedyna_paras, "range_qe", 1000),
         :int_ne => get(qedyna_paras, "int_ne", 2.0),
         :int_ee => get(qedyna_paras, "int_ee", 2.0),
-        :exch => get(qedyna_paras, "exch", 0.2)
+        :exch => get(qedyna_paras, "exch", 0.2),
+        :adiabatic_time => get(qedyna_paras, "adiabatic_time", 1E-10)
     )
 
     

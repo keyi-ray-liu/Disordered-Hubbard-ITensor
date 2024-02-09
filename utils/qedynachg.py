@@ -972,10 +972,13 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
     files = sys.argv[3:]
 
     mul = 5 if plot_energy else 4
-    row = mul * (len(files) // wrap + 1) 
-    col = wrap
+    row = mul * ((len(files) - 1) // wrap + 1) 
+    col = min(wrap, len(files))
 
-    fig, axes = plt.subplots( row, col , figsize = (8 * col, 4 * row), dpi=65536//max(4 * row, 8 * col))
+    print(len(files), row, col)
+    fig, axes = plt.subplots( row, col , figsize = (8 * col, 4 * row)
+                             #, dpi=65536//max(4 * row, 8 * col)
+                             )
     axes = [ [ax] for ax in axes] if len(files) == 1 else axes
 
     
@@ -1039,6 +1042,9 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
         timescale : float = ts[i]
         occ : np.ndarray = occs[i]
 
+        strs = file.split('/')
+        l = [ int( s[: s.find("TDVP")].strip('_')) for s in strs if "TDVP" in s ][0]
+
         if not plot_qe:
             ee = ee[:, s:end]
             bond = bond[:, s:end]
@@ -1048,8 +1054,10 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
 
         print(sites, time)
 
-        r = i //wrap
+        r = ( i //wrap) * mul
         c = i % wrap
+
+        print(r, c)
 
         if plot_energy:
             energy = np.loadtxt(file + '/mix_basis_energies')
@@ -1070,7 +1078,7 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
         ylabel = "Site Number"
         extent = [ 1 * timescale, time * timescale, 2, sites + 1]
 
-        titlefile = '_'.join(file.split('_')[:-1]) + ' timescale: {}'.format(timescale) + ' plot_qe: {}'.format(plot_qe)
+        titlefile = '_'.join(file.split('_')) + ' timescale: {}'.format(timescale) + ' plot_qe: {}'.format(plot_qe) 
         im = ax.imshow(bond.transpose(), aspect="auto", extent=extent, interpolation='none', cmap='hot'
                        , vmin=bd_lo, vmax=bd_hi
                        )
@@ -1082,7 +1090,8 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
         ax : plt.Axes =axes[r + 1][c]
 
         im = ax.imshow(ee.transpose(), aspect="auto", extent=extent, interpolation='none', cmap='hot'
-                       ,vmin = ee_lo, vmax=ee_hi
+                       ,vmin = ee_lo, vmax=ee_hi, 
+                       origin='lower'
                        )
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
@@ -1103,15 +1112,13 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
         ax : plt.Axes =axes[ r + mul - 1][c]
 
         exl = occ[:, 1]
-
-        if '1QE' not in file:
-            exr = occ[:, -2]
-
         times = np.arange( occ.shape[0]) * timescale
-        ax.plot(times, exl, label='QE left')
+        ax.plot(times, exl, label='QE1 (left)')
 
-        if '1QE' not in file:
-            ax.plot(times, exr, label='QE right')
+        for QEs in range(1, (occ.shape[-1] - l)// 2 ):
+            
+            exr = occ[:, l + QEs * 2]
+            ax.plot(times, exr, label = 'QE' + str(QEs + 1))
 
         ax.set_xlabel('Time')
         ax.set_ylabel('QE level')
@@ -1149,6 +1156,46 @@ def GQS_plot():
     prob10 = raw[:, :, 2]
 
 
+def plateau_plot():
+
+    def cal_turning(input):
+
+        diff = (input[2:] - input[:-2])/ (2 * timescale)
+        
+        print(diff)
+        return 1 + np.argmax(diff>10e-5)
+
+    print("MAKE SURE ALL INPUTS ARE ALREADY SORTED")
+    files = sys.argv[2:]
+
+    string = "scan_ref/"
+
+    fig, ax = plt.subplots()
+
+    for i, file in enumerate(files):
+
+        cur = file[len(string):]
+        if os.path.exists( file + '/timescale' ):
+            timescale = np.loadtxt(file + '/timescale')
+        
+        else:
+            timescale = float(file.split('_')[-1])
+        
+        raw = np.loadtxt(file + '/expN')
+        rex = raw[:, -2]
+
+        ax : plt.Axes = ax
+        turning = cal_turning(rex)
+        pl = max([ float(key[:-2]) if 'pl' in key else -10**5 for key in file.split('_')])
+        ax.scatter(pl, timescale * turning, c='blue')
+
+        ax.set_xlabel('pl number')
+        ax.set_ylabel('Time responding to LQE')
+        ax.set_title('Turning point for RQE')
+
+        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
+
+    fig.savefig('plots/response.pdf')
 
 
 
@@ -1208,7 +1255,10 @@ if __name__ == '__main__':
         current()
 
     elif control == 17:
-        time_bond_ee(filename_override='scan', wrap=10)
+        time_bond_ee(filename_override='levels', wrap=21)
 
     elif control == 18:
         GQS_plot()
+
+    elif control == 19:
+        plateau_plot()

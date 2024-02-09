@@ -63,17 +63,15 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   # ##################### end chain hamiltonian ###################################
   ##################### begin QE hamiltonian ###################################
   # QE part
-  # left QE
-  if QE > 0 && headoverride == 0
 
-    res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=1)
+  if headoverride == 0
+
+    for which in 1:QE
+      res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=which)
+    end
+    
   end 
 
-  # right QE
-  if QE > 1 && headoverride == 0
-
-    res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=2)
-  end 
 
   ############################################## end QE hamiltonian ##########################################
   ######################### begin penalty ####################################

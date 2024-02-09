@@ -217,7 +217,25 @@ function boson_fermion_test()
   
 end 
 
+function test()
 
+  N = 5
+  s = siteinds("Fermion", N; conserve_qns =true)
+  vecs = ones( (N, 2))
+
+  #@show vecs
+
+  psi = MPS(s, 1)
+
+
+  for j=1:N
+    psi[j] = ITensor(vecs[j,:],  s[j])
+  end
+  orthogonalize!(psi,1)
+  normalize!(psi)
+
+  return psi
+end 
 
 # tcds = rand(10, 100) +  1im* rand(10, 100)
 

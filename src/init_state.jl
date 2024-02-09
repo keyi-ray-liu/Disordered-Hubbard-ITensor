@@ -64,8 +64,11 @@ function init_state(para, sites, disx, disy; kwargs...)
 
         state = vcat(QE1, state)
         state = vcat(AUX1, state)
-        state = vcat(state, QE2)
-        state = vcat(state, AUX2)
+
+        for _ in 2:QE
+          state = vcat(state, QE2)
+          state = vcat(state, AUX2)
+        end 
 
       else
 
@@ -94,7 +97,10 @@ function init_state(para, sites, disx, disy; kwargs...)
         end 
 
         state = vcat(front, state)
-        state = vcat(state, back)
+
+        for _ in 2:QE
+          state = vcat(state, back)
+        end
 
       end 
 
@@ -223,6 +229,7 @@ function init_site(para::Dict; kwargs...)
   # end 
 
   #println(length(sites))
+  @show length(sites)
   return sites
 end 
 

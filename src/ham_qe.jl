@@ -3,7 +3,7 @@
 function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; if_gate=false, head=0, factor=2, τ=0.1, which=1)
 
   println("Adding QE", which)
-  QEen = para["QEen"]
+  QEen = para["QEen"][which]
   dp = para["dp"]
   ζ_dp = para["ζ_dp"]
   CN = para["CN"]
@@ -20,14 +20,18 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   dp = dp[which]
   ζ_dp = ζ_dp[which]
 
+
+  # paux comes into play when QN is enabled, which is also encoded by head
   if which == 1
     paux = 1
     pqe = head 
 
-  elseif which == 2
+  # for the rest of the QE, we currently assume they are all shuffled to the right, 
+  else
 
-    paux = Ltotal + head * 2
-    pqe = Ltotal + head + 1
+    # aux sites are always to the right of QE for the RHS, i.e. QE2 at h + L + h, QE3 at h + L + h + h, etc.
+    paux = Ltotal + head * which 
+    pqe = Ltotal + head * which - 1
   end 
 
   saux = sites[paux]
@@ -63,7 +67,7 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
     qe_begin = 1
     qe_end = min(range + 1, Ltotal)
 
-  elseif which == 2
+  else
 
     qe_begin = max(Ltotal - range , 1)
     qe_end = Ltotal 

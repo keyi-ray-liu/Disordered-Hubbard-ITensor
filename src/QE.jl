@@ -57,7 +57,9 @@ function QE_dynamic(simu_para, additional_para)
     plasmon_energy = readdlm(workdir * output * "ex" )
     energy = plasmon_energy[end] - plasmon_energy[end - 1]
 
-    energy *= QEmul
+    energy = QEmul .* energy
+
+
   end 
   
   

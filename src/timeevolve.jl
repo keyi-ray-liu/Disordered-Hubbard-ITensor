@@ -1,7 +1,7 @@
 """worker function perfomring time evolution"""
 function time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs...)
 
-    QE = paras["QE"]
+    #QE = paras["QE"]
     L = paras["L"]
     cutoff = paras["TEcutoff"]
     maxdim = paras["TEdim"]
@@ -9,16 +9,13 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs...)
     disorder = paras["disorder"]
     τ = paras["τ"]
     type = paras["type"]
+    adiabatic_time = paras["adiabatic_time"]
     #source_config = paras["source_config"]
     #drain_config = paras["drain_config"]
     prefix = getworkdir()
 
     # if QE == 0 && s_len + length(drain)
     #     throw(ArgumentError("Dynamics have to include quantum emitter/SD"))
-
-    if QE > 2
-        throw(ArgumentError("More than two QE, not allowed"))
-    end 
 
     if start > fin && τ > 0
         throw(ArgumentError("reverse parameters not correct"))
@@ -74,11 +71,24 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs...)
     # TDVP starts
     elseif method == "TDVP"
 
-        # same as DMRG, we set up H first
-        H = init_ham( paras, L, disx, disy, sites; kwargs...)
+        # same as DMRG, we set up the full Hamiltonian first
+        H_full = init_ham( paras, L, disx, disy, sites; kwargs...)
         #forward evolution
 
         for dt in start:τ:fin
+
+            if dt < adiabatic_time
+
+                temp_para = deepcopy(paras)
+                temp_para["dp"] *= dt/adiabatic_time
+
+                print(temp_para["dp"])
+                H = init_ham( temp_para, L, disx, disy, sites; kwargs...)
+
+            else
+                H = H_full
+            end 
+                
 
             println("$method time : $dt")
             #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, cutoff, nsite=2)

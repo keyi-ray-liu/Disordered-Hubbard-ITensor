@@ -96,7 +96,25 @@ function SD_dynamics(simu_para, sd_hop, additional_para)
   
 end 
 
+"""
+SD solver to solve the transport dyanmics. 
 
+L-bulk sys-R
+
+General workflow of the solver: simu parameters contains the core parameters, sd_hop has the SD parameters that OVERRIDES the sd_hop in simu dictionary. Additional parameters has parameters such as timesteps, etc. 
+
+The get_mix_energy function controlled by the sd_hop flag, generates all the important structure of the mix basis, including ordering. All logic are wrapped in the function
+
+if offset is nothing, the program runs with only the system to find the appropriate offset values. 
+
+At the current stage, if the product_state flag is false, we then run the DMRG algorithm to find the ground state of our system with 0 offset.
+
+When we have the initial state, either by loading existing WF or generating, we then run the time dynamics.
+
+
+All the logic in SD should be decoupled from the bulk system, such that the transport dynamics can be separately specified by sd_hop
+
+"""
 function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
     workdir = getworkdir()

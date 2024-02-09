@@ -491,38 +491,20 @@ function partial_tr( M::MPO; leftend::Int =0, rightend::Int=10^4, plev::Pair{Int
   return MPO(sys)
 end
 
-function partial_contract(ψ::MPS, leftend::Int, rightend::Int)
-  if leftend > rightend 
-    error("leftend cannot be greater than rightend")
-  end 
+"""
+partially contract an MPS except the indices in sites
+"""
+function partial_contract(ψ::MPS, sites::Vector{Int})
 
-  if leftend >= rightend - 1
-    return inner(ψ, ψ)
-  end 
-
-  sys = deepcopy(ψ[ leftend + 1: rightend - 1])
-
-  ψdag = prime(linkinds, dag(ψ))
-  L = R = ITensor(1.)
-
-  for left = 1:leftend
-
-    L *= ψ[left]
-    L *= ψdag[left]
-    #L *= prime(linkinds, dag(ψ[left]))
-
-  end 
-
-
-  for right =rightend:length(ψ)
-
-    R *= ψ[right]
-    R *= ψdag[right]
-    
+  s = siteinds(ψ)
+  result = ITensor(1.)
+  for j in eachindex(ψ)
+    if j in sites
+      result *= ψ[j]
+    else 
+      result *= (ITensor([1,1],s[j]) * ψ[j])
+    end
   end
 
-  sys[1] *= L
-  sys[end] *= R
-
-  return sys
+  return result
 end 

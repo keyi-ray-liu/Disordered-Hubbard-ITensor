@@ -2,11 +2,11 @@
 function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5, 0.5], exch=0.2, 
   decay=0.0, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
   guess=false, manual=false, itr_dis=[1.0], range=10000, noise=true, method="DMRG", QE=0, scales=[1.0], 
-  QN=true,  QEen=0.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
+  QN=true,  QEen=[], dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
   dynamode="none", cutoff=1E-12, TEcutoff=1E-8, TEdim=300, TEmethod="TDVP", product_state=false, TEBDfactor=2,
   τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3, geometry = "linear", spec_hop_struct = Dict{Int64, Float64}(),
   screening_int=0.0, screening_qe=0.0,  s_len = 0, d_len = 0, sd_hop = Dict{Any, Any}(), 
-  sd_override=false, range_qe=1000)
+  sd_override=false, range_qe=1000, adiabatic_time=1E-10)
 
   # process L so that it's consistent with the new definition
   if typeof(L) == Int
@@ -18,13 +18,17 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
   Ltotal = prod(L)
   allnn = get_nn(L, t; snake =snake, geometry=geometry, spec_hop_struct= spec_hop_struct)
 
-  if QE == 0
-    dp = []
-    ζ_dp = []
 
-  elseif QE == 1
-    dp = dp * [1.0]
-    ζ_dp = ζ_dp * [1.0]
+  # set default parameters to match number of QE
+  if typeof(QEen) == Int || typeof(QEen) == Float64
+    QEen = [ QEen for _ in 1:QE]
+  end 
+  dp = [ dp * 1.0 for _ in 1:QE]
+  ζ_dp = [ ζ_dp * 1.0 for _ in 1:QE]
+
+
+  # set QE locations
+  if QE == 1
 
     if QEloc == []
       if length(L) == 1
@@ -35,20 +39,29 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
       end 
     end 
 
-  elseif QE == 2
-    dp = dp * [1.0, 1.0]
-    ζ_dp = ζ_dp * [1.0, 1.0]
+  elseif QE > 1
 
     if QEloc == []
       if length(L) == 1
-        QEloc = [ [-2.0], [prod(L) + 1.0]]
+        QEloc = [ [-2.0] ]
       else
         y = (minimum(L) - 1) / 2
-        QEloc = [ [y, -2.0 ], [y, maximum(L) + 1.0]]
+        QEloc = [ [y, -2.0 ]]
       end 
     end 
 
+    for cnt in 2:QE
+      if length(L) == 1
+        QEloc = vcat(QEloc,  [[prod(L) + cnt - 1.0]] )
+
+      else
+        QEloc = vcat(QEloc,  [[y, maximum(L) + cnt - 1.0]])
+      end 
+    end 
+
+
   end 
+
 
   # check half-filling and various N condition
   if N == "HF"
@@ -64,17 +77,8 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
   end
 
 
-
   if typeof(N) == Int
     N = [Ltotal - N, N, 0, 0]
-  end 
-
-  if sum(N) > Ltotal
-    error("too many sites!")
-  end 
-
-  if type == "Fermion" && (N[3] != 0 || N[4] != 0)
-    error("Wrong number condition for spinless Fermions!")
   end 
 
   if length(N) == 3
@@ -85,6 +89,29 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
   if CN == "CN"
       CN = N[2] + N[3] + 2 * N[4]
   end 
+
+  if sum(N) > Ltotal
+    error("too many sites!")
+  end 
+
+  if type == "Fermion" && (N[3] != 0 || N[4] != 0)
+    error("Wrong number condition for spinless Fermions!")
+  end 
+
+  if (QE > 0) && s_len + d_len > 0
+    error("QE and SD cannot both be non zero")
+  end 
+
+
+  for val in (dp, ζ_dp, QEloc, QEen)
+
+    if !isnothing(val) && length(val) != QE 
+      error("QE parameter(s):" * string(val) * "and QE number mismatch")
+    end 
+  end 
+
+
+
 
   # we set the basic parameters for the simulation
   para = Dict(
@@ -137,16 +164,11 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
     "sd_hop" => sd_hop,
     "sd_override" => sd_override,
     "range_qe" => range_qe,
-    "allnn" => allnn
+    "allnn" => allnn,
+    "adiabatic_time" => adiabatic_time
   )
 
-  if (QE > 0) && s_len + d_len > 0
-    error("QE and SD cannot both be non zero")
-  end 
 
-  if length(dp) != QE || length(ζ_dp) != QE || length(QEloc) != QE
-    error("dp parameter(s) and QE number mismatch")
-  end 
 
   # if dynamode != "none" && headoverride != 2
   #   error("Wrong head override number")
