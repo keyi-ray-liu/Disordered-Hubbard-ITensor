@@ -62,11 +62,11 @@ function top()
 
     println("TEST TEST TEST")
 
-    GQS_dyna_wrapper()
+    #GQS_dyna_wrapper()
     #benchmark()
     #iter_sd_wrapper()
     #source_drain_wrapper()
-    #transport_wrapper()
+    transport_wrapper()
     #paras = setpara(;L=12, N=6, ex=2)
     #main(paras)
     #eigensolver_wrapper()

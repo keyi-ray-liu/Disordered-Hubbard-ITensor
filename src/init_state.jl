@@ -20,6 +20,7 @@ function init_state(para, sites, disx, disy; kwargs...)
   
   source_config = get(kwargs, :source_config, [])
   drain_config = get(kwargs, :drain_config, [])
+  state_override = get(kwargs, :state_override, [])
 
   if s_len != length(source_config) || d_len != length(drain_config)
     error("sd configs does not match inputs")
@@ -45,7 +46,16 @@ function init_state(para, sites, disx, disy; kwargs...)
 
       # we already have check for the type of N
 
-      state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
+      if !isempty(state_override)
+
+        state = [ op_str[i] for i in state_override]
+
+      else
+        state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
+
+      end
+
+      print(state)
 
       if s_len + d_len > 0
 
@@ -245,7 +255,8 @@ function TE_stateprep(para; kwargs...)
 
   source_config = get(kwargs, :source_config, [])
   drain_config = get(kwargs, :drain_config, [])
-
+  state_override = get(kwargs, :state_override, [])
+  
   mode = para["dynamode"]
   Ltotal = prod(L)
   type = para["type"]
@@ -263,7 +274,15 @@ function TE_stateprep(para; kwargs...)
 
   
   if QN
-    state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
+
+    if !isempty(state_override)
+
+      state = [ op_str[i] for i in state_override]
+
+    else
+      state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
+
+    end
 
     if s_len + d_len > 0
 

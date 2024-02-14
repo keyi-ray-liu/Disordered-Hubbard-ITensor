@@ -124,4 +124,39 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
 
 end 
 
+function add_ccouple_sd!(res, para::Dict; head=0, Usd =0.0)
 
+  type = para["type"]
+
+  if type == "Fermion"
+    ops = "N"
+
+  elseif type == "Electron"
+    ops = "Ntot"
+
+  end 
+
+  psys = head + 1
+  sd_hop = para["sd_hop"]
+  sdcouple = get(sd_hop, "sdcouple", [])
+
+  for psd in sdcouple
+
+    #ssys = sites[psys]
+    #ssd = sites[psd]
+    # U(n_d - 1/2)(n_c - 1/2)
+
+    # quad term
+    res += Usd, ops, psys, ops, psd
+
+    # linear N_d
+    res += -Usd * 1/2, ops, psys
+
+    # linear n_c
+    res += -Usd * 1/2, ops, psd
+
+
+  end 
+
+  return res
+end 

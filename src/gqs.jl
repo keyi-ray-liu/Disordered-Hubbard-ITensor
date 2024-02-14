@@ -50,10 +50,10 @@ end
 function GQS_measure(ψ)
 
     
-    O = outer(ψ', ψ)
+    #O = outer(ψ', ψ)
     s = siteinds(ψ)
 
-    onevec = gen_ones(s)
+    #onevec = gen_ones(s)
 
     typestr = ["Emp", "Occ"]
     states = collect(Iterators.product(typestr, typestr))
@@ -67,7 +67,7 @@ function GQS_measure(ψ)
         for (col, state) in enumerate(states)
 
             basis = randomMPS( s[left:left+1], state)
-            ϕ = partial_contract(onevec, ψ, left - 1, left + 2)
+            ϕ = partial_contract(ψ, [left, left+1])
             @show res[left, col] = inner(basis',  ϕ)
 
         end 

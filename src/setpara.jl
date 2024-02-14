@@ -90,8 +90,8 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
       CN = N[2] + N[3] + 2 * N[4]
   end 
 
-  if sum(N) > Ltotal
-    error("too many sites!")
+  if sum(N) != Ltotal
+    error("L and N mismatch!")
   end 
 
   if type == "Fermion" && (N[3] != 0 || N[4] != 0)

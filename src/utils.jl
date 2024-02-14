@@ -26,6 +26,7 @@ function get_nn(L::Vector{Int}, t; snake=false, geometry ="linear", spec_hop_str
   # get the size of the whole system
   total = prod(L)
 
+  println(total)
   for site in 1:total
 
     nn = Dict{Int, Float64}()
@@ -498,13 +499,24 @@ function partial_contract(ψ::MPS, sites::Vector{Int})
 
   s = siteinds(ψ)
   result = ITensor(1.)
+
   for j in eachindex(ψ)
+
     if j in sites
       result *= ψ[j]
     else 
-      result *= (ITensor([1,1],s[j]) * ψ[j])
+      
+      LHS = ITensor([0, 1],s[j])
+
+      @show LHS
+      result *= LHS * ψ[j]
+      #@show typeof( (ITensor([0,1],s[j])' * ψ[j]) )
+      #result *= (ITensor([0,1],s[j]) * ψ[j])
+
     end
+
   end
 
+  @show result
   return result
 end 

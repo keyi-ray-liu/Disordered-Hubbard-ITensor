@@ -13,6 +13,7 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs...)
     #source_config = paras["source_config"]
     #drain_config = paras["drain_config"]
     prefix = getworkdir()
+    variance_flag = get(kwargs, :variance_flag, false)
 
     # if QE == 0 && s_len + length(drain)
     #     throw(ArgumentError("Dynamics have to include quantum emitter/SD"))
@@ -57,9 +58,11 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs...)
             end 
             
             normalize!(ψ)
-            var = variance(H, ψ)
 
-            println("variance of the state: $var")
+            if variance_flag
+                var = variance(H, ψ)
+                println("variance of the state: $var")
+            end 
 
             wf = h5open( prefix * "t$method" * string(dt) * ".h5", "w")
             write(wf, "psi", ψ)
@@ -118,8 +121,10 @@ function time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs...)
                 end
             end 
 
-            var = variance(H, ψ1)
-            println("variance of the state: $var")
+            if variance_flag
+                var = variance(H, ψ)
+                println("variance of the state: $var")
+            end 
 
 
             wf = h5open( prefix * "t$method" * string(dt) * ".h5", "w")

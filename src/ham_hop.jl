@@ -89,6 +89,7 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
   internal_hop = sd_hop["internal_hop"]
   to_chain_hop = sd_hop["to_chain_hop"]
   sd_loc = sd_hop["sd_loc"]
+  sdcontact = sd_hop["sdcontact"]
 
   # iterate through all sites to get NN
 
@@ -168,6 +169,35 @@ function add_hopping_sd!(res, para::Dict, L::Vector{Int}, disx::Vector{Float64},
     end 
 
   end
+
+  #determines if sd has contact
+  if sdcontact
+    p1 = head 
+    p2 = Ltotal + head + 1
+    s1 = sites[p1]
+    s2 = sites[p2]
+
+    for operator in sd_operators
+
+      op1, op2 = operator 
+
+      if !if_gate
+        res += t * internal_hop , op1, p1 ,op2, p2
+        res += t * internal_hop, op1, p2 ,op2, p1
+
+      else 
+        hj =
+        t  * internal_hop * op(op1, s1) * op(op2, s2) +
+        t  * internal_hop * op(op1, s2) * op(op2, s1)
+
+        gatefy!(res, factor, hj, τ)
+
+      end 
+
+    end 
+  end 
+
+
 
   #source, onto chain
   # 

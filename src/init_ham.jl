@@ -23,7 +23,10 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   if_gate = get(kwargs, :if_gate, false)
   
   mix_basis = get(sd_hop, "mix_basis", false)
-  bulk_bias = get(sd_hop, "bulk_bias", 0)
+  bulk_bias = get(sd_hop, "bulk_bias", [0.0 for _ in 1:prod(L)])
+  Usd = get(sd_hop, "Usd", 0.0)
+
+
   # if QE > 0, then at least left emitter, and if QN, we account for the AUX site
 
   # head denotes the position of QE1: 0 if QE == 0, 1 if QE but not QN, 2 if QE and QN
@@ -69,7 +72,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
     for which in 1:QE
       res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=which)
     end
-    
+
   end 
 
 
@@ -111,13 +114,21 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
     end 
   end 
 
-  if bulk_bias != 0
-    res = add_onsite_bias!(res, para, sites, bulk_bias, if_gate=if_gate, head=head, factor= factor, τ=τ)
-  end
 
+
+  # adding bulk bias
+
+  res = add_onsite_bias!(res, para, sites, bulk_bias, if_gate=if_gate, head=head, factor= factor, τ=τ)
+
+
+
+  # adding capacitative coupling between SD and sys, if applicable
+  if Usd != 0 
+    res = add_ccouple_sd!(res, para::Dict; head=head, Usd =Usd)
+  end 
   ########################### end SD hamiltonian ###################################
 
-  #@show res 
+  @show res 
 
   if !if_gate
     H = MPO(res, sites)

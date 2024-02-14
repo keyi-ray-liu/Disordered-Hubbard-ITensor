@@ -39,6 +39,7 @@ function add_onsite_bias!(res, para::Dict, sites, bulk_bias; if_gate=false, head
     ops = "Ntot"
   end 
 
+
   for i = 1:Ltotal
 
     #println("adding bulk bias, $(i + head), $bulk_bias")
@@ -46,10 +47,10 @@ function add_onsite_bias!(res, para::Dict, sites, bulk_bias; if_gate=false, head
     si = sites[p]
 
     if !if_gate
-      res += bulk_bias, ops, p
+      res += bulk_bias[i], ops, p
 
     else 
-      ons = bulk_bias * op(ops, si)
+      ons = bulk_bias[i] * op(ops, si)
       gatefy!(res, factor, ons, τ)
     end 
   end 

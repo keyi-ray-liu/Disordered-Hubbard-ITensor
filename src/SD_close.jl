@@ -1,4 +1,4 @@
-function SD_dynamics(simu_para, sd_hop, additional_para)
+function SD_dynamics_QE(simu_para, sd_hop, additional_para)
 
     workdir = getworkdir()
     L = simu_para[:L]
@@ -114,23 +114,25 @@ When we have the initial state, either by loading existing WF or generating, we 
 
 All the logic in SD should be decoupled from the bulk system, such that the transport dynamics can be separately specified by sd_hop
 
+We default that offset must be provided, the offset calculations are removed for now
 """
 function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
     workdir = getworkdir()
     L = simu_para[:L]
-    N = simu_para[:N]
+
 
     source_config = additional_para["source_config"]
     drain_config  = additional_para["drain_config"]
 
-    N_sys = N[2] + N[3] + 2 * N[4]
+    # N = simu_para[:N]
+    # N_sys = N[2] + N[3] + 2 * N[4]
+    # Ntotal = N_sys + count_ele(source_config) + count_ele(drain_config)
 
-    Ntotal = N_sys + count_ele(source_config) + count_ele(drain_config)
     Ltotal = prod(L)
   
     if length(L) == 1
-      sd_loc = [ [-1.0], [Ltotal]]
+      sd_loc = [ [1.0], [Ltotal]]
       source_site = 1
       drain_site = Ltotal
     else
@@ -144,36 +146,62 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     sd_hop["source_site"] = source_site
     sd_hop["drain_site"] = drain_site
     
-    offset = sd_hop["source_offset"]
+    bulk_bias = get(sd_hop, "bulk_bias", 0.0)
+    init_bulk_bias = get(sd_hop, "init_bulk_bias", 0.0)
+
+    if typeof(bulk_bias) == Float64 || typeof(bulk_bias) == Int
+        bulk_bias = [bulk_bias for _ in 1:Ltotal]
+    end 
+
+    if typeof(init_bulk_bias) == Float64 || typeof(init_bulk_bias) == Int
+      init_bulk_bias = [init_bulk_bias for _ in 1:Ltotal]
+    end 
+
+    if length(bulk_bias) != Ltotal || length(init_bulk_bias) != Ltotal
+        error("bulk bias and sys size value mismatch")
+    end
+    
+    sd_hop["bulk_bias"] = bulk_bias
+
+    sdcouple = get(sd_hop, "sdcouple", 0)
+    extends = []
+
+    for extend in 1:sdcouple
+      append!(extends, length(source_config) - extend + 1 )
+      append!(extends, length(source_config) + extend + L)
+    end 
+
+    sd_hop["sdcouple"] = extends
+    state_override = sd_hop["state_override"]
     mix_basis = sd_hop["mix_basis"]
     
-
-  
+    
     product_state = additional_para["product_state"]
     τ = additional_para["τ"]
     start = additional_para["start"]
     fin = additional_para["fin"]
     occ_direct = additional_para["occ_direct"]
 
-    offset_output = "get_offset_bulk"
+
     initial_state_output = "initial_state"
     
-    
-    if isnothing(offset) 
-      # if no offset, we find the GS of the bulk
-      if !isfile(workdir * offset_output * ".h5") 
-        # if there no target file, we perform a single GS search, to find the correct offset for the SD
-        println("No offset file, generating")
-        paras = setpara(;simu_para..., N=Ntotal, ex=1, output = offset_output, s_len =0, d_len = 0)
-        main(paras; source_config = [], drain_config = [])
-      else
-        println("offset file found, loading")
-      end 
+    # offset = sd_hop["source_offset"]
+    # offset_output = "get_offset_bulk"
+    # if isnothing(offset) 
+    #   # if no offset, we find the GS of the bulk
+    #   if !isfile(workdir * offset_output * ".h5") 
+    #     # if there no target file, we perform a single GS search, to find the correct offset for the SD
+    #     println("No offset file, generating")
+    #     paras = setpara(;simu_para..., N=Ntotal, ex=1, output = offset_output, s_len =0, d_len = 0)
+    #     main(paras; source_config = [], drain_config = [])
+    #   else
+    #     println("offset file found, loading")
+    #   end 
   
-      offset = readdlm(workdir * offset_output * "ex" )[end]
-      sd_hop["source_offset"] = offset
-      sd_hop["drain_offset"] = offset
-    end 
+    #   offset = readdlm(workdir * offset_output * "ex" )[end]
+    #   sd_hop["source_offset"] = offset
+    #   sd_hop["drain_offset"] = offset
+    # end 
   
     simu_para[:sd_hop] = sd_hop
 
@@ -195,7 +223,10 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
       # here we solve for the GS, where initially the chemical potential is turned off
       gs_para = deepcopy(simu_para)
-      gs_para[ :sd_hop]["source_offset"] = gs_para[ :sd_hop]["drain_offset"] = 0
+
+
+        gs_para[ :sd_hop]["source_offset"] = gs_para[ :sd_hop]["drain_offset"] = 0
+        gs_para[ :sd_hop]["bulk_bias"] = init_bulk_bias
 
       if mix_basis
         mix_basis_gs , _, _, _= get_mix_energy(gs_para; ks=ks, LR=LR)
@@ -207,7 +238,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
       if !isfile( workdir * initial_state_output * ".h5")
         # if no IS, generate one 
         paras = setpara(;gs_para..., ex=1, output = initial_state_output, sd_override=false)
-        main(paras; mix_basis_energies = mix_basis_gs, ks= ks, LR =LR, addtags = addtags, source_config = source_config, drain_config = drain_config)
+        main(paras; mix_basis_energies = mix_basis_gs, ks= ks, LR =LR, addtags = addtags, source_config = source_config, drain_config = drain_config, state_override = state_override)
   
       end 
   
@@ -223,7 +254,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
   
     else
       paras = setpara(;simu_para...)
-      ψ, sites = TE_stateprep(paras; addtags=addtags, source_config = source_config, drain_config = drain_config)
+      ψ, sites = TE_stateprep(paras; addtags=addtags, source_config = source_config, drain_config = drain_config, state_override = state_override)
     end 
   
     paras = setpara(;simu_para..., τ=τ,  output="TE")
@@ -248,4 +279,9 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     
   
 end 
+
+
+"""
+Running TN simulations for localized transition. The sys N should be fixed at 2
+"""
 
