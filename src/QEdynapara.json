@@ -1,17 +1,18 @@
 {
-    "L": 100,
-    "N": 50,
-    "sweepdim": 500,
-    "sweepcnt" : 30,
-    "QE" : 2,
+    "L": 12,
+    "N": 6,
+    "sweepdim": 300,
+    "sweepcnt" : 25,
+    "QE" : 5,
     "dynamode" : "left",
     "TEcutoff" : 1e-9,
-    "TEdim" : 400,
+    "TEdim" : 300,
     "krylovdim" : 8,
     "QN" : true,
     "range" : 1000,
     "range_qe" : 1000,
     "type" : "Fermion", 
     "int_ne" : 2.0,
-    "int_ee" : 2.0
+    "int_ee" : 2.0,
+    "adiabatic_time" : 100.0
 }

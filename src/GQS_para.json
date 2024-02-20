@@ -1,0 +1,14 @@
+{
+    "L": 12,
+    "N": 6,
+    "sweepdim": 500,
+    "sweepcnt" : 30,
+    "TEcutoff" : 1e-9,
+    "TEdim" : 400,
+    "krylovdim" : 8,
+    "range" : 1000,
+    "type" : "Fermion", 
+    "int_ne" : 3.0,
+    "int_ee" : 3.0,
+    "exch" : 0.2
+}

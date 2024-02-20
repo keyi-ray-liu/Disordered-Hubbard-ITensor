@@ -1,7 +1,7 @@
 {
-    "t" : 0.5,
-    "start" :0.5,
-    "fin":100.0,
+    "t" : 0.125,
+    "start" :0.125,
+    "fin":16,
     "product_state":false,
     "occ_direct" :false
 }
