@@ -2,6 +2,7 @@
 function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vector{Float64}, sites; kwargs...)
   # parameters 
 
+  if_gate = get(kwargs, :if_gate, false)
   println("H init start")
 
   factor= para["TEBDfactor"]
@@ -17,11 +18,12 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   s_len = para["s_len"]
   d_len = para["d_len"]
+
+
+
+  # sd para
   sd_hop = para["sd_hop"]
 
-
-  if_gate = get(kwargs, :if_gate, false)
-  
   mix_basis = get(sd_hop, "mix_basis", false)
   bulk_bias = get(sd_hop, "bulk_bias", [0.0 for _ in 1:prod(L)])
   Usd = get(sd_hop, "Usd", 0.0)
@@ -69,9 +71,16 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   if headoverride == 0
 
-    for which in 1:QE
+    # here we first couple two QEs at most
+    for which in 1:min(QE, 2)
       res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=which)
     end
+
+
+    # we consider the 'damping' here
+    for which in 3:QE
+      res = add_damping!(res, para, L, sites; head=head, which=which)
+    end 
 
   end 
 
@@ -121,7 +130,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   res = add_onsite_bias!(res, para, sites, bulk_bias, if_gate=if_gate, head=head, factor= factor, τ=τ)
 
 
-
+  # TODO merging into the sd block
   # adding capacitative coupling between SD and sys, if applicable
   if Usd != 0 
     res = add_ccouple_sd!(res, para::Dict; head=head, Usd =Usd)

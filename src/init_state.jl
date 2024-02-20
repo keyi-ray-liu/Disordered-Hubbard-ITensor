@@ -115,12 +115,12 @@ function init_state(para, sites, disx, disy; kwargs...)
       end 
 
       @show length(state), length(sites)
-      ψ0 = randomMPS(sites,state)
+      ψ0 = randomMPS(sites,state; linkdims=10)
 
     # random MPS if QN is false, making sure no 'stuck' situation
     else
 
-      ψ0 = randomMPS(sites, Ltotal + (headoverride > 0 ? headoverride : QE))
+      ψ0 = randomMPS(sites, Ltotal + (headoverride > 0 ? headoverride : QE); linkdims=10)
 
     end 
 
@@ -321,10 +321,10 @@ function TE_stateprep(para; kwargs...)
     end
 
     print(state)
-    ψ = randomMPS(sites,state)
+    ψ = randomMPS(sites,state; linkdims=10)
 
   else 
-    ψ = randomMPS(sites,Ltotal + QE)
+    ψ = randomMPS(sites,Ltotal + QE; linkdims=10)
   end 
 
   return ψ, sites

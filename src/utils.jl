@@ -388,18 +388,22 @@ function sd_gen(sd_hop; kwargs...)
   occ2 = occ1 + 1
 
   if !inelastic
-    config = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR]
+
+    sample = StatsBase.sample(1:NR, div(NR, 2), replace = false)
+    config = [ x in sample ? occ1 : occ2 for x in 1:NR]
 
   else
 
+    sample = StatsBase.sample(1:NR, div(NR, 2), replace = false)
     inelastic_para = get(sd_hop, "inelastic_para", Dict())
     kcnt = get(inelastic_para, "kcnt", 0)
     
-    config = [ x in StatsBase.sample(1:NR, div(NR, 2), replace = false) ? occ1 : occ2 for x in 1:NR * (kcnt + 1)]
+    config = [ x in sample ? occ1 : occ2 for x in 1:NR * (kcnt + 1)]
   end 
 
 
-
+  println("config count:", count(==(occ1), config))
+  println("config detail:", config)
   return config
 end 
 

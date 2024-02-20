@@ -239,6 +239,7 @@ function transport_wrapper()
         :type => get(transport_para, "type", "Fermion"),
         :krylovdim => get(transport_para, "krylovdim", 128),
         :QN=>true,
+        :noise=> get(transport_para, "noise", true),
         :CN=> get(transport_para, "CN", 0),
         :int_ee => get(transport_para, "int_ee", 0.0),
         :int_ne => get(transport_para, "int_ne", 0.0),

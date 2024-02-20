@@ -12,7 +12,7 @@ using StatsBase
 using Suppressor
 
 
-include("behavior_test.jl")
+#include("behavior_test.jl")
 include("main.jl")
 include("setpara.jl")
 include("setdisorder.jl")

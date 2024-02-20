@@ -139,4 +139,17 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
 
 end 
 
+function add_damping!(res, para, L, sites; head=0, which=3)
 
+  println("Adding QE damping", which)
+  QEen = para["QEen"][which]
+  QN = para["QN"]
+  QEloc = para["QEloc"]
+  scales = para["scales"]
+  type = para["type"]
+  scr = para["screening_qe"]
+  range = para["range_qe"]
+
+  Ltotal = prod(L)
+
+end 

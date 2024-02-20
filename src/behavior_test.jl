@@ -4,6 +4,7 @@ using ITensors
 using ITensorTDVP
 using Random
 using Test
+using StatsBase
 using ITensors.HDF5
 
 # @testset "DMRG-X" begin
@@ -182,6 +183,14 @@ using ITensors.HDF5
 
 # end
 
+
+function testRNG()
+
+  NR = 16
+  @show StatsBase.sample(1:NR, div(NR, 2), replace = false)
+
+end 
+
 function benchmark()
 
   paras = setpara(;L=12, N=6, ex=2)
@@ -288,3 +297,5 @@ end
 # LR = [1,1, 0, 0, 1, 0, 1]
 
 # findall( x-> x==1, LR)
+
+testRNG()
