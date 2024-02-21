@@ -966,7 +966,7 @@ def current():
 
 
 
-def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=1000):
+def time_bond_ee(plot_energy=False, plot_qe=True, filename_override='', wrap=1000, sys_override='QE'):
 
     until = int(sys.argv[2])
     files = sys.argv[3:]
@@ -975,8 +975,9 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
     row = mul * ((len(files) - 1) // wrap + 1) 
     col = min(wrap, len(files))
 
+    print(sys_override)
     print(len(files), row, col)
-    fig, axes = plt.subplots( row, col , figsize = (8 * col, 4 * row)
+    fig, axes = plt.subplots( row, col , figsize = (8 * col, 6 * row)
                              #, dpi=65536//max(4 * row, 8 * col)
                              )
     axes = [ [ax] for ax in axes] if len(files) == 1 else axes
@@ -991,13 +992,6 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
     ee_lo = bd_lo = s_lo =  10e9
     ee_hi = bd_hi = s_hi = 0
 
-    if not plot_qe:
-        s = 1
-        end = -2
-
-    else:
-        s = 0
-        end = ee.shape[-1]
 
     for i, file in enumerate(files):
         
@@ -1020,7 +1014,13 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
 
         occs[i] = np.loadtxt(file + '/expN')[:untiltick]
 
+        if not plot_qe:
+            s = 1
+            end = -2
 
+        else:
+            s = 0
+            end = ee.shape[-1]
 
         ee_lo = min( ee_lo, np.amin(ee[:, s:end]))
         ee_hi = max( ee_hi, np.amax(ee[:, s:end]))
@@ -1043,8 +1043,15 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
         occ : np.ndarray = occs[i]
 
         strs = file.split('/')
-        l = [ int( s[: s.find("TDVP")].strip('_')) for s in strs if "TDVP" in s ][0]
+        
+        if not plot_qe:
+            s = 1
+            end = -2
 
+        else:
+            s = 0
+            end = ee.shape[-1]
+            
         if not plot_qe:
             ee = ee[:, s:end]
             bond = bond[:, s:end]
@@ -1078,13 +1085,17 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
         ylabel = "Site Number"
         extent = [ 1 * timescale, time * timescale, 2, sites + 1]
 
-        titlefile = '_'.join(file.split('_')) + ' timescale: {}'.format(timescale) + ' plot_qe: {}'.format(plot_qe) 
+        titlefile = '_'.join(file.split('_')) + ' timescale: {}'.format(timescale) 
+        
+        if sys_override == 'QE':
+            titlefile += ' plot_qe: {}'.format(plot_qe) 
+
         im = ax.imshow(bond.transpose(), aspect="auto", extent=extent, interpolation='none', cmap='hot'
                        , vmin=bd_lo, vmax=bd_hi
                        )
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-        ax.set_title('Max bond dim. vs. t, each site, {}'.format(titlefile))
+        ax.set_title('Max bond dim. vs. t, each site, \n {}'.format(titlefile))
         fig.colorbar(im)
 
         ax : plt.Axes =axes[r + 1][c]
@@ -1095,7 +1106,7 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
                        )
         ax.set_xlabel(xlabel)
         ax.set_ylabel(ylabel)
-        ax.set_title('Von Neumann Entropy on bipartite cut. vs. t. {}'.format(titlefile))
+        ax.set_title('Von Neumann Entropy on bipartite cut. vs. t. \n {}'.format(titlefile))
         fig.colorbar(im)
 
         ax : plt.Axes =axes[r + 2][c]
@@ -1106,25 +1117,39 @@ def time_bond_ee(plot_energy=False, plot_qe=False, filename_override='', wrap=10
 
         ax.set_ylim( s_lo, s_hi)
         ax.set_xlabel('Time')
-        ax.set_ylabel('S_eff')
-        ax.set_title('Effectly Entropy vs. t. {}'.format(titlefile))
+        ax.set_ylabel(r"$S_{eff}$")
+        ax.set_title('Effectly Entropy vs. t. \n {}'.format(titlefile))
 
         ax : plt.Axes =axes[ r + mul - 1][c]
 
-        exl = occ[:, 1]
         times = np.arange( occ.shape[0]) * timescale
-        ax.plot(times, exl, label='QE1 (left)')
 
-        for QEs in range(1, (occ.shape[-1] - l)// 2 ):
-            
-            exr = occ[:, l + QEs * 2]
-            ax.plot(times, exr, label = 'QE' + str(QEs + 1))
 
-        ax.set_xlabel('Time')
-        ax.set_ylabel('QE level')
-        ax.set_title('QE levels vs. t. {}'.format(titlefile))
+        if sys_override == 'QE':
+            exl = occ[:, 1]
+            ax.plot(times, exl, label='QE1 (left)')
+            l = [ int( s[: s.find("TDVP")].strip('_')) for s in strs if "TDVP" in s ][0]
+            for QEs in range(1, (occ.shape[-1] - l)// 2 ):
+                
+                exr = occ[:, l + QEs * 2]
+                ax.plot(times, exr, label = 'QE' + str(QEs + 1))
 
-        ax.legend()
+            ax.set_xlabel('Time')
+            ax.set_ylabel('QE level')
+            ax.set_title('QE levels vs. t. {}'.format(titlefile))
+
+            ax.legend()
+
+        elif sys_override == 'LT':
+            LT = occ[:, occ.shape[-1] //2 - 1]
+            ax.plot(times, LT, label='site 1')
+
+            ax.set_xlabel('time')
+            ax.set_ylabel(r'$\langle n_S\rangle$')
+            ax.set_title(file)
+
+            #hard limit on y axis
+            ax.set_ylim(0, 1.1)
 
 
     fig.tight_layout()
@@ -1197,6 +1222,45 @@ def plateau_plot():
 
     fig.savefig('plots/response.pdf')
 
+def occ_static_single(col_limit=9):
+
+    files = sys.argv[2:]
+
+    col = min(col_limit, len(files))
+    row = len(files) // col_limit if len(files)//col_limit == len(files)/col_limit else len(files) // col_limit + 1
+
+    fig, axes = plt.subplots(row, col,  figsize=( 8 * col, 10 * row))
+
+    if len(files) == 1:
+        axes = [[axes]]
+
+    for i, file in enumerate(files):
+
+        r = i//col_limit
+        c = i%col_limit
+        raw = np.loadtxt(file + '/occ')
+
+        # we extrapolate the position of #1
+        syssize = raw.shape[-1]
+        L_res = syssize//2 - 1
+
+        data = raw[:, L_res]
+        times = 0.125 * np.arange( raw.shape[0])
+
+        
+        ax : plt.Axes = axes[r][c]
+        ax.plot( times, data)
+
+        ax.set_xlabel('time')
+        ax.set_ylabel(r'$\langle n_S\rangle$')
+        ax.set_title(file)
+
+        #hard limit on y axis
+        ax.set_ylim(0, 1.1)
+    fig.savefig( 'plots/testocc.pdf')
+
+
+    
 
 
 if __name__ == '__main__':
@@ -1255,10 +1319,13 @@ if __name__ == '__main__':
         current()
 
     elif control == 17:
-        time_bond_ee(filename_override='levels', wrap=21)
+        time_bond_ee(filename_override='LT2', wrap=12, sys_override='LT')
 
     elif control == 18:
         GQS_plot()
 
     elif control == 19:
         plateau_plot()
+
+    elif control == 20:
+        occ_static_single()
