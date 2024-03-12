@@ -63,7 +63,9 @@ function QEdyna_wrapper()
         :int_ne => get(qedyna_paras, "int_ne", 2.0),
         :int_ee => get(qedyna_paras, "int_ee", 2.0),
         :exch => get(qedyna_paras, "exch", 0.2),
-        :adiabatic_time => get(qedyna_paras, "adiabatic_time", 1E-10)
+        :adiabatic_time => get(qedyna_paras, "adiabatic_time", 1E-10),
+        :QEmode => get(qedyna_paras, "QEmode", "plain"),
+        :geometry => get(qedyna_paras, "geometry", "linear")
     )
 
     
@@ -78,7 +80,7 @@ function QEdyna_wrapper()
         "QEmul" => get(add_para, "QEmul", 1.0)
     )
 
-    QE_dynamic(para, additional_para)
+    QE_dynamic(para, additional_para; show_ham=false)
 end 
 
 
@@ -126,14 +128,18 @@ end
 
 
 function corr_wrapper()
+    cur_dir = pwd()
+    qedyna_paras = load_JSON(cur_dir * "/QEdynapara.json")
 
+    
     para = Dict{Any, Any}(
         "op1" => "Cdag",
         "op2" => "C",
         "tag" => "CC",
         "wftag" => "tTDVP", 
         "momentum" => true,
-        "QE" => 2
+        "QE" => get(qedyna_paras, "QE", 2),
+        "ft_imag" => true
     )
 
     time_corr_plot(para)
@@ -270,7 +276,7 @@ function transport_wrapper()
 
     #para[:source_config] = [ 2 for _ in 1:NR]
     #para[:drain_config] = [ 3 for _ in 1:NR]
-    SD_dynamics_transport(para, sd_hop, additional_para)
+    SD_dynamics_transport(para, sd_hop, additional_para; show_ham=false)
 
 
 end 
@@ -342,4 +348,45 @@ function GQS_dyna_wrapper()
     )
 
     GQS_dynamic(para, additional_para)
+end 
+
+
+function REPL_test_wrapper()
+
+    for usd in [2.0]
+        for NR in [16, 32]
+            sdpara = Dict{}(
+                "to_chain_hop" => 0.0,
+                "internal_hop" => 1.0,
+                "source_offset" => 0.0,
+                "drain_offset" => 0.0,
+                "bulk_bias" => 0.0,
+                "init_bulk_bias" => [-100.0, 100.0],
+                "mix_basis" => false,
+                "NR" => NR,
+                "inelastic" => false,
+                "inelastic_para"=> Dict{}(
+                    "kcnt" => 0,
+                    "deltak" => 0
+                ),
+                "interacting" => false,
+                "sdcontact"=> false,
+                "Usd" => usd,
+                "sdcouple" => 2,
+                "state_override"=> [2, 1]
+            )
+
+            open("sdpara.json", "w") do io
+                JSON3.pretty(io, sdpara)
+            end
+            
+            rm("work", recursive=true)
+            transport_wrapper()
+            
+        end
+
+    end
+
+
+
 end 

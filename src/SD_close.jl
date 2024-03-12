@@ -8,7 +8,7 @@ function SD_dynamics_QE(simu_para, sd_hop, additional_para)
     drain_config  = additional_para["drain_config"]
   
     Ntotal = N + count_ele(source_config) + count_ele(drain_config)
-    Ltotal = prod(L)
+    Ltotal = get_systotal(para)
   
     if length(L) == 1
       sd_loc = [ [-1.0], [Ltotal]]
@@ -129,7 +129,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     # N_sys = N[2] + N[3] + 2 * N[4]
     # Ntotal = N_sys + count_ele(source_config) + count_ele(drain_config)
 
-    Ltotal = prod(L)
+    Ltotal = get_systotal(para)
   
     if length(L) == 1
       sd_loc = [ [1.0], [Ltotal]]
@@ -172,7 +172,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     end 
 
     sd_hop["sdcouple"] = extends
-    state_override = sd_hop["state_override"]
+    state_override = get(sd_hop, "state_override", [])
     mix_basis = sd_hop["mix_basis"]
     
     
@@ -238,7 +238,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
       if !isfile( workdir * initial_state_output * ".h5")
         # if no IS, generate one 
         paras = setpara(;gs_para..., ex=1, output = initial_state_output, sd_override=false)
-        main(paras; mix_basis_energies = mix_basis_gs, ks= ks, LR =LR, addtags = addtags, source_config = source_config, drain_config = drain_config, state_override = state_override)
+        main(paras; mix_basis_energies = mix_basis_gs, ks= ks, LR =LR, addtags = addtags, source_config = source_config, drain_config = drain_config, state_override = state_override, kwargs...)
   
       end 
   
@@ -265,6 +265,18 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     println("length of ψ is:" , length(ψ))
     println("length of sites", length(sites))
     
+    if !isempty( state_override)
+
+      gs_n = expect(ψ, "N")
+      mid = div(length(ψ), 2)
+
+      println("temp occ check begin:")
+      println( "sys:", gs_n[mid: mid+1])
+      println( "sum of L:", sum(gs_n[begin:mid - 1]))
+      println( "sum of R:", sum(gs_n[mid + 2:end]))
+
+    end 
+
     if mix_basis
 
       #@show hastags(sites, "mix")

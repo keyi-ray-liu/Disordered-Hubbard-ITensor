@@ -26,7 +26,7 @@ function init_state(para, sites, disx, disy; kwargs...)
     error("sd configs does not match inputs")
   end 
 
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
   scales = para["scales"]
   snake = para["snake"]
   QEen = para["QEen"]
@@ -48,14 +48,14 @@ function init_state(para, sites, disx, disy; kwargs...)
 
       if !isempty(state_override)
 
+        
         state = [ op_str[i] for i in state_override]
+        println("overriding init state: ", state)
 
       else
         state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
 
       end
-
-      print(state)
 
       if s_len + d_len > 0
 
@@ -83,44 +83,49 @@ function init_state(para, sites, disx, disy; kwargs...)
       else
 
         if mode == "both"
-          front =  [emp, occ ] 
-          back =  QE > 1 ? [occ, emp] : []
+          QEL =  [emp, occ ] 
+          QER =  QE > 1 ? [occ, emp] : []
 
         elseif mode == "left"
-          front = [emp, occ]
-          back = QE > 1 ? front : []
+          QEL = [emp, occ]
+          QER = QE > 1 ? QEL : []
 
         elseif mode == "right"
-          front = [occ, emp]
-          back = QE > 1 ? front : []
+          QEL = [occ, emp]
+          QER = QE > 1 ? QEL : []
 
         elseif mode == "empty"
-          front  = [occ, emp]
-          back = QE > 1 ? [emp, occ] : []
+          QEL  = [occ, emp]
+          QER = QE > 1 ? [emp, occ] : []
 
         elseif mode == "none"
-          front =  [emp for n=1:headoverride] 
-          back = QE > 1 ? front : []
+          QEL =  [emp for n=1:headoverride] 
+          QER = QE > 1 ? QEL : []
 
         else
           error("Unrecognized dyna mode")
         end 
 
-        state = vcat(front, state)
+        state = vcat(QEL, state)
 
         for _ in 2:QE
-          state = vcat(state, back)
+          state = vcat(state, QER)
         end
 
       end 
 
+
       @show length(state), length(sites)
-      ψ0 = randomMPS(sites,state; linkdims=10)
+      ψ0 = randomMPS(sites,state 
+      #;linkdims=10
+      )
 
     # random MPS if QN is false, making sure no 'stuck' situation
     else
 
-      ψ0 = randomMPS(sites, Ltotal + (headoverride > 0 ? headoverride : QE); linkdims=10)
+      ψ0 = randomMPS(sites, Ltotal + (headoverride > 0 ? headoverride : QE)
+      #; linkdims=10
+      )
 
     end 
 
@@ -206,6 +211,118 @@ function init_state(para, sites, disx, disy; kwargs...)
 end
 
 
+"""with QE X lattice"""
+function init_state(para, sites, disx, disy, geometry::String; kwargs...)
+
+  if geometry != "x-siam"
+
+    return init_state(para, sites, disx, disy; kwargs...)
+
+  end 
+
+  L = para["L"]
+  N = para["N"]
+  QE = para["QE"]
+  headoverride = para["headoverride"]
+  mode = para["dynamode"]
+  type = para["type"]
+  state_override = get(kwargs, :state_override, [])
+
+  half, leg = L
+
+  #Ltotal = get_systotal(para)
+
+  
+  op_str = get_type_dict(type)
+  emp = op_str[1]
+  occ = op_str[2]
+  
+  # Create an initial random matrix product state
+
+  # QN and QE conditions if QN, explicit initiating conditions
+
+
+  # we already have check for the type of N
+
+  if !isempty(state_override)
+
+    
+    state = [ op_str[i] for i in state_override]
+    println("overriding init state: ", state)
+
+  else
+    state = [ op_str[i] for i= 1:4 for _ in 1:N[i] ]
+
+  end
+
+  Lstart = 1
+  Lstate = [ state[Lstart + (h - 1) * leg: Lstart + h * leg - 1] for h in 1:half]
+
+  midstart = 1 + half * leg
+  midstate = [state[ midstart]]
+
+  Rstart = midstart + 1
+  Rstate = [ state[Rstart + (h -1) * leg: Rstart + h *leg - 1] for h in 1:half]
+
+
+  if headoverride == 0
+
+    QEL = QE > 0 ? [emp, occ] : []
+    QER = QE >  half ? [ occ, emp ] : []
+
+  else
+
+    if mode == "both"
+      QEL =  [emp, occ ] 
+      QER =  QE > half ? [occ, emp] : []
+
+    elseif mode == "left"
+      QEL = [emp, occ]
+      QER = QE > half ? QEL : []
+
+    elseif mode == "right"
+      QEL = [occ, emp]
+      QER = QE > half ? QEL : []
+
+    elseif mode == "empty"
+      QEL  = [occ, emp]
+      QER = QE > half ? [emp, occ] : []
+
+    elseif mode == "none"
+      QEL =  [emp for n=1:headoverride] 
+      QER = QE > half ? QEL : []
+
+    else
+      error("Unrecognized dyna mode")
+    end 
+
+  end 
+
+  # Lstates
+  for h in 1:half
+    state = vcat(state, QEL, Lstate[h])
+  end 
+
+  #mid
+  state = vcat(state, midstate)
+
+  #Rstate
+  for h in 1:half
+    state = vcat(state, Rstate[h], QER)
+  end 
+
+
+  @show length(state), length(sites)
+  ψ0 = randomMPS(sites,state 
+  #;linkdims=10
+  )
+
+# random MPS if QN is false, making sure no 'stuck' situation
+
+
+  return ψ0
+end
+
 """return the sites indices for further use, can add quantum emitters """
 function init_site(para::Dict; kwargs...)
   L = para["L"]
@@ -216,7 +333,7 @@ function init_site(para::Dict; kwargs...)
   s_len = para["s_len"]
   d_len = para["d_len"]
 
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
 
   addtags = get(kwargs, :addtags, "")
   # set however many extra sites regarding the condition
@@ -258,7 +375,7 @@ function TE_stateprep(para; kwargs...)
   state_override = get(kwargs, :state_override, [])
   
   mode = para["dynamode"]
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
   type = para["type"]
   
   op_str = get_type_dict(type)
@@ -293,38 +410,42 @@ function TE_stateprep(para; kwargs...)
     else
 
       if mode == "both"
-        front =  [emp, occ ] 
-        back =  QE > 1 ? [occ, emp] : []
+        QEL =  [emp, occ ] 
+        QER =  QE > 1 ? [occ, emp] : []
 
       elseif mode == "left"
-        front = [emp, occ]
-        back = QE > 1 ? front : []
+        QEL = [emp, occ]
+        QER = QE > 1 ? QEL : []
 
       elseif mode == "right"
-        front = [occ, emp]
-        back = QE > 1 ? front : []
+        QEL = [occ, emp]
+        QER = QE > 1 ? QEL : []
 
       elseif mode == "empty"
-        front  = [occ, emp]
-        back = QE > 1 ? [emp, occ] : []
+        QEL  = [occ, emp]
+        QER = QE > 1 ? [emp, occ] : []
 
       elseif mode == "none"
-        front =  [emp for n=1:headoverride] 
-        back = QE > 1 ? front : []
+        QEL =  [emp for n=1:headoverride] 
+        QER = QE > 1 ? QEL : []
 
       else
         error("Unrecognized dyna mode")
       end 
 
-      state = vcat(front, state)
-      state = vcat(state, back)
+      state = vcat(QEL, state)
+      state = vcat(state, QER)
     end
 
     print(state)
-    ψ = randomMPS(sites,state; linkdims=10)
+    ψ = randomMPS(sites,state
+    #; linkdims=10
+    )
 
   else 
-    ψ = randomMPS(sites,Ltotal + QE; linkdims=10)
+    ψ = randomMPS(sites,Ltotal + QE
+    #; linkdims=10
+    )
   end 
 
   return ψ, sites

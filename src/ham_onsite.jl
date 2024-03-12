@@ -4,7 +4,7 @@ function add_onsite_hubbard!(res, para::Dict,  L::Vector{Int}, sites; if_gate=fa
   println("Adding on-site Hubbard")
 
   U = para["U"]
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
 
   for i = 1:Ltotal
 
@@ -29,7 +29,7 @@ function add_onsite_bias!(res, para::Dict, sites, bulk_bias; if_gate=false, head
 
   println("Adding on-site bias")
   L = para["L"]
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
   type = para["type"]
 
   if type == "Fermion"
@@ -67,7 +67,7 @@ function add_sd_potential(res, para, sites; if_gate = false, factor=2, τ=0.1)
   sd_hop = para["sd_hop"]
   L = para["L"]
   type = para["type"]
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
 
   if type == "Fermion" 
     ops = "N"

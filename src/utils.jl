@@ -11,6 +11,30 @@ function get_type_dict(type)
 
 end 
 
+function get_systotal(L::Vector{Int}, geometry::String)
+
+  if geometry == "x-siam"
+    
+    # for the x-siam type, we assume L to have the following structure: [# of legs on each site, # of sites in each leg]
+    
+    # the factor of 2 is to account for LR legs
+    Lres  = prod(L) * 2 
+    Ltotal = Lres + 1
+  else
+
+    Ltotal = prod(L)
+  end 
+
+  return Ltotal 
+end 
+
+function get_systotal(para::Dict)
+
+  L = para["L"]
+  geometry = para["geometry"]
+
+  return get_systotal(L, geometry)
+end 
 
 """Calculates hopping
 Return the strength of hooping, baseline is 1 without disorder"""
@@ -24,9 +48,9 @@ function get_nn(L::Vector{Int}, t; snake=false, geometry ="linear", spec_hop_str
   nns = Dict{Int, Dict{Int, Float64}}()
 
   # get the size of the whole system
-  total = prod(L)
+  total = get_systotal(L, geometry)
 
-  println(total)
+  println(geometry, total)
   for site in 1:total
 
     nn = Dict{Int, Float64}()
@@ -139,6 +163,24 @@ function get_nn(L::Vector{Int}, t; snake=false, geometry ="linear", spec_hop_str
       else
         nn[site + 1]= t
       end
+
+    # for x-siam, the input arrays are symmetrized: L = (legs, sites in legs)
+    elseif geometry == "x-siam"
+
+      _, leg_size = L
+
+      mid = prod(L) + 1
+
+      # get effect pos in each leg. the 2 here is because the system is flipped
+      effect_pos = site < mid ? site % leg_size : (site - 2) % leg_size
+
+      if effect_pos == 0
+        nn[mid] = t
+
+      else
+        nn[site + 1] = t
+
+      end 
 
 
     else
@@ -371,7 +413,11 @@ end
 
 function Ukj(k, j, N)
   return sqrt( 2/ (N + 1)) * sin(  j * k * pi / (N + 1))
+end 
 
+
+function Ukj_imag(k, j, N)
+  return sqrt( 1/N) * exp( 2im * j * k *pi / N)
 end 
 
 

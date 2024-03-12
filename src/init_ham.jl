@@ -8,6 +8,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   factor= para["TEBDfactor"]
   τ = para["τ"]
   QE = para["QE"]
+  QEmode = para["QEmode"]
   QN = para["QN"]
   headoverride = para["headoverride"]
   type = para["type"]
@@ -19,7 +20,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   s_len = para["s_len"]
   d_len = para["d_len"]
 
-
+  show_ham = get(kwargs, :show_ham, true)
 
   # sd para
   sd_hop = para["sd_hop"]
@@ -78,9 +79,21 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
 
     # we consider the 'damping' here
-    for which in 3:QE
-      res = add_damping!(res, para, L, sites; head=head, which=which)
+
+    if QEmode[begin:min(length(QEmode), length("Damping"))] == "Damping"
+
+      for which in 2:QE - 1
+        res = add_damping!(res, para, L, sites; head=head, which=which, QEmode=QEmode)
+      end 
+
+    else
+
+      for which in 3:QE
+        res = add_qe!(res, para, L, disx, disy, sites, if_gate=if_gate, head=head, factor= factor, τ=τ, which=which)
+      end 
+
     end 
+    
 
   end 
 
@@ -137,12 +150,15 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   end 
   ########################### end SD hamiltonian ###################################
 
-  @show res 
+  if show_ham
+    @show res 
+  end
 
   if !if_gate
     H = MPO(res, sites)
-
     @show maxlinkdim(H)
+
+
     return H
 
   else

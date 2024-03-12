@@ -2,11 +2,11 @@
 function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5, 0.5], exch=0.2, 
   decay=0.0, self_nuc=false, disorder=false, sweepdim=500, sweepcnt=50, ex=1, weight=10.0, 
   guess=false, manual=false, itr_dis=[1.0], range=10000, noise=true, method="DMRG", QE=0, scales=[1.0], 
-  QN=true,  QEen=[], dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
+  QN=true,  QEen=0.0, dp=1.0, ζ_dp=0.5, QEloc = [], output="", headoverride=0, 
   dynamode="none", cutoff=1E-12, TEcutoff=1E-8, TEdim=300, TEmethod="TDVP", product_state=false, TEBDfactor=2,
   τ=0.1,type="Fermion", U=0.0, snake=false, krylovdim=3, geometry = "linear", spec_hop_struct = Dict{Int64, Float64}(),
   screening_int=0.0, screening_qe=0.0,  s_len = 0, d_len = 0, sd_hop = Dict{Any, Any}(), 
-  sd_override=false, range_qe=1000, adiabatic_time=1E-10)
+  sd_override=false, range_qe=1000, adiabatic_time=1E-10, QEmode = "plain")
 
   # process L so that it's consistent with the new definition
   if typeof(L) == Int
@@ -15,7 +15,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
 
   L = convert(Vector{Int}, L)
 
-  Ltotal = prod(L)
+  Ltotal = get_systotal(L, geometry)
   allnn = get_nn(L, t; snake =snake, geometry=geometry, spec_hop_struct= spec_hop_struct)
 
 
@@ -52,7 +52,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
 
     for cnt in 2:QE
       if length(L) == 1
-        QEloc = vcat(QEloc,  [[prod(L) + cnt - 1.0]] )
+        QEloc = vcat(QEloc,  [[Ltotal + cnt - 1.0]] )
 
       else
         QEloc = vcat(QEloc,  [[y, maximum(L) + cnt - 1.0]])
@@ -66,12 +66,12 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
   # check half-filling and various N condition
   if N == "HF"
 
-    n = div(prod(L), 2)
+    n = div(Ltotal, 2)
 
     if type == "Electron"
-      N = [0, n, n, 0]
+      N = [Ltotal - 2 * n, n, n, 0]
     else
-      N = [n, n, 0, 0]
+      N = [Ltotal - n, n, 0, 0]
     end 
 
   end
@@ -106,6 +106,7 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
   for val in (dp, ζ_dp, QEloc, QEen)
 
     if !isnothing(val) && length(val) != QE 
+      
       error("QE parameter(s):" * string(val) * "and QE number mismatch")
     end 
   end 
@@ -165,7 +166,9 @@ function setpara(;L=22, N="HF", CN="CN", int_ee=2.0, int_ne=2.0, t=-1.0, ζ=[0.5
     "sd_override" => sd_override,
     "range_qe" => range_qe,
     "allnn" => allnn,
-    "adiabatic_time" => adiabatic_time
+    "adiabatic_time" => adiabatic_time,
+    "QEmode" => QEmode,
+    "geometry" => geometry
   )
 
 

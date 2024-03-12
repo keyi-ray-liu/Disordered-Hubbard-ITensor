@@ -136,6 +136,7 @@ function time_corr_plot(paras)
   wftag = paras["wftag"]
   momentum = paras["momentum"]
   QE = paras["QE"]
+  ft_imag = paras["ft_imag"]
 
   files = glob( wftag * "*.h5", workdir)
 
@@ -164,9 +165,16 @@ function time_corr_plot(paras)
       end 
       
       N = length(ψ) - QE * 2
-      U_matrix = reduce(hcat, [[ Ukj(k, j, N) for j in 1:N ] for k in 1:N])
+
+      if ! ft_imag
+        U_matrix = reduce(hcat, [[ Ukj(k, j, N) for j in 1:N ] for k in 1:N])
+
+      else
+        U_matrix = reduce(hcat, [[ Ukj_imag(k, j, N) for j in 1:N ] for k in 1:N])
+
+      end 
       
-      KK_corr = U_matrix * NN_corr[ 1 + QE : end - QE, 1 + QE : end - QE] * U_matrix
+      KK_corr = U_matrix * NN_corr[ 3 : end - (QE - 1) * 2, 3 : end - (QE - 1) * 2] * U_matrix
 
       writedlm( workdir * tag * "_kcorrRE" * string(get_time(file)), real(KK_corr) )
       writedlm( workdir * tag * "_kcorrIM" * string(get_time(file)), imag(KK_corr) )

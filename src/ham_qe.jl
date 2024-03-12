@@ -14,7 +14,7 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   scr = para["screening_qe"]
   range = para["range_qe"]
 
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
 
   # we had the check of dp length with QE
   dp = dp[which]
@@ -139,17 +139,79 @@ function add_qe!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
 
 end 
 
-function add_damping!(res, para, L, sites; head=0, which=3)
+function add_damping!(res, para, L, sites; head=0, which=2, QEmode="Damping-hop")
 
   println("Adding QE damping", which)
   QEen = para["QEen"][which]
-  QN = para["QN"]
-  QEloc = para["QEloc"]
-  scales = para["scales"]
+  #QN = para["QN"]
+  #QEloc = para["QEloc"]
+  #scales = para["scales"]
   type = para["type"]
-  scr = para["screening_qe"]
-  range = para["range_qe"]
+  #scr = para["screening_qe"]
+  #range = para["range_qe"]
 
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
 
+
+  if type == "Electron"
+    opn = "Ntot"
+    opc = [ ["Cup", "Cdagup"], ["Cdn", "Cdagdn"]]
+
+  elseif type == "Fermion"
+    opn = "N"
+    opc = [ ["C", "Cdag"]]
+    
+  end
+
+  pexcur = head + Ltotal + ( which - 2) * 2 + 1
+  pgscur = pexcur + 1
+  pexnxt = pexcur + 2
+  pgsnxt = pexcur + 3
+
+  # we first bias the excited state. The add_qe function already biases QE2, so we only bias the nxt sites
+
+  res += QEen, opn, pexnxt
+
+  # we add specific interactions w.r.t the additional QEs
+
+  if QEmode == "Damping-hop"
+    for operator in opc
+
+      opc1, opc2 = operator
+
+      res += opc1, pexcur, opc2, pgscur, opc2, pexnxt, opc1, pgsnxt
+
+      res += opc2, pgsnxt, opc1, pexnxt, opc1, pgscur, opc2, pexcur
+
+    end
+
+  elseif QEmode == "Damping-den"
+
+    res += opn, pexcur, opn, pexnxt
+
+
+  elseif QEmode == "Damping-reservoir"
+
+    #overriding pcur because everything is coupled to QE2
+    pexcur = head + Ltotal + 1
+    pgscur = head + Ltotal + 2
+
+    for operator in opc
+
+      opc1, opc2 = operator
+
+
+      res += which, opc1, pexcur, opc2, pgscur, opc2, pexnxt, opc1, pgsnxt
+
+      res += which, opc2, pgsnxt, opc1, pexnxt, opc1, pgscur, opc2, pexcur
+
+    end
+
+
+  else
+
+    error("Unrecognized damping mode!")
+  end 
+
+  return res
 end 

@@ -57,8 +57,10 @@ function single_search(para::Dict, sites, disx, disy, states, vars; kwargs...)
 
   else
     # init with no modification to disorder
-    H = init_ham(para, para["L"], disx, disy, sites; kwargs...)
     ϕ = init_state(para, sites, disx, disy; kwargs...)
+    
+    H = init_ham(para, para["L"], disx, disy, sites; kwargs...)
+
   end 
 
   

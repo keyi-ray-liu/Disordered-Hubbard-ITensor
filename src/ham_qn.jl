@@ -4,7 +4,7 @@ function add_qn!(res, para::Dict,  L::Vector{Int}, sites; if_gate=false, head=0,
   
   println("Adding QN conserving")
   N = para["N"]
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
 
   for i= 1:Ltotal
 

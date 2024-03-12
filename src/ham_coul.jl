@@ -11,7 +11,7 @@ function add_ee!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   #snake = para["snake"]
   scr = para["screening_int"]
   type = para["type"]
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
   allnn = para["allnn"]
 
   if type == "Fermion"
@@ -70,7 +70,7 @@ function add_ne!(res, para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::
   ζ_ne = para["ζ"][1]
   self = para["self_nuc"]
   CN = para["CN"]
-  Ltotal = prod(L)
+  Ltotal = get_systotal(para)
   scales = para["scales"]
   scr = para["screening_int"]
   type = para["type"]
@@ -126,6 +126,8 @@ end
 
 function add_ccouple_sd!(res, para::Dict; head=0, Usd =0.0)
 
+
+  println("Adding LR couple")
   type = para["type"]
 
   if type == "Fermion"

@@ -22,7 +22,7 @@ function QE(QE_para; check_flag = false)
 end 
 
 """Calculating QE dynamics using various methods"""
-function QE_dynamic(simu_para, additional_para)
+function QE_dynamic(simu_para, additional_para; kwargs...)
 
   #TE para
   product_state = additional_para["product_state"]
@@ -50,7 +50,7 @@ function QE_dynamic(simu_para, additional_para)
     # single search assume no QE GS, headoverride makes sure QE is blocked in Hamiltonian
 
     paras = setpara(;simu_para..., ex=ex, output = output, headoverride= QN + 1)
-    main(paras;)
+    main(paras; kwargs...)
   end 
 
   if isnothing(energy)
@@ -83,6 +83,7 @@ function QE_dynamic(simu_para, additional_para)
 
   end 
   
+  print(energy)
   paras = setpara(;simu_para..., τ=τ, QEen=energy, output="TE")
   # further preparation of the initial state, if needed
   #ψ, sites = TE_stateprep(ψ, paras, sites)
@@ -91,7 +92,7 @@ function QE_dynamic(simu_para, additional_para)
   println("length of ψ is:" , length(ψ))
   println("length of sites", length(sites))
 
-  time_evolve(ψ, sites, paras, start, fin, occ_direct)
+  time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs...)
   
   
 end

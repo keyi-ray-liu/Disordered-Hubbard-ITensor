@@ -3,6 +3,7 @@
 function add_mix_sd(res, para, energies, ks, LR; head=0)
 
   println("Adding mixed basis SD")
+  Ltotal = get_systotal(para)
   offsetLR(v) = v > s_len ? Ltotal : 0
   sd_hop = para["sd_hop"]
   t = para["t"]
@@ -17,7 +18,7 @@ function add_mix_sd(res, para, energies, ks, LR; head=0)
   to_chain_hop = sd_hop["to_chain_hop"]
   interacting = sd_hop["interacting"]
   inelastic = sd_hop["inelastic"]
-  Ltotal = prod(L)
+  
 
   if type == "Fermion"
     ops = [ ["Cdag", "C"]]

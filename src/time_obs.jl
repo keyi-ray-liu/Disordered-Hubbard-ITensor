@@ -181,6 +181,8 @@ function time_obs(para)
     
   end 
 
+  # --------   cal end   ---------------
+  # write results
   writedlm(workdir *"time", T)
 
   if obs == "occ"
