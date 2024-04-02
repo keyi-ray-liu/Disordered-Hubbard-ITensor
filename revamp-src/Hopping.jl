@@ -1,3 +1,6 @@
+# for a flat chain, return next NN until end
+HoppingNeighbor(sys::Chain_only, j::Int) = j < dims(sys) ? [[t(sys), j + 1] ] : []
+
 function HoppingNeighbor(sys::QE_flat_SIAM, j)
 end 
 
@@ -5,27 +8,116 @@ end
 """
 Here, we have either the offset hopping in the QE, or the chain hopping
 """
-function HoppingNeighbor(sys::QE_two, j)
+function HoppingNeighbor(sys::QE_two, j::Int)
 
-    systotal = get_systotal(sys)
-    t = t(sys)
 
     # we only hop onwards, no hop in QE and last site
-    if j <3 || j > systotal - 3
+    if j <3 || j > get_systotal(sys) - 3
         hop = []
     else
-        hop = [[t, j + 1]]
+        hop = [[t(sys), j + 1]]
     end 
 
     return hop
 
 end 
 
-# for a flat chain, return next NN until end
-function HoppingNeighbor(sys::Chain_only, j)
+function HoppingNeighbor(sys::NF_square, j::Int)
 
-    dims = dims(sys)
-    t = t(sys)
-    return j < dims ? [[t, j + 1] ]: []
+    hop = []
+
+    # not at end of col
+    if j % L(sys) != 0
+        append!(hop, [[t(sys), j + 1]])
+    end 
+
+    # not at end of row
+    if div(j - 1, L(sys)) + 1 < L(sys)
+        append!(hop, [[t(sys), j + L(sys)]])
+    end 
+
+
+    return hop
+
+end 
+
+function HoppingNeighbor(sys::DPT, j::Int)
+
+    # # if L or R, no contact
+    # if j < L(sys)  || (j > L(sys) + 2 && j < get_systotal(sys))
+    #     hop = [[t_reservoir(sys), j + 1]]
+
+    # # contact
+    # elseif j == L(sys) && contact(sys)
+    #     hop = [[contact_t(sys), j + 3]]
+
+    # # lower dot
+    # elseif j == L(sys) + 1
+    #     hop = [[t_doubledot(sys), j + 1]]
+
+    if j < L(sys) + R(sys)
+        hop = [[t_reservoir(sys), j + 1]]
+
+    elseif j == L(sys) + R(sys) + 1
+        hop = [[t_doubledot(sys), j + 1]]
+
+    else
+        hop = []
+    end 
+
+    return hop
+
+end 
+
+function HoppingNeighbor(sys::LSR_SIAM, j::Int)
+
+    # if L or R
+    if j < L(sys)  || (j > L(sys) + 1 && j < get_systotal(sys))
+        hop = [[t_reservoir(sys), j + 1]]
+
+    elseif j == L(sys) || j == L(sys) + 1
+        hop = [[t_couple(sys), j + 1]]
+
+    else
+        hop = []
+    end 
+
+
+    return hop
+end 
+
+"""This function only concerns with the 'simple' hopping, complex terms such as QE dipole offsets are calculated elsewhere"""
+function add_hop!(sys::systems, res::OpSum)
+    
+
+    println("Adding all hopping")
+    sys_type = type(sys)
+    systotal = get_systotal(sys)
+
+    if sys_type == "Fermion"
+        operators = [ ["C", "Cdag"]]
+
+    elseif sys_type == "Electron"
+        operators = [ ["Cup", "Cdagup"], ["Cdn", "Cdagdn"]]
+
+    end 
+
+    for j in 1:systotal
+
+        for (v, k) in HoppingNeighbor(sys, j)
+
+            k = trunc(Int, k)
+            for operator in operators
+
+                op1, op2 = operator
+
+                res += v, op1, j, op2, k
+                res += v, op1, k, op2, j
+            end 
+
+        end 
+    end 
+    
+    return res
 
 end 

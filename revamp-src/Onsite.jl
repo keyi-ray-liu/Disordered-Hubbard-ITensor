@@ -1,27 +1,25 @@
-function Onsite(sys, j)
+Onsite(sys::systems, j) = 0.0
 
-end 
 
 function Onsite(sys::QE_two, j) :: Float64
 
     systotal = get_systotal(sys)
-    QEen = QEen(sys)
 
-    if j == 1 || j == systotal
+    if j == 2 || j == systotal
         onsite = 0.0
 
-    elseif j == 2 || j == systotal - 1
-        onsite = QEen
+    elseif j == 1 || j == systotal - 1
+        onsite = QEen(sys)
 
     else
         # adjust position of j
         onsite = Onsite(sys.chain_only, j - 2)
     end
 
-    return den
+    return onsite
 end 
 
-function Onsite(sys::Chain_only, j) :: Float64
+function Onsite(sys::Chain_only, j::Int) :: Float64
 
     _, λ_ne, _, _, range, CN, ζ = CoulombParameters(sys)
 
@@ -32,5 +30,105 @@ function Onsite(sys::Chain_only, j) :: Float64
 
 
     return onsite
+
+end 
+
+"""For NF NxN, we add to the inner square, that is from row 2 to row N - 1, from col 2 to col N - 1"""
+function Onsite(sys::NF_square, j::Int) :: Float64
+    
+    row = div(j - 1, L(sys)) + 1
+    col = j % L(sys)
+
+    println("row ", row)
+    if 1 < row < L(sys)  && 1 < col < L(sys)
+        onsite = bias(sys)
+
+    else
+        onsite = 0.0
+    end 
+
+    return onsite
+end 
+
+#Onsite(sys::DPT, j) = j < L(sys) ? bias_L(sys) : j < L(sys) + 1 ? bias_doubledot(sys)[1] : j < L(sys) + 2 ? bias_doubledot(sys)[2] : bias_R(sys)
+
+function Onsite(sys::DPT, j ::Int) :: Float64
+
+
+    if j <= L(sys)
+        onsite = bias_L(sys)
+
+        # offset from int
+        if j > L(sys) - couple_range(sys)
+            onsite -= 1/2 * U(sys)
+        end 
+    
+    #lower
+    # elseif j == L(sys) + 1
+    elseif j == L(sys) + R(sys) + 1
+        onsite = bias_doubledot(sys)[1]
+
+        # offset from int term
+        onsite -= U(sys) *  couple_range(sys)
+
+    #upper
+    #elseif j == L(sys) + 2
+    elseif j == L(sys) + R(sys) + 2
+        onsite = bias_doubledot(sys)[2]
+
+    else
+        onsite = bias_R(sys)
+
+        # offset from int
+        if j <= L(sys) + couple_range(sys) 
+            onsite -= 1/2 * U(sys) 
+        end 
+
+    end
+
+    return onsite
+
+end 
+
+function Onsite(sys::LSR_SIAM, j::Int)
+
+
+    if j <= L(sys) 
+        onsite = bias_L(sys)
+
+    elseif j == L(sys) + 1
+        onsite = bias_onsite(sys)
+
+    else
+        onsite = bias_R(sys)
+
+    end 
+
+    return onsite
+
+end 
+
+function add_onsite!(sys::systems, res::OpSum)
+    
+    println("Adding onsite")
+    sys_type = type(sys)
+
+    systotal = get_systotal(sys)
+
+    if sys_type == "Fermion"
+        ops = "N"
+  
+    elseif sys_type == "Electron"
+        ops = "Ntot"
+  
+    end 
+
+    for j=1 :systotal
+        # E-E and N-
+        res += Onsite(sys, j), ops, j
+
+    end 
+
+    return res
 
 end 
