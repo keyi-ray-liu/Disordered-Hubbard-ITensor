@@ -85,7 +85,7 @@ function set_Dynamic(;
     τ = 0.1,
     start = 0.1,
     fin=20.0,
-    TEcutoff=1E-8,
+    TEcutoff=1E-9,
     TEdim=64,
     kwargs...
     )
@@ -275,17 +275,12 @@ struct QE_two <: systems
     
 end 
 
-QE_distance(sys::QE_two) = sys.QE_distance
-t(sys::QE_two) = t(sys.chain_only)
 product(sys::QE_two) = sys.product
-QEen(sys::QE_two) = sys.QEen
-init(sys::QE_two) = sys.init
-type(sys::QE_two) = type(sys.chain_only)
 get_systotal(sys::QE_two) = get_systotal(sys.chain_only) + 2 * QESITES
-QEmul(sys::QE_two) = sys.QEmul
-dp(sys::QE_two) = sys.dp
+type(sys::QE_two) = type(sys.chain_only)
+t(sys::QE_two) = t(sys.chain_only)
 ζ(sys::QE_two) = ζ(sys.chain_only)
-offset_scale(sys::QE_two) = sys.offset_scale
+
 
 function set_QE_two(;
     QE_distance = 2.0,
@@ -321,20 +316,76 @@ struct QE_flat_SIAM <: systems
     siteseach::Int
     N::Vector{Int}
     type::String
+    QE_distance :: Float64
     offset_scale::Float64
     QEen:: Float64
+    t :: Float64
+    dp :: Float64
+    ζ:: Float64
+    QEmul :: Float64
+    init :: String
     coulomb::Coulombic
-end 
 
+end 
 
 legleft(sys::QE_flat_SIAM) = sys.legleft
 legright(sys::QE_flat_SIAM) = sys.legright
 siteseach(sys::QE_flat_SIAM) = sys.siteseach
-getsymm(sys::QE_flat_SIAM) = sys.N
+N(sys::QE_flat_SIAM) = sys.N
+get_systotal(sys::QE_flat_SIAM) = 1 + (legleft(sys) + legright(sys)) * (siteseach(sys) + QESITES)
+left(sys::QE_flat_SIAM) = legleft(sys) * (siteseach(sys) + QESITES)
 type(sys::QE_flat_SIAM) = sys.type
 
-get_systotal(sys::QE_flat_SIAM) = 1 + (legleft(sys) + legright(sys)) * (siteseach(sys) + QESITES)
 
+
+QE_distance(sys::Union{QE_two, QE_flat_SIAM}) = sys.QE_distance
+t(sys::QE_flat_SIAM) = sys.t
+QEen(sys::Union{QE_two, QE_flat_SIAM}) = sys.QEen
+init(sys::Union{QE_two, QE_flat_SIAM}) = sys.init
+QEmul(sys::Union{QE_two, QE_flat_SIAM}) = sys.QEmul
+dp(sys::Union{QE_two, QE_flat_SIAM}) = sys.dp
+ζ(sys::QE_flat_SIAM) = sys.ζ
+offset_scale(sys::Union{QE_two, QE_flat_SIAM}) = sys.offset_scale
+
+function set_QE_SIAM(;
+    legleft=2,
+    legright=2,
+    siteseach=10,
+    N=1,
+    type="Fermion",
+    QE_distance=2,
+    offset_scale=0.5,
+    QEen=0.0,
+    t=-1.0,
+    dp=1.0,
+    ζ=0.5,
+    init="Left",
+    QEmul=1.0,
+    coulomb=set_Coulombic()
+    )
+
+    if typeof(N) == Int
+        N = [siteseach - N, N, 0, 0]
+    end 
+
+    return QE_flat_SIAM(
+        legleft,
+        legright,
+        siteseach,
+        N,
+        type,
+        QE_distance,
+        offset_scale,
+        QEen,
+        t,
+        dp,
+        ζ,
+        QEmul,
+        init,
+        coulomb
+    )
+
+end 
 
 struct DPT <: systems
 
@@ -456,6 +507,7 @@ N(sys::LSR_SIAM) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
 
 dis(i, j, sys::systems) = abs(i - j)
+dis(i, j, sys::QE_flat_SIAM) = abs(i - j) + QE_distance(sys)
 dis(i, j, sys::QE_two) = abs(i - j) + QE_distance(sys)
 
 CoulombParameters(sys::Chain_only) = CoulombParameters(sys.coulomb::Coulombic)

@@ -66,3 +66,30 @@ function load_plsmon(output)
 end 
 
 checkexist(output) = isfile( getworkdir() * output * ".h5")
+
+
+# returns the precise site number of the ex QE site, beginning of the subsystem and end of subsystem, corresponding to site j
+function get_sys_loc(sys::QE_flat_SIAM, j::Int) 
+
+  if j <= left(sys)
+
+    mod = (j - 1) % (siteseach(sys) + QESITES)
+    qe_loc = j - mod 
+    chain_begin = qe_loc + QESITES
+    chain_end = chain_begin + siteseach(sys) - 1
+
+  elseif j > left(sys) + 1
+
+    mod = (j - 2) % (siteseach(sys) + QESITES)
+    chain_begin = j - mod 
+    chain_end = chain_begin + siteseach(sys) - 1
+    qe_loc = chain_end + 1
+
+
+  else
+    qe_loc = chain_begin = chain_end = -1
+  end 
+
+  return qe_loc, chain_begin, chain_end
+
+end 

@@ -7,8 +7,15 @@ gen_state_str(sys::DPT) = vcat([ get_type_dict(type(sys))[i] for i=1:4 for _ in 
 
 gen_state_str(sys::LSR_SIAM) = vcat([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
+gen_state_str(sys::QE_flat_SIAM) = vcat(
+    reduce(vcat, [vcat(QE_str(sys)[1], shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])) for _ in 1:legleft(sys)]), 
+    ["Emp"], 
+    reduce(vcat, [vcat(shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ]), QE_str(sys)[2]) for _ in 1:legright(sys)])
+    )
 
-function QE_str(sys::QE_two)
+
+
+function QE_str(sys::Union{QE_two, QE_flat_SIAM})
 
     ex = ["Occ", "Emp"]
     gs = ["Emp", "Occ"]
@@ -30,6 +37,7 @@ function QE_str(sys::QE_two)
     end 
 
 end 
+
 
 function gen_state(sys::systems; QN=true, kwargs...)
 

@@ -19,6 +19,38 @@ function Onsite(sys::QE_two, j) :: Float64
     return onsite
 end 
 
+function Onsite(sys::QE_flat_SIAM, chain_begin, chain_end, j)
+
+    _, λ_ne, _, _, range, CN, ζ = CoulombParameters(sys)
+
+    λ_ne *= CN
+
+    onsite = - λ_ne * ( sum([ 1/(dis(j, k, sys) + ζ) for k in max(chain_begin, j - range) : min(chain_end, j + range)])   - 1/ζ)
+
+    return onsite
+
+end 
+
+
+function Onsite(sys::QE_flat_SIAM, j) :: Float64
+
+    qe_loc, chain_begin, chain_end = get_sys_loc(sys, j)
+
+    if j == qe_loc + 1 || j == left(sys) + 1
+        onsite = 0.0
+
+    elseif j == qe_loc
+        onsite = QEen(sys)
+
+
+    else
+        # adjust position of j
+        onsite = Onsite(sys, chain_begin, chain_end, j)
+    end
+
+    return onsite
+end 
+
 function Onsite(sys::Chain_only, j::Int) :: Float64
 
     _, λ_ne, _, _, range, CN, ζ = CoulombParameters(sys)

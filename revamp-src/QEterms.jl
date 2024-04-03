@@ -24,6 +24,32 @@ function QECoupling(sys::QE_two, j)
 
 end 
 
+"""For the flat X QE, currently chain sites only couple to their respective QE"""
+function QECoupling(sys::QE_flat_SIAM, j) 
+
+    # no coupling for QE sites themselves, as they are not coupled to other QEs
+    qe_loc, chain_begin, chain_end = get_sys_loc(sys, j)
+
+    if chain_begin <= j <= chain_end
+
+        if j > qe_loc 
+            r_qe = dis(j, chain_begin, sys)
+        else
+            r_qe = dis(j, chain_end, sys)
+        end 
+
+        qe = dp(sys)  * r_qe / (r_qe^3 + ζ(sys))
+        res = [[qe, qe_loc]]
+
+    else
+        res = []
+
+    end 
+
+    return res
+
+end 
+
 
 """
 All logic are wrapped in respective functions. The QE diagonal Energies are wrapped in onsite function, where the offset QE hopping should be included in the hopping part of the Hamiltoian

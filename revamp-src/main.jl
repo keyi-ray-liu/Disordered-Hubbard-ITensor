@@ -42,7 +42,10 @@ end
 if test
 
     #DPT_wrapper()
-    NF_wrapper()
+    #NF_wrapper()
+    QE_SIAM_wrapper()
+
+
 else
 
     ARG = ARGS[1]
@@ -61,6 +64,9 @@ else
 
     elseif ARG == "NF_suqre"
         NF_wrapper()
+
+    elseif ARG == "QE_SIAM"
+        QE_SIAM_wrapper()
 
     else
         error("Unrecognized option")

@@ -3,6 +3,19 @@ DenDenNeighbor(sys::systems, j) = []
 
 function DenDenNeighbor(sys::QE_flat_SIAM, j)
 
+    _, chain_begin, chain_end = get_sys_loc(sys, j)
+
+    if chain_begin <= j <= chain_end
+
+        λ_ee, _, exch, _, range, _, ζ = CoulombParameters(sys)
+        ifexch(j, k, sys) = ( 1 - (dis(j, k, sys) == 1) * exch )
+        
+        return [ [λ_ee * ifexch(j, k, sys) / ( dis(j, k, sys) + ζ), k] for k in max(chain_begin, j - range) : j - 1]
+
+    else
+        return []
+    end 
+
 end 
 
 function DenDenNeighbor(sys::QE_two, j)

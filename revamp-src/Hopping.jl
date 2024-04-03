@@ -22,6 +22,29 @@ function HoppingNeighbor(sys::QE_two, j::Int)
 
 end 
 
+"""Flattened X QE, each 'arm' is staggered, as QE + chain, ... , center, chain, QE, ...."""
+function HoppingNeighbor(sys::QE_flat_SIAM, j::Int)
+
+    hop = []
+    # determine the total number of sites in left
+    @show qe_loc, chain_begin, chain_end = get_sys_loc(sys, j)
+
+    # hop to next
+    if chain_begin <= j < chain_end
+        append!(hop, [[t(sys), j + 1]])
+    end 
+
+    # left end, to center
+    # right begin, to center
+    if (j == chain_end && j > qe_loc)  ||  (j == chain_begin && j < qe_loc)
+        append!(hop, [[t(sys), left(sys) + 1]])
+    end 
+
+    return hop
+
+
+end 
+
 function HoppingNeighbor(sys::NF_square, j::Int)
 
     hop = []
