@@ -1,9 +1,9 @@
 {
-    "L": 12,
-    "N": 6,
+    "L": 8,
+    "N": 4,
     "sweepdim": 300,
-    "sweepcnt" : 25,
-    "QE" : 5,
+    "sweepcnt" : 10,
+    "QE" : 2,
     "dynamode" : "left",
     "TEcutoff" : 1e-9,
     "TEdim" : 300,
@@ -14,5 +14,7 @@
     "type" : "Fermion", 
     "int_ne" : 2.0,
     "int_ee" : 2.0,
-    "adiabatic_time" : 100.0
+    "adiabatic_time" : 0,
+    "QEmode" : "plain",
+    "geometry" : "linear"
 }

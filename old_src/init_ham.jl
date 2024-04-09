@@ -25,7 +25,7 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   # sd para
   sd_hop = para["sd_hop"]
 
-  mix_basis = get(sd_hop, "mix_basis", false)
+  mixbasis = get(sd_hop, "mixbasis", false)
   bulk_bias = get(sd_hop, "bulk_bias", [0.0 for _ in 1:prod(L)])
   Usd = get(sd_hop, "Usd", 0.0)
 
@@ -113,9 +113,9 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
 
   if s_len + d_len > 0 && sd_override == false
 
-    if mix_basis
+    if mixbasis
       
-      energies = get(kwargs, :mix_basis_energies, [])
+      energies = get(kwargs, :mixbasis_energies, [])
       ks = get(kwargs, :ks, [])
       LR = get(kwargs, :LR, [])
 
@@ -129,10 +129,20 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
       # no TEBD support
       res = add_mix_sd(res, para, energies, ks, LR; head=head)
 
+      # adding capacitative coupling between SD and sys, if applicable
+      if Usd != 0
+        res = add_mix_sdcouple(res, para, energies, ks, LR; head = head, Usd=Usd)
+      end 
+
 
     else
       res = add_hopping_sd!(res, para, L, disx, disy, sites; if_gate = if_gate, head=head, factor =factor, τ=τ)
       res = add_sd_potential(res, para, sites; if_gate = if_gate,  factor=factor, τ=τ)
+
+      # adding capacitative coupling between SD and sys, if applicable
+      if Usd !=0
+        res = add_ccouple_sd!(res, para; head=head, Usd =Usd)
+      end 
     end 
   end 
 
@@ -143,11 +153,6 @@ function init_ham(para::Dict,  L::Vector{Int}, disx::Vector{Float64}, disy::Vect
   res = add_onsite_bias!(res, para, sites, bulk_bias, if_gate=if_gate, head=head, factor= factor, τ=τ)
 
 
-  # TODO merging into the sd block
-  # adding capacitative coupling between SD and sys, if applicable
-  if Usd != 0 
-    res = add_ccouple_sd!(res, para::Dict; head=head, Usd =Usd)
-  end 
   ########################### end SD hamiltonian ###################################
 
   if show_ham

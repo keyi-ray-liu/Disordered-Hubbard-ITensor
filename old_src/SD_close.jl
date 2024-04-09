@@ -120,6 +120,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
     workdir = getworkdir()
     L = simu_para[:L]
+    geometry = simu_para[:geometry]
 
 
     source_config = additional_para["source_config"]
@@ -129,7 +130,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     # N_sys = N[2] + N[3] + 2 * N[4]
     # Ntotal = N_sys + count_ele(source_config) + count_ele(drain_config)
 
-    Ltotal = get_systotal(para)
+    Ltotal = get_systotal(L, geometry)
   
     if length(L) == 1
       sd_loc = [ [1.0], [Ltotal]]
@@ -173,7 +174,7 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
     sd_hop["sdcouple"] = extends
     state_override = get(sd_hop, "state_override", [])
-    mix_basis = sd_hop["mix_basis"]
+    mixbasis = sd_hop["mixbasis"]
     
     
     product_state = additional_para["product_state"]
@@ -206,14 +207,14 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
     simu_para[:sd_hop] = sd_hop
 
     # we will keep this basis even for the μ = 0 GS calculations for consistency
-    if mix_basis
-      mix_basis_energies, ks, LR, zeropoint = get_mix_energy(simu_para)
+    if mixbasis
+      mixbasis_energies, ks, LR, zeropoint = get_mix_energy(simu_para)
       addtags = "mix"
 
       println("zeropoint", zeropoint)
     else
       addtags = ""
-      mix_basis_energies = ks = LR = []
+      mixbasis_energies = ks = LR = []
     end 
   
     # we prepare the initial state
@@ -228,17 +229,17 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
         gs_para[ :sd_hop]["source_offset"] = gs_para[ :sd_hop]["drain_offset"] = 0
         gs_para[ :sd_hop]["bulk_bias"] = init_bulk_bias
 
-      if mix_basis
-        mix_basis_gs , _, _, _= get_mix_energy(gs_para; ks=ks, LR=LR)
+      if mixbasis
+        mixbasis_gs , _, _, _= get_mix_energy(gs_para; ks=ks, LR=LR)
 
       else
-        mix_basis_gs = []
+        mixbasis_gs = []
       end 
 
       if !isfile( workdir * initial_state_output * ".h5")
         # if no IS, generate one 
         paras = setpara(;gs_para..., ex=1, output = initial_state_output, sd_override=false)
-        main(paras; mix_basis_energies = mix_basis_gs, ks= ks, LR =LR, addtags = addtags, source_config = source_config, drain_config = drain_config, state_override = state_override, kwargs...)
+        main(paras; mixbasis_energies = mixbasis_gs, ks= ks, LR =LR, addtags = addtags, source_config = source_config, drain_config = drain_config, state_override = state_override, kwargs...)
   
       end 
   
@@ -277,16 +278,16 @@ function SD_dynamics_transport(simu_para, sd_hop, additional_para; kwargs...)
 
     end 
 
-    if mix_basis
+    if mixbasis
 
       #@show hastags(sites, "mix")
-      writedlm(workdir * "mix_basis_energies", mix_basis_energies)
-      writedlm( workdir * "mix_basis_gs", mix_basis_gs)
+      writedlm(workdir * "mixbasis_energies", mixbasis_energies)
+      writedlm( workdir * "mixbasis_gs", mixbasis_gs)
       writedlm( workdir * "ks", ks)
       writedlm( workdir * "LR", LR)
     end 
 
-    time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs..., mix_basis_energies = mix_basis_energies, ks=ks, LR=LR)
+    time_evolve(ψ, sites, paras, start, fin, occ_direct; kwargs..., mixbasis_energies = mixbasis_energies, ks=ks, LR=LR)
       
     
   

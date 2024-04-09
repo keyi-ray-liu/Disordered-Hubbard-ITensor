@@ -1,0 +1,26 @@
+{
+    "source_offset": 0.0,
+    "mixbasis": false,
+    "to_chain_hop": 0,
+    "drain_offset": 0.0,
+    "sdcontact": true,
+    "state_override": [
+        2,
+        1
+    ],
+    "bulk_bias": 0,
+    "interacting": false,
+    "init_bulk_bias": [
+        -100,
+        100
+    ],
+    "internal_hop": 1,
+    "inelastic": false,
+    "inelastic_para": {
+        "kcnt": 0,
+        "deltak": 0
+    },
+    "sdcouple": 2,
+    "NR": 4,
+    "Usd": 2
+}

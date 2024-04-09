@@ -21,12 +21,12 @@ function QE_wrapper(num, energy)
     energy = parse(Float64, energy)
 
     para = Dict(
-        :L => 100,
+        :L => 12,
         :sweepdim => 400,
         :sweepcnt => 30,
         :QE => num,
         :QEen => energy,
-        :ex => 20,
+        :ex => 2,
         :krylovdim => 8,
         :range=>1000,
         :range_qe => 1000
@@ -80,7 +80,7 @@ function QEdyna_wrapper()
         "QEmul" => get(add_para, "QEmul", 1.0)
     )
 
-    QE_dynamic(para, additional_para; show_ham=false)
+    QE_dynamic(para, additional_para; show_ham=true)
 end 
 
 
@@ -128,6 +128,7 @@ end
 
 
 function corr_wrapper()
+
     cur_dir = pwd()
     qedyna_paras = load_JSON(cur_dir * "/QEdynapara.json")
 
@@ -251,6 +252,7 @@ function transport_wrapper()
         :int_ne => get(transport_para, "int_ne", 0.0),
         :U => get(transport_para, "U", 0.0),
         :t => get(transport_para, "t", 1.0),
+        :geometry => get(transport_para, "geometry", "linear")
     )
     
     sd_hop = load_JSON(cur_dir * "/sdpara.json")
@@ -276,7 +278,7 @@ function transport_wrapper()
 
     #para[:source_config] = [ 2 for _ in 1:NR]
     #para[:drain_config] = [ 3 for _ in 1:NR]
-    SD_dynamics_transport(para, sd_hop, additional_para; show_ham=false)
+    SD_dynamics_transport(para, sd_hop, additional_para; show_ham=true)
 
 
 end 
@@ -362,7 +364,7 @@ function REPL_test_wrapper()
                 "drain_offset" => 0.0,
                 "bulk_bias" => 0.0,
                 "init_bulk_bias" => [-100.0, 100.0],
-                "mix_basis" => false,
+                "mixbasis" => false,
                 "NR" => NR,
                 "inelastic" => false,
                 "inelastic_para"=> Dict{}(

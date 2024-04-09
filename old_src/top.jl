@@ -13,6 +13,8 @@ using Suppressor
 
 
 
+const QESITES = 2
+
 #include("behavior_test.jl")
 include("main.jl")
 include("setpara.jl")
@@ -69,15 +71,16 @@ function top()
     #iter_sd_wrapper()
     #source_drain_wrapper()
     #transport_wrapper()
-    #paras = setpara(;L=12, N=6, ex=6, QE=2, dynamode="left", headoverride=2); main(paras)
+    #paras = setpara(;L=6, N=3, ex=6, QE=0, dynamode="left", headoverride=0); main(paras)
     #eigensolver_wrapper()
     #time_obs_wrapper( "occ")
-    QEdyna_wrapper()
+    #QEdyna_wrapper()
     #eigen_overlap()
-    #NF_wrapper()
+    NF_wrapper()
     #time_obs_wrapper("GQS")
     #REPL_test_wrapper()
     #corr_wrapper()
+    #QE_wrapper("2", "1.0")
 
     
   else

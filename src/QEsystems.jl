@@ -1,4 +1,4 @@
-function run_QE_two(QEen, dims, N, product; staticex= 0, dp=1.0, kwargs...)
+function run_QE_two(QEen, dims, N, product; staticex= 0, dp=1.0, TEdim=64, kwargs...)
 
     coulomb = set_Coulombic(;kwargs...)
     chain = set_Chain(;dims=dims, N=N, coulomb=coulomb, kwargs...)
@@ -14,7 +14,7 @@ function run_QE_two(QEen, dims, N, product; staticex= 0, dp=1.0, kwargs...)
         decoupled = set_QE_two(; chain_only=chain, QEen=0.0, dp=0.0, kwargs...)
 
         # get plasmon energy
-        static = set_Static(; ex=ex, output=output, kwargs...)
+        static = set_Static(; ex=ex, output=output, sweepdim=TEdim, kwargs...)
 
         ϕ = gen_state(decoupled)
         run_static_simulation(decoupled, static, ϕ)
@@ -28,10 +28,10 @@ function run_QE_two(QEen, dims, N, product; staticex= 0, dp=1.0, kwargs...)
     ψ = (!product && staticex == 0) ? load_ψ(output) : gen_state(sys)
 
     if staticex == 0
-        dynamic = set_Dynamic(;kwargs...)
+        dynamic = set_Dynamic(; TEdim=TEdim, kwargs...)
         run_dynamic_simulation(sys, dynamic, ψ)
     else
-        static = set_Static(; ex=staticex, kwargs...)
+        static = set_Static(; ex=staticex, sweepdim=TEdim, kwargs...)
         run_static_simulation(sys, static, ψ)
     end 
     
@@ -76,6 +76,25 @@ function run_QE_SIAM(QEen, siteseach, N, product; staticex= 0, TEdim=64, τ=1.0,
 
 end 
 
+
+function QE_two_wrapper()
+
+    product = false
+    qe_two_in = load_JSON( pwd() * "/qetwopara.json")
+
+    QEen = get(qe_two_in, "QEen", 0.0)
+    L = get(qe_two_in, "L", 20)
+    N = get(qe_two_in, "N", div(L, 2))
+
+    #τ = get(qe_two_in, "timestep", 0.125)
+    TEdim = get(qe_two_in, "TEdim", 64)
+
+    run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, TEdim=TEdim)
+
+    dyna_occ()
+    dyna_EE()
+
+end 
 
 
 function QE_SIAM_wrapper()

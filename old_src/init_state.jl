@@ -231,7 +231,6 @@ function init_state(para, sites, disx, disy, geometry::String; kwargs...)
   half, leg = L
 
   #Ltotal = get_systotal(para)
-
   
   op_str = get_type_dict(type)
   emp = op_str[1]

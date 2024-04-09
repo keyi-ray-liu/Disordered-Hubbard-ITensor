@@ -1,7 +1,8 @@
 {
     "t" : 0.125,
     "start" :0.125,
-    "fin":16,
+    "fin": 32.0,
     "product_state":false,
-    "occ_direct" :false
+    "occ_direct" :false,
+    "QEmul" : 8
 }

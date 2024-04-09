@@ -229,21 +229,56 @@ end
 function test()
 
   N = 5
-  s = siteinds("Fermion", N; conserve_qns =true)
-  vecs = ones( (N, 2))
+  QN = true
 
-  #@show vecs
+  if QN
 
-  psi = MPS(s, 1)
+    s = siteinds("Fermion", N; conserve_qns =true)
+    state = [ n%2==0 ? "Occ" : "Emp" for n in 1:N]
+    M = randomMPS(s, state)
 
+  else
+    s = siteinds("Fermion", N)
+    M = randomMPS(s)
+
+  end 
+
+  result = ITensor(1.)
+  
+  a = 2
+  b = 3
+
+  # new = ITensor(1.)
+  # for k = 1:N
+  #   new *= M[k]
+  # end 
+
+  # println("NEW")
+  # @show new
 
   for j=1:N
-    psi[j] = ITensor(vecs[j,:],  s[j])
-  end
-  orthogonalize!(psi,1)
-  normalize!(psi)
+    if j == a || j == b
+      result *= M[j]
+    else 
 
-  return psi
+      if QN
+        #temp = 1.0
+        #println( length(s[j]))
+        temp = (ITensor([1, 1],s[j]') * M[j])
+      else
+        temp= (ITensor([1, 1],s[j]) * M[j])
+        println("Raw 1 tensor no QN")
+        #println(temp)
+        println(j)
+        println( length(s[j]))
+        #println(typeof(temp))
+      end 
+
+      result *= temp
+    end
+  end
+
+  #@show result
 end 
 
 # tcds = rand(10, 100) +  1im* rand(10, 100)
@@ -296,6 +331,34 @@ end
 
 # LR = [1,1, 0, 0, 1, 0, 1]
 
-# findall( x-> x==1, LR)
 
-testRNG()
+# abstract type A end
+
+# struct B <: A
+# end 
+
+# struct C <: A
+# end
+
+# foo(obj::A) = 1
+# foo(obj::B) = 2
+
+
+# a = B()
+# c = C()
+# @show foo(a)
+# @show foo(c)
+
+j = 10
+k = 2
+U = 2.0
+
+couple_range(a::Any) = 2
+sys = "A"
+pairs = vcat( [ [U, j - k] for k in 1:couple_range(sys)], [[U, j + 1 + k] for k in 1:couple_range(sys)])
+
+
+for (i, j) in pairs
+  println(i)
+  println(j)
+end 

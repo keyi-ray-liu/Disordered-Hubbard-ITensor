@@ -220,9 +220,9 @@ function cal_current(ψ, para)
   workdir = getworkdir()
   sites = siteinds(ψ)
   fermionic = hastags(sites, "Fermion")
-  mix_basis = hastags(sites, "mix")
+  mixbasis = hastags(sites, "mix")
 
-  if !mix_basis
+  if !mixbasis
     U_matrix = reduce(hcat, [[ Ukj(k, j, N) for j in 1:N ] for k in 1:N])
     indices = 1:N + 1
     leftid = 1:N

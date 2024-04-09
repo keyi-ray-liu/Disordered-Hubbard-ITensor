@@ -162,3 +162,85 @@ function add_ccouple_sd!(res, para::Dict; head=0, Usd =0.0)
 
   return res
 end 
+
+
+function add_mix_sdcouple(res, para::Dict, energies, ks, LR; head = head, Usd=Usd)
+
+
+  println("Adding LR couple mix")
+  type = para["type"]
+  s_len = para["s_len"]
+  d_len = para["d_len"]
+  Ltotal = get_systotal(para)
+
+  if type == "Fermion"
+
+    ops = [ ["Cdag", "C"]]
+    opn = "N"
+
+  elseif type == "Electron"
+
+    ops = [ ["Cdagup", "Cup"], ["Cdagdn", "Cdn"]]
+    opn = "Ntot"
+
+  end 
+
+  psys = head + 1
+  sd_hop = para["sd_hop"]
+  sdcouple = get(sd_hop, "sdcouple", [])
+
+  # we are doing some sketchy stuff here treating the sdcouples as pure numbers
+  sd_num = div(length(sdcouple), 2)
+
+  # we now couple in the mix basis
+  for psd in 1:sd_num
+
+
+    # U(n_d - 1/2)(n_c - 1/2)
+    # n_c = sum_k,k' u_1k u_1k' c^+_k c_k'
+
+    for k in 1:s_len
+
+      uk = Ukj( ks[k], psd, s_len)
+      # quad term
+      for kprime in 1:s_len
+
+        ukprime = Ukj( ks[kprime], psd, s_len)
+   
+        for (op1, op2) in ops
+          res += Usd * uk * ukprime, opn, psys, op1, k, op2, kprime
+
+          # linear n_c
+          res += -Usd * 1/2 * uk * ukprime, op1, k, op2, kprime
+
+        end
+      end
+    end 
+
+    for k in 1:d_len
+
+      uk = Ukj( ks[k + s_len], psd, s_len)
+      # quad term
+      for kprime in 1:d_len
+
+        ukprime = Ukj( ks[kprime + s_len], psd, s_len)
+
+        for (op1, op2) in ops
+          res += Usd * uk * ukprime, opn, psys, op1, k + head + Ltotal , op2, kprime + head + Ltotal
+
+          # linear n_c
+          res += -Usd * 1/2 * uk * ukprime, op1, k + head + Ltotal,  op2, kprime + head + Ltotal
+
+        end
+      end
+    end 
+
+
+    # linear N_d, but now we couple to both S,D, so drop the 1/2
+    res += -Usd , opn, psys
+
+
+  end 
+
+  return res
+end 
