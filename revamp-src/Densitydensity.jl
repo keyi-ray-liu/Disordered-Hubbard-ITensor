@@ -3,16 +3,42 @@ DenDenNeighbor(sys::systems, j) = []
 
 function DenDenNeighbor(sys::QE_flat_SIAM, j)
 
+
     _, chain_begin, chain_end = get_sys_loc(sys, j)
+    λ_ee, _, exch, _, range, _, ζ = CoulombParameters(sys)
+
+    ifexch(j, k, sys) = ( 1 - (dis(j, k, sys) == 1) * exch )
 
     if chain_begin <= j <= chain_end
 
-        λ_ee, _, exch, _, range, _, ζ = CoulombParameters(sys)
-        ifexch(j, k, sys) = ( 1 - (dis(j, k, sys) == 1) * exch )
-        
         return [ [λ_ee * ifexch(j, k, sys) / ( dis(j, k, sys) + ζ), k] for k in max(chain_begin, j - range) : j - 1]
 
+
+    # center site interacting, since the sys is completely symmetric, the sites are the only thing thats being changed
+    elseif j == left(sys) + 1
+
+        denden = []
+
+        for k in 1:min(range, siteseach(sys))
+
+            # we calculate interact ONCE, as if we are at site 0
+            strength = λ_ee * ifexch(0, k, sys) / (dis(0, k, sys) + ζ)
+            #left
+            for l in 1:legleft(sys)
+                append!(denden, [[strength, j - k - (l -1) * (siteseach(sys) + QESITES)]])
+            end 
+
+            #right
+            for r in 1:legright(sys)
+                append!(denden, [[strength, j + k + (r -1) * (siteseach(sys) + QESITES)]])
+            end 
+
+        end 
+
+        @show denden
+        return denden
     else
+
         return []
     end 
 

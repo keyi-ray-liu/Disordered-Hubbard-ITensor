@@ -2,7 +2,7 @@ using DelimitedFiles
 using Glob
 using ITensors
 using ITensors.HDF5
-using ITensors: OneITensor, check_hascommoninds, linkind, siteinds, tr
+using ITensors: OneITensor, linkind, siteinds, tr
 using JSON3
 using LinearAlgebra
 using StatsBase
@@ -41,9 +41,9 @@ end
 
 if test
 
-    #DPT_wrapper()
+    DPT_wrapper()
     #NF_wrapper()
-    QE_SIAM_wrapper()
+    #QE_SIAM_wrapper()
 
 
 else
@@ -62,7 +62,7 @@ else
     elseif ARG == "dptcurrent"
         dyna_dptcurrent()
 
-    elseif ARG == "NF_suqre"
+    elseif ARG == "NF_square"
         NF_wrapper()
 
     elseif ARG == "QE_SIAM"

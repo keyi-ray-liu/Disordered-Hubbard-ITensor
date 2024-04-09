@@ -130,14 +130,14 @@ end
 
 function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic)
 
-    τ, start, fin, TEcutoff, TEdim= SimulationParameters(simulation)
+    τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
 
     for dt in start:τ:fin
 
 
         println("TDVP time : $dt")
         #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
-        ψ1 = tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsite=2, time_step= -im * τ/2, normalize=true)
+        ψ1 = tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true)
 
         println( "inner", abs(inner(ψ1, ψ)))
         ψ = ψ1

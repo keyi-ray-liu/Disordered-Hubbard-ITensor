@@ -77,6 +77,7 @@ struct Dynamic <: simulations
     fin :: Float64
     TEcutoff :: Float64
     TEdim :: Int
+    nsite :: Int
 
 
 end 
@@ -87,6 +88,7 @@ function set_Dynamic(;
     fin=20.0,
     TEcutoff=1E-9,
     TEdim=64,
+    nsite=2,
     kwargs...
     )
 
@@ -95,7 +97,8 @@ function set_Dynamic(;
         start,
         fin,
         TEcutoff,
-        TEdim
+        TEdim,
+        nsite
     )
 
 end 
@@ -521,6 +524,6 @@ CoulombParameters(sys::Coulombic) = sys.λ_ee, sys.λ_ne, sys.exch, sys.scr, sys
 
 SimulationParameters(sys::Static) = sys.ex, sys.prev_state, sys.prev_energy, sys.prev_var, sys.sweepcnt, sys.sweepdim, sys.noise, sys.cutoff,sys.krylovdim, sys.weight
 
-SimulationParameters(sys::Dynamic) = sys.τ, sys.start, sys.fin, sys.TEcutoff, sys.TEdim
+SimulationParameters(sys::Dynamic) = sys.τ, sys.start, sys.fin, sys.TEcutoff, sys.TEdim, sys.nsite
 
 add_specific_int!(sys::systems, res) = res
