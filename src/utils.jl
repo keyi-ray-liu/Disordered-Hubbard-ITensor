@@ -93,3 +93,76 @@ function get_sys_loc(sys::QE_flat_SIAM, j::Int)
   return qe_loc, chain_begin, chain_end
 
 end 
+
+function gen_graph(sys::QE_G_SIAM)
+
+  g = NamedGraph()
+
+  for i in 1:legleft(sys) + legright(sys)
+    for j in 1:siteseach(sys) + QESITES
+      add_vertex!(g, (i, j))
+    end 
+  end 
+
+  center = (legleft(sys) + legright(sys) + 1, 1)
+  add_vertex!(g, center)
+
+  for i in 1:legright(sys) + legright(sys)
+
+    add_edge!(g, (center, (i, 1)))
+    for j in 1: siteseach(sys) +QESITES - 1
+      add_edge!(g, ((i, j), (i, j + 1)))
+    end 
+  end 
+
+  @show vertices(g)
+
+  return g
+  #@visualize g
+
+end 
+
+sitemap(sys::systems, j) = j
+sitemap(sys::QE_G_SIAM, j) = sitemap(sys)[j]
+
+"""maps the flattened index to graph index"""
+
+
+function get_sitemap(sys::QE_flat_SIAM)
+
+  d = Dict()
+
+  for j in 1:get_systotal(sys)
+
+    full = QESITES + siteseach(sys)
+
+    if j < left(sys) + 1
+  
+      leg = div(j - 1, full) + 1
+      idx = full - (j - 1) % full
+  
+    elseif j == left(sys) + 1
+  
+      leg = legleft(sys) + legright(sys) + 1
+      idx = 1
+  
+    else
+  
+      j -= 1
+      leg = div(j - 1, full) + 1
+      idx = (j - 1) % full + 1
+      j += 1
+  
+    end 
+  
+    d[(leg, idx)] = j
+    d[j] = (leg, idx)
+
+
+  end 
+
+  @show d
+  return d
+end 
+
+

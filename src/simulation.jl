@@ -9,6 +9,16 @@ function run_static_simulation(sys::systems, simulation::Static, ψ::MPS)
     solve(H, ψ, simulation)
 end 
 
+function run_static_simulation(sys::QE_G_SIAM, simulation::Static, ψ)
+
+    h = gen_hamiltonian(sys)
+
+    @show h 
+    H = ttn(h, siteinds(ψ))
+    solve(H, ψ, simulation)
+
+end 
+
 
 """we completely decoupled the code logic of dynamic simulations, it is required that one provides an initial state"""
 

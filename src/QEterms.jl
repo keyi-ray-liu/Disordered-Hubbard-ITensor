@@ -11,10 +11,10 @@ function QECoupling(sys::QE_two, j)
 
     else
 
-        r_qe1 = dis(j, QESITES + 1, sys)
+        r_qe1 = qedis(j, QESITES + 1, sys)
         qe1 = dp(sys) * r_qe1/ ( r_qe1^3 + ζ(sys) )
 
-        r_qe2 = dis(j, get_systotal(sys) - QESITES, sys)
+        r_qe2 = qedis(j, get_systotal(sys) - QESITES, sys)
         qe2 = dp(sys) * r_qe2/ ( r_qe2^3 + ζ(sys))
 
         return [ [qe1, 1], [qe2, get_systotal(sys) - 1]]
@@ -33,9 +33,9 @@ function QECoupling(sys::QE_flat_SIAM, j)
     if chain_begin <= j <= chain_end
 
         if j > qe_loc 
-            r_qe = dis(j, chain_begin, sys)
+            r_qe = qedis(j, chain_begin, sys)
         else
-            r_qe = dis(j, chain_end, sys)
+            r_qe = qedis(j, chain_end, sys)
         end 
 
         qe = dp(sys)  * r_qe / (r_qe^3 + ζ(sys))
@@ -49,6 +49,8 @@ function QECoupling(sys::QE_flat_SIAM, j)
     return res
 
 end 
+
+QECoupling(sys::QE_G_SIAM, j) = QECoupling(sys.system, j)
 
 
 """
@@ -81,11 +83,11 @@ function add_qe!(sys::systems, res::OpSum)
             for op in opc
                 op1, op2 = op
 
-                res += dp, op1, kex, op2, kgs,  opn, j
-                res += dp, op1, kgs, op2, kex, opn, j
+                res += dp, op1, sitemap(sys, kex), op2, sitemap(sys, kgs),  opn, sitemap(sys, j)
+                res += dp, op1, sitemap(sys, kgs), op2, sitemap(sys, kex), opn, sitemap(sys, j)
 
-                res += - dp * offset_scale(sys), op1, kex, op2, kgs
-                res += - dp * offset_scale(sys), op1, kgs, op2, kex
+                res += - dp * offset_scale(sys), op1, sitemap(sys, kex), op2, sitemap(sys, kgs)
+                res += - dp * offset_scale(sys), op1, sitemap(sys, kgs), op2, sitemap(sys, kex)
             end 
         end 
 

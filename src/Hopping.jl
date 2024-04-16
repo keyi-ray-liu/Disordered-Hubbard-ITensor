@@ -45,6 +45,8 @@ function HoppingNeighbor(sys::QE_flat_SIAM, j::Int)
 
 end 
 
+HoppingNeighbor(sys::QE_G_SIAM, j::Int) = HoppingNeighbor(sys.system, j::Int)
+
 function HoppingNeighbor(sys::NF_square, j::Int)
 
     hop = []
@@ -134,8 +136,8 @@ function add_hop!(sys::systems, res::OpSum)
 
                 op1, op2 = operator
 
-                res += v, op1, j, op2, k
-                res += v, op1, k, op2, j
+                res += v, op1, sitemap(sys, j), op2, sitemap(sys, k)
+                res += v, op1, sitemap(sys, k), op2, sitemap(sys, j)
             end 
 
         end 

@@ -15,7 +15,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = BIAS_LR, bias_R = -BIAS_LR
 
     # Stage1, no bias, GS, start negative time
 
-    Stage1 = set_Dynamic(;τ=τ, start= - t_switch + τ, fin=t_switch, kwargs...)
+    Stage1 = set_Dynamic(;τ=τ, start= - 4.0 + τ, fin=0, kwargs...)
 
     ψ = load_ψ(eqinit_str)
 
@@ -26,7 +26,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = BIAS_LR, bias_R = -BIAS_LR
 
     Stage2 = set_Dynamic(;τ=τ, start=τ, fin=t_switch , kwargs...)
 
-    ψ = load_ψ(t_switch)
+    ψ = load_ψ(0.0)
 
     run_dynamic_simulation(noneq, Stage2, ψ)
 

@@ -10,6 +10,31 @@ using Suppressor
 using ITensorTDVP
 using Random
 
+#using DataGraphs: edge_data, vertex_data
+#using Dictionaries: Dictionary
+using Graphs: nv, vertices, edges, src, dst
+#using ITensors: ITensors
+#using ITensors.ITensorMPS: ITensorMPS
+using ITensorNetworks:
+  ITensorNetworks,
+  OpSum,
+  ttn,
+  apply,
+  dmrg,
+  inner,
+  linkdims,
+  mpo,
+  random_mps,
+  random_ttn,
+  relabel_sites,
+  siteinds
+#using ITensorNetworks.ModelHamiltonians: ModelHamiltonians
+#using KrylovKit: eigsolve
+using NamedGraphs: named_comb_tree, rem_vertex!, add_vertex!, add_edge!, NamedGraph
+using Observers: observer
+using Test: @test, @test_broken, @testset
+using ITensorUnicodePlots: @visualize
+
 include("systems.jl")
 include("initial.jl")
 include("Onsite.jl")
@@ -43,8 +68,8 @@ if test
 
     #DPT_wrapper()
     #NF_wrapper()
-    #QE_SIAM_wrapper()
-    QE_two_wrapper()
+    QE_SIAM_wrapper()
+    #QE_two_wrapper()
 
 
 else

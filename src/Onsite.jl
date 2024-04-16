@@ -25,7 +25,15 @@ function Onsite(sys::QE_flat_SIAM, chain_begin, chain_end, j)
 
     λ_ne *= CN
 
-    onsite = - λ_ne * ( sum([ 1/(dis(j, k, sys) + ζ) for k in max(chain_begin, j - range) : min(chain_end, j + range)])   - 1/ζ)
+    if j == left(sys) + 1
+
+        onsite =  sum([ - λ_ne * CN / (dis(0, k, sys) + ζ) for k in 1: min(range, siteseach(sys))]) * (legleft(sys) + legright(sys))
+
+
+    else
+        
+        onsite = - λ_ne * CN *  ( sum([ 1/(dis(j, k, sys) + ζ) for k in max(chain_begin, j - range) : min(chain_end, j + range)])   - 1/ζ)
+    end 
 
     return onsite
 
@@ -36,13 +44,11 @@ function Onsite(sys::QE_flat_SIAM, j) :: Float64
 
     qe_loc, chain_begin, chain_end = get_sys_loc(sys, j)
 
-    if j == qe_loc + 1 || j == left(sys) + 1
+    if j == qe_loc + 1 
         onsite = 0.0
 
     elseif j == qe_loc
         onsite = QEen(sys)
-
-
     else
         # adjust position of j
         onsite = Onsite(sys, chain_begin, chain_end, j)
@@ -50,6 +56,8 @@ function Onsite(sys::QE_flat_SIAM, j) :: Float64
 
     return onsite
 end 
+
+Onsite(sys::QE_G_SIAM, j) = Onsite(sys.system, j)
 
 function Onsite(sys::Chain_only, j::Int) :: Float64
 
@@ -157,7 +165,7 @@ function add_onsite!(sys::systems, res::OpSum)
 
     for j=1 :systotal
         # E-E and N-
-        res += Onsite(sys, j), ops, j
+        res += Onsite(sys, j), ops, sitemap(sys, j)
 
     end 
 

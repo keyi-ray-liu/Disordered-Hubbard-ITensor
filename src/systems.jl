@@ -248,12 +248,12 @@ function set_NF_square(;
 
 
     if L^2 - Nup - Ndn != 1
-        error("NF electron number incorrect")
+        @warn "NF electron (hole) number !=1, is this expected behavior?"
     end 
 
     return NF_square(
         L,
-        [1, Nup, Ndn, 0],
+        [L^2 - Nup - Ndn, Nup, Ndn, 0],
         U,
         t,
         bias
@@ -270,7 +270,6 @@ struct QE_two <: systems
     QE_distance :: Float64
     offset_scale :: Float64
     QEen :: Float64
-    QEmul :: Float64
     dp :: Float64
     init :: String
     product :: Bool
@@ -289,7 +288,6 @@ function set_QE_two(;
     QE_distance = 2.0,
     offset_scale=0.5,
     QEen=0.0,
-    QEmul=1.0,
     dp=1.0,
     init ="Left",
     product=false,
@@ -301,7 +299,6 @@ function set_QE_two(;
         QE_distance,
         offset_scale,
         QEen,
-        QEmul,
         dp,
         init,
         product,
@@ -325,7 +322,6 @@ struct QE_flat_SIAM <: systems
     t :: Float64
     dp :: Float64
     ζ:: Float64
-    QEmul :: Float64
     init :: String
     coulomb::Coulombic
 
@@ -340,12 +336,10 @@ left(sys::QE_flat_SIAM) = legleft(sys) * (siteseach(sys) + QESITES)
 type(sys::QE_flat_SIAM) = sys.type
 
 
-
 QE_distance(sys::Union{QE_two, QE_flat_SIAM}) = sys.QE_distance
 t(sys::QE_flat_SIAM) = sys.t
 QEen(sys::Union{QE_two, QE_flat_SIAM}) = sys.QEen
 init(sys::Union{QE_two, QE_flat_SIAM}) = sys.init
-QEmul(sys::Union{QE_two, QE_flat_SIAM}) = sys.QEmul
 dp(sys::Union{QE_two, QE_flat_SIAM}) = sys.dp
 ζ(sys::QE_flat_SIAM) = sys.ζ
 offset_scale(sys::Union{QE_two, QE_flat_SIAM}) = sys.offset_scale
@@ -362,8 +356,8 @@ function set_QE_SIAM(;
     t=-1.0,
     dp=1.0,
     ζ=0.5,
-    init="Left",
-    QEmul=1.0,
+    init="1",
+    TTN = false,
     coulomb=set_Coulombic()
     )
 
@@ -371,7 +365,7 @@ function set_QE_SIAM(;
         N = [siteseach - N, N, 0, 0]
     end 
 
-    return QE_flat_SIAM(
+    sys = QE_flat_SIAM(
         legleft,
         legright,
         siteseach,
@@ -383,12 +377,46 @@ function set_QE_SIAM(;
         t,
         dp,
         ζ,
-        QEmul,
         init,
         coulomb
     )
 
+    if !TTN
+        return sys
+    else
+
+        
+        ITensors.enable_auto_fermion()
+        sitemap = get_sitemap(sys)
+        return QE_G_SIAM(sys, sitemap)
+    end
+
 end 
+
+struct QE_G_SIAM <: systems
+    system :: QE_flat_SIAM
+    sitemap :: Dict
+end 
+
+legleft(sys::QE_G_SIAM) = legleft(sys.system)
+legright(sys::QE_G_SIAM) = legright(sys.system)
+siteseach(sys::QE_G_SIAM) = siteseach(sys.system)
+N(sys::QE_G_SIAM) = N(sys.system)
+get_systotal(sys::QE_G_SIAM) = get_systotal(sys.system)
+left(sys::QE_G_SIAM) = left(sys.system)
+type(sys::QE_G_SIAM) = type(sys.system)
+t(sys::QE_G_SIAM) = t(sys.system)
+
+
+QE_distance(sys::QE_G_SIAM) = QE_distance(sys.system)
+QEen(sys::QE_G_SIAM) = QEen(sys.system)
+init(sys::QE_G_SIAM) = init(sys.system)
+dp(sys::QE_G_SIAM) = dp(sys.system)
+ζ(sys::QE_G_SIAM) = ζ(sys.system)
+offset_scale(sys::QE_G_SIAM) = offset_scale(sys.system)
+
+sitemap(sys::QE_G_SIAM) = sys.sitemap
+
 
 struct DPT <: systems
 
@@ -509,9 +537,10 @@ N(sys::LSR_SIAM) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
 
 
-dis(i, j, sys::systems) = abs(i - j)
-dis(i, j, sys::QE_flat_SIAM) = abs(i - j) + QE_distance(sys)
-dis(i, j, sys::QE_two) = abs(i - j) + QE_distance(sys)
+
+dis(i, j, sys::systems) = abs(i- j)
+qedis(i, j, sys::QE_flat_SIAM) = abs(i -j) + QE_distance(sys)
+qedis(i, j, sys::QE_two) = abs(i - j) + QE_distance(sys)
 
 CoulombParameters(sys::Chain_only) = CoulombParameters(sys.coulomb::Coulombic)
 

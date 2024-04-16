@@ -8,14 +8,16 @@ gen_state_str(sys::DPT) = vcat([ get_type_dict(type(sys))[i] for i=1:4 for _ in 
 gen_state_str(sys::LSR_SIAM) = vcat([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
 gen_state_str(sys::QE_flat_SIAM) = vcat(
-    reduce(vcat, [vcat(QE_str(sys)[1], shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])) for _ in 1:legleft(sys)]), 
+    reduce(vcat, [vcat(QE_str(sys)[j], shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])) for j in 1:legleft(sys)]), 
     ["Emp"], 
-    reduce(vcat, [vcat(shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ]), QE_str(sys)[2]) for _ in 1:legright(sys)])
+    reduce(vcat, [vcat(shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ]), QE_str(sys)[j]) for j in 1 + legleft(sys) : legright(sys) + legleft(sys)])
     )
 
 
+gen_state_map(sys::QE_G_SIAM, sites) = Dict( s => gen_state_str(sys.system)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
 
-function QE_str(sys::Union{QE_two, QE_flat_SIAM})
+
+function QE_str(sys::Union{QE_two})
 
     ex = ["Occ", "Emp"]
     gs = ["Emp", "Occ"]
@@ -38,6 +40,43 @@ function QE_str(sys::Union{QE_two, QE_flat_SIAM})
 
 end 
 
+function QE_str(sys::QE_flat_SIAM)
+
+    ex = ["Occ", "Emp"]
+    gs = ["Emp", "Occ"]
+
+    if init(sys) == "1"
+        return ex, gs, gs, gs
+
+    elseif init(sys) == "2"
+        return ex, ex, gs, gs
+
+    elseif init(sys) == "3"
+        return ex, ex, ex, gs
+
+    elseif init(sys) == "4"
+        return ex, ex, ex, ex
+
+    else
+        error("Unrecognized QE init")
+    end 
+
+end 
+
+
+function gen_state(sys::QE_G_SIAM; QN=true, kwargs...)
+
+    g = gen_graph(sys)
+    sites = siteinds(type(sys), g; conserve_qns=QN)
+
+    #print(sites)
+    #@show length(gen_state_str(sys)), length(get_systotal(sys))
+    @show gen_state_map(sys, sites)
+    ψ = ttn(sites, g -> gen_state_map(sys, sites)[g])
+
+    return ψ
+
+end 
 
 function gen_state(sys::systems; QN=true, kwargs...)
 
@@ -51,7 +90,6 @@ function gen_state(sys::systems; QN=true, kwargs...)
     return ψ
 
 end 
-
 
 
 function gen_hamiltonian(sys::systems)

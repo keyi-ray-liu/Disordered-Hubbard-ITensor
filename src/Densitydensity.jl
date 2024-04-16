@@ -44,6 +44,8 @@ function DenDenNeighbor(sys::QE_flat_SIAM, j)
 
 end 
 
+DenDenNeighbor(sys::QE_G_SIAM, j) = DenDenNeighbor(sys.system, j)
+
 function DenDenNeighbor(sys::QE_two, j)
 
     systotal = get_systotal(sys)
@@ -113,7 +115,7 @@ function add_DensityDensity!(sys::systems, res::OpSum)
             # delta function setting up the exchange between nearest neighbor
 
             # because k < j, we check if j is in the nn of k
-            res += U, ops, j, ops, k
+            res += U, ops, sitemap(sys, j), ops, sitemap(sys, k)
 
         end
 
