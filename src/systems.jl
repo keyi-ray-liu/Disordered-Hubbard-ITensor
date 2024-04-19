@@ -308,6 +308,17 @@ function set_QE_two(;
 end 
 
 
+struct QE_parallel <: systems
+
+    upper :: QE_two
+    lower :: QE_two
+    center_parameters :: Dict
+end 
+
+get_systotal(sys::QE_parallel) = get_systotal(sys.upper) + get_systotal(sys.lower) + 1
+upper_size(sys::QE_parallel) = get_systotal(sys.upper)
+type(sys::QE_parallel) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
+
 """QE X SIAM system struct, here we assume each leg is attached to each QE, and all legs are connect via a SINGLE 'center' site """
 struct QE_flat_SIAM <: systems
 
@@ -323,6 +334,7 @@ struct QE_flat_SIAM <: systems
     dp :: Float64
     ζ:: Float64
     init :: String
+    center_parameter :: Dict
     coulomb::Coulombic
 
 end 
@@ -335,6 +347,9 @@ get_systotal(sys::QE_flat_SIAM) = 1 + (legleft(sys) + legright(sys)) * (siteseac
 left(sys::QE_flat_SIAM) = legleft(sys) * (siteseach(sys) + QESITES)
 type(sys::QE_flat_SIAM) = sys.type
 
+center_ee(sys::QE_flat_SIAM) = sys.center_parameter["center_ee"]
+center_ne(sys::QE_flat_SIAM) = sys.center_parameter["center_ne"]
+center_t(sys::QE_flat_SIAM) = sys.center_parameter["center_t"]
 
 QE_distance(sys::Union{QE_two, QE_flat_SIAM}) = sys.QE_distance
 t(sys::QE_flat_SIAM) = sys.t
@@ -358,6 +373,7 @@ function set_QE_SIAM(;
     ζ=0.5,
     init="1",
     TTN = false,
+    center_parameter = Dict(),
     coulomb=set_Coulombic()
     )
 
@@ -378,6 +394,7 @@ function set_QE_SIAM(;
         dp,
         ζ,
         init,
+        center_parameter,
         coulomb
     )
 

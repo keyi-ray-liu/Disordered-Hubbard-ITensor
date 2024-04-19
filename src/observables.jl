@@ -4,20 +4,36 @@ get_time(raw::String) = parse(Float64, SubString(raw, 1 + length(DYNA_STR), leng
 get_dyna_files() = sort( filter(x->occursin(DYNA_STR,x), readdir(getworkdir())), by=get_time)
 
 
-function entropy_von_neumann(psi::MPS, b::Int)
+
+""" calculates von neumann and other higher order renyi entropies"""
+function entropies(psi::MPS, b::Int, max_order::Int)
 
     s = siteinds(psi)  
     orthogonalize!(psi, b)
     _,S = svd(psi[b], (linkind(psi, b-1), s[b]))
     SvN = 0.0
+    Renyi = [0.0 for _ in 2:max_order]
     for n in 1:dim(S, 1)
         p = S[n,n]^2
         SvN -= p * log(p)
+
+        for (i, order) in enumerate(2:max_order)
+            Renyi[i] += p^order
+        end     
+        
     end
-    return SvN
+
+    for (i, order) in enumerate(2:max_order)
+        Renyi[i] = 1/(1 - order) * log(Renyi[i])
+    end  
+    
+    # return as uniform array
+    return [SvN, Renyi...]
 end
 
-function scan_ee(ψ::MPS)
+
+
+function scan_ee(ψ::MPS, max_order::Int)
 
     L = length(ψ)
     soi = []
@@ -25,19 +41,20 @@ function scan_ee(ψ::MPS)
     for s in 2:L - 1
         append!(soi, s)
     end 
-  
-    return [ entropy_von_neumann(ψ, i ) for i in soi], [ maximum(size(ψ[ j])) for j in soi], soi
+
+    return mapreduce(permutedims, vcat, [ entropies(ψ, i, max_order) for i in soi]), [ maximum(size(ψ[ j])) for j in soi] 
   
 end 
 
 
 
-function dyna_EE()
+function dyna_EE(; max_order=3)
 
     T = []
     bonds = []
-    ees = []
-    sites = []
+    SvN = []
+    SRenyi = [[] for _ in 2:max_order]
+    #sites = []
     workdir = getworkdir()
 
     for file in get_dyna_files()
@@ -46,20 +63,31 @@ function dyna_EE()
         t = get_time(file)
 
         println("Calculating EE, $t")
-        @show ee, bond, site = scan_ee(ψ)
+        ee, bond = scan_ee(ψ, max_order)
+        
+        print(ee)
+        vN = ee[:, 1]
 
+        for (i, order) in enumerate(2:max_order)
+            Renyi = ee[:, order]
+            append!(SRenyi[i], [Renyi])
+        end 
         
         append!(T, t)
-        append!(ees, [ee])
+        append!(SvN, [vN])
         append!(bonds, [bond])
-        append!(sites, [site])
+        #append!(sites, [site])
 
     end 
 
     writedlm(workdir * "times", T)
-    writedlm(workdir * "EE", ees)
+    writedlm(workdir * "SvN", SvN)
     writedlm(workdir * "bonds", bonds)
-    writedlm(workdir * "sites", sites)
+
+    for (i, order) in enumerate(2:max_order)
+        writedlm(workdir * "SRenyi" * string(order), SRenyi[i])
+    end 
+    #writedlm(workdir * "sites", sites)
 
 end 
 
@@ -123,7 +151,7 @@ function dyna_dptcurrent()
         println("Calculating DPT current, $t")
 
         L = div(length(ψ), 2) - 1
-        corr = correlation_matrix(ψ, "Cdag", "C")
+        corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L+1)
 
         @show append!(currentLR, 2 * imag(corr[L, L + 1]))
 

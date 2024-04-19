@@ -3,7 +3,7 @@ function run_static_simulation(sys::systems, simulation::Static, ψ::MPS)
 
     h = gen_hamiltonian(sys)
 
-    @show h 
+    #@show h 
     H = MPO(h, siteinds(ψ))
 
     solve(H, ψ, simulation)

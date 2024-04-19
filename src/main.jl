@@ -68,7 +68,8 @@ if test
 
     #DPT_wrapper()
     #NF_wrapper()
-    QE_SIAM_wrapper()
+    dyna_EE()
+    #QE_SIAM_wrapper()
     #QE_two_wrapper()
 
 

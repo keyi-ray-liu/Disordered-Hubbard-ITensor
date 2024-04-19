@@ -115,10 +115,11 @@ function gen_graph(sys::QE_G_SIAM)
     end 
   end 
 
-  @show vertices(g)
+  @show g
+  #@visualize g
 
   return g
-  #@visualize g
+  
 
 end 
 

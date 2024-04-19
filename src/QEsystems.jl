@@ -39,7 +39,7 @@ function run_QE_two(QEen, dims, N, product; staticex= 0, dp=1.0, TEdim=64, τ=1.
 end 
 
 
-function run_QE_SIAM(QEen, siteseach, N, product; TTN = false, staticex= 0, TEdim=64, τ=1.0, QEmul=1.0, init="1", kwargs...)
+function run_QE_SIAM(QEen, siteseach, N, product; TTN = false, staticex= 0, TEdim=64, τ=1.0, QEmul=1.0, init="1", center_parameter=Dict(), kwargs...)
 
     output = "initialqesiamstate"
 
@@ -49,7 +49,7 @@ function run_QE_SIAM(QEen, siteseach, N, product; TTN = false, staticex= 0, TEdi
         println("Calculating initial state")
         ex = (QEen == 0) ? 2 : 1
         # we set up the decoupled sys from the QE
-        decoupled = set_QE_SIAM(;  TTN=TTN, init=init, QEen=0.0, dp=0.0, N = N, siteseach=siteseach, kwargs...)
+        decoupled = set_QE_SIAM(;  TTN=TTN, init=init, QEen=0.0, dp=0.0, N = N, siteseach=siteseach, center_parameter=center_parameter, kwargs...)
 
         # get plasmon energy
         static = set_Static(; ex=ex, output=output, sweepdim=TEdim, kwargs...)
@@ -61,7 +61,7 @@ function run_QE_SIAM(QEen, siteseach, N, product; TTN = false, staticex= 0, TEdi
 
     end 
 
-    sys = set_QE_SIAM(; TTN=TTN, init=init, QEen=QEen, N=N, siteseach=siteseach, kwargs...)
+    sys = set_QE_SIAM(; TTN=TTN, init=init, QEen=QEen, N=N, siteseach=siteseach, center_parameter=center_parameter, kwargs...)
 
     ψ = (!product && staticex == 0) ? load_ψ(output) : gen_state(sys)
 
@@ -112,13 +112,14 @@ function QE_SIAM_wrapper()
     QEmul = get(qe_siam_in, "QEmul", 1.0)
     init = get(qe_siam_in, "init", "1")
     TTN = get(qe_siam_in, "TTN", false)
+    center_parameter = get(qe_siam_in, "center_parameter", Dict())
 
 
     #τ = get(qe_siam_in, "timestep", 0.125)
     TEdim = get(qe_siam_in, "TEdim", 64)
     timestep = get(qe_siam_in, "timestep", 1.0)
 
-    run_QE_SIAM(QEen, siteseach, N, prod; TTN=TTN, init= init, legleft=legleft, legright=legright, τ=timestep, QEmul=QEmul, TEdim = TEdim)
+    run_QE_SIAM(QEen, siteseach, N, prod; TTN=TTN, init= init, legleft=legleft, legright=legright, τ=timestep, QEmul=QEmul, TEdim = TEdim, center_parameter=center_parameter)
 
     dyna_occ()
     dyna_EE()

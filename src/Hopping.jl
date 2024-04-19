@@ -1,9 +1,6 @@
 # for a flat chain, return next NN until end
 HoppingNeighbor(sys::Chain_only, j::Int) = j < dims(sys) ? [[t(sys), j + 1] ] : []
 
-function HoppingNeighbor(sys::QE_flat_SIAM, j)
-end 
-
 
 """
 Here, we have either the offset hopping in the QE, or the chain hopping
@@ -22,6 +19,23 @@ function HoppingNeighbor(sys::QE_two, j::Int)
 
 end 
 
+function HoppingNeighbor(sys::QE_parallel, j::Int)
+
+    uppertotal = get_uppertotal(sys)
+    
+    if j <= uppertotal
+        hop = HoppingNeighbor(sys.upper, j)
+
+    elseif j < get_systotal(sys)
+        hop = [ [t, site + uppertotal] for (t, site) in HoppingNeighbor(sys.lower, j - uppertotal)]
+
+    else
+        hop = []
+    end 
+
+    return hop
+end 
+
 """Flattened X QE, each 'arm' is staggered, as QE + chain, ... , center, chain, QE, ...."""
 function HoppingNeighbor(sys::QE_flat_SIAM, j::Int)
 
@@ -37,7 +51,7 @@ function HoppingNeighbor(sys::QE_flat_SIAM, j::Int)
     # left end, to center
     # right begin, to center
     if (j == chain_end && j > qe_loc)  ||  (j == chain_begin && j < qe_loc)
-        append!(hop, [[t(sys), left(sys) + 1]])
+        append!(hop, [[center_t(sys), left(sys) + 1]])
     end 
 
     return hop

@@ -22,7 +22,7 @@ function DenDenNeighbor(sys::QE_flat_SIAM, j)
         for k in 1:min(range, siteseach(sys))
 
             # we calculate interact ONCE, as if we are at site 0
-            strength = λ_ee * ifexch(0, k, sys) / (dis(0, k, sys) + ζ)
+            strength = center_ee(sys) * ifexch(0, k, sys) / (dis(0, k, sys) + ζ)
             #left
             for l in 1:legleft(sys)
                 append!(denden, [[strength, j - k - (l -1) * (siteseach(sys) + QESITES)]])

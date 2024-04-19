@@ -34,6 +34,7 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
         # (dominant eigenvalue) and optimized MPS
 
         if cur_ex == 1
+            
 
             energy, ψ = dmrg(H, ϕ, sweeps; eigsolve_krylovdim = krylovdim)
             cur_ex += 1
@@ -181,13 +182,17 @@ function solve(H::ITensorNetworks.TreeTensorNetwork{Any}, ϕ::ITensorNetworks.Tr
 
 
             #energy, ψ = dmrg(H, ϕ, sweeps; eigsolve_krylovdim = krylovdim)
-            energy, ψ = dmrg(H, ϕ; nsweeps = sweepcnt, maxdim = sweepdim, cutoff = TEcutoff, nsites = 2, updater_kwargs=(; krylovdim=krylovdim))
+            ψ= dmrg(H, ϕ; nsweeps = sweepcnt, maxdim = sweepdim, cutoff = TEcutoff, nsites = 2, updater_kwargs=(; krylovdim=krylovdim))
+
+            @show energy = inner(ψ', H, ψ)
+            
             cur_ex += 1
             
 
         else
-            energy, ψ = dmrg(H, prev_state, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim) 
+            ψ = dmrg(H, prev_state, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim, outputlevel=1) 
 
+            @show energy = inner(ψ', H, ψ)
             # check if cur energy is lower than previously achieved energy, if so, return to the point with lower energy (if not, start with current state as GS)
             if abs(energy - prev_energy[end]) > TOL && energy < prev_energy[end]
 
@@ -237,13 +242,12 @@ function solve(H::ITensorNetworks.TreeTensorNetwork{Any}, ϕ::ITensorNetworks.Tr
 
 
         println("As of end of search, type of prev_state", typeof(prev_state))
-        var = variance(H, ψ)
 
         append!(allenergy, energy)
         append!(prev_energy, energy)
         append!(prev_state, [ψ])
-        append!(allvars, var)
-        append!(prev_var, var)
+        # append!(allvars, var)
+        # append!(prev_var, var)
 
     end 
     

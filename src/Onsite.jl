@@ -19,6 +19,25 @@ function Onsite(sys::QE_two, j) :: Float64
     return onsite
 end 
 
+function Onsite(sys::QE_parallel, j) 
+
+    uppertotal = get_uppertotal(sys)
+
+    if j <= uppertotal
+        onsite = Onsite(sys.upper, j)
+
+    elseif j < get_systotal(sys)
+        onsite = Onsite(sys.lower, j - uppertotal)
+
+    else
+        onsite = 0.0
+
+    end 
+
+    return onsite
+    
+end 
+
 function Onsite(sys::QE_flat_SIAM, chain_begin, chain_end, j)
 
     _, λ_ne, _, _, range, CN, ζ = CoulombParameters(sys)
@@ -27,7 +46,7 @@ function Onsite(sys::QE_flat_SIAM, chain_begin, chain_end, j)
 
     if j == left(sys) + 1
 
-        onsite =  sum([ - λ_ne * CN / (dis(0, k, sys) + ζ) for k in 1: min(range, siteseach(sys))]) * (legleft(sys) + legright(sys))
+        onsite =  sum([ - center_ne(sys) * CN / (dis(0, k, sys) + ζ) for k in 1: min(range, siteseach(sys))]) * (legleft(sys) + legright(sys))
 
 
     else
