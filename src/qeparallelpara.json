@@ -1,0 +1,12 @@
+{
+    "L" : 11,
+    "TEdim" : 64,
+    "QEmul" : 1.0,
+    "center_parameter": {
+        "center_ee" : 2.0,
+        "center_ne" : 1.0,
+        "center_t" : 0.0,
+        "center_range" : 1000,
+        "center_dis" : 1.0
+    }
+}
