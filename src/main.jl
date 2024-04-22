@@ -100,6 +100,9 @@ else
     elseif ARG == "QE_two"
         QE_two_wrapper()
 
+    elseif ARG == "QE_parallel"
+        QE_parallel_wrapper()
+
     else
         error("Unrecognized option")
     end 

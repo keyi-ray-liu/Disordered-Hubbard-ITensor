@@ -33,8 +33,8 @@ function Onsite(sys::QE_parallel, j)
         upperchain = get_upperchain(sys)
         lowerchain = get_lowerchain(sys)
 
-        uppercenter = div(upperchain, 2) + 1
-        lowercenter = div(lowerchain, 2) + 1
+        uppercenter = div(upperchain, 2) + 0.5
+        lowercenter = div(lowerchain, 2) + 0.5
 
         onsite =  - ( sum(
             [ center_ne(sys) / (dis(i, uppercenter, sys) + center_dis(sys)) for i in  max( 1, uppercenter - center_range(sys) ) : min( upperchain, uppercenter + center_range(sys))]) + 

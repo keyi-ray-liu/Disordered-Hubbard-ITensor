@@ -82,8 +82,8 @@ function DenDenNeighbor(sys::QE_parallel, j)
         upperchain = get_upperchain(sys)
         lowerchain = get_lowerchain(sys)
 
-        uppercenter = div(upperchain, 2) + 1
-        lowercenter = div(lowerchain, 2) + 1
+        uppercenter = div(upperchain, 2) + 0.5
+        lowercenter = div(lowerchain, 2) + 0.5
         
         upperoffset = QESITES
         loweroffset = uppertotal + QESITES
