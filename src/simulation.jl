@@ -3,7 +3,7 @@ function run_static_simulation(sys::systems, simulation::Static, ψ::MPS)
 
     h = gen_hamiltonian(sys)
 
-    #@show h 
+    @show h 
     H = MPO(h, siteinds(ψ))
 
     solve(H, ψ, simulation)
@@ -33,11 +33,10 @@ function run_dynamic_simulation(sys::systems, simulation::Dynamic, ψ::MPS)
 end 
 
 
-function run_Static_chain(dims, N;  kwargs...)
+function run_Static_chain(L, N;  kwargs...)
 
 
-    coulomb = set_Coulombic(;kwargs...)
-    sys = set_Chain(; dims=dims, N=N, coulomb=coulomb, kwargs...)
+    sys = set_Chain(; L=L, N=N, kwargs...)
 
     simulation = set_Static(;kwargs...)
     ψ = gen_state(sys)

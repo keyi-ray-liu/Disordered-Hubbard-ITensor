@@ -6,7 +6,13 @@ const INITIAL_STR = "initialstate"
 const DYNA_STR = "tTDVP"
 const DPT_INIT_BIAS = [-100.0, 100.0]
 const BIAS_LR = 0.25
-
+const EMPTY_CENTER = Dict(
+    "center_ee" => 0.0,
+    "center_ne" => 0.0,
+    "center_t" => 0.0,
+    "center_range" => 0,
+    "center_dis" => 1.0
+)
 
 
 
@@ -139,35 +145,36 @@ end
 
 struct Chain_only <: systems
 
-    dims :: Int
+    L :: Int
     N :: Vector{Int}
     type :: String
     t :: Float64
     coulomb :: Coulombic
 end 
 
-dims(sys::Chain_only) = sys.dims
+L(sys::Chain_only) = sys.L
 type(sys::Chain_only) = sys.type
 N(sys::Chain_only) = sys.N
 t(sys::Chain_only) = sys.t
 ζ(sys::Chain_only) = sys.coulomb.ζ
-get_systotal(sys::Chain_only) = sys.dims
+get_systotal(sys::Chain_only) = sys.L
 
 function set_Chain(;
-    dims =2,
+    L =2,
     N =1,
     type="Fermion",
     t=-1,
-    coulomb=set_Coulombic(),
     kwargs...
     )
 
+    coulomb = set_Coulombic(;kwargs...)
+
     if typeof(N) == Int
-        N = [dims - N, N, 0, 0]
+        N = [L - N, N, 0, 0]
     end 
 
     return Chain_only(
-        dims,
+        L,
         N,
         type,
         t,
@@ -187,7 +194,7 @@ struct Rectangular <: systems
 
 end 
 
-Lx(sys::Rectangular) = sys.dims
+Lx(sys::Rectangular) = sys.L
 type(sys::Rectangular) = sys.type
 N(sys::Rectangular) = sys.N
 t(sys::Rectangular) = sys.t
@@ -199,12 +206,13 @@ function set_Rectangular(;
     N =1,
     type="Fermion",
     t=-1,
-    coulomb=set_Coulombic(),
     kwargs...
     )
 
+    coulomb = set_Coulombic(;kwargs...)
+
     if typeof(N) == Int
-        N = [dims - N, N, 0, 0]
+        N = [L - N, N, 0, 0]
     end 
 
     return Rectangular(
@@ -282,7 +290,7 @@ get_systotal(sys::QE_two) = get_systotal(sys.chain_only) + 2 * QESITES
 type(sys::QE_two) = type(sys.chain_only)
 t(sys::QE_two) = t(sys.chain_only)
 ζ(sys::QE_two) = ζ(sys.chain_only)
-
+L(sys::QE_two) = L(sys.chain_only)
 
 function set_QE_two(;
     QE_distance = 2.0,
@@ -291,9 +299,10 @@ function set_QE_two(;
     dp=1.0,
     init ="Left",
     product=false,
-    chain_only=set_Chain(),
     kwargs...
     )
+
+    chain_only = set_Chain(;kwargs...)
 
     return QE_two(
         QE_distance,
@@ -307,17 +316,45 @@ function set_QE_two(;
 
 end 
 
-
+""" Currently the QE sys 1 and QEsys 2 are put side-by-side , with the center site at the very end"""
 struct QE_parallel <: systems
 
     upper :: QE_two
     lower :: QE_two
-    center_parameters :: Dict
+    center_parameter :: Dict
 end 
 
+get_upperchain(sys::QE_parallel) = L(sys.upper)
+get_lowerchain(sys::QE_parallel) = L(sys.lower)
+QEen(sys::QE_parallel) = QEen(sys.upper)
 get_systotal(sys::QE_parallel) = get_systotal(sys.upper) + get_systotal(sys.lower) + 1
-upper_size(sys::QE_parallel) = get_systotal(sys.upper)
+get_uppertotal(sys::QE_parallel) = get_systotal(sys.upper)
+get_lowertotal(sys::QE_parallel) = get_systotal(sys.lower)
 type(sys::QE_parallel) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
+offset_scale(sys::QE_parallel) = offset_scale(sys.upper)
+
+function set_QE_parallel(;
+    center_parameter = EMPTY_CENTER,
+    inits = "1",
+    kwargs...
+)   
+
+    if inits == "1"
+        initstr = ["Left", "None"]
+    else
+        initstr = ["Left", "Left"]
+    end 
+
+    upper = set_QE_two(; init=initstr[1], kwargs...)
+    lower = set_QE_two(; init=initstr[2], kwargs...)
+
+    return QE_parallel(
+        upper,
+        lower,
+        center_parameter
+    )
+
+end 
 
 """QE X SIAM system struct, here we assume each leg is attached to each QE, and all legs are connect via a SINGLE 'center' site """
 struct QE_flat_SIAM <: systems
@@ -347,9 +384,12 @@ get_systotal(sys::QE_flat_SIAM) = 1 + (legleft(sys) + legright(sys)) * (siteseac
 left(sys::QE_flat_SIAM) = legleft(sys) * (siteseach(sys) + QESITES)
 type(sys::QE_flat_SIAM) = sys.type
 
-center_ee(sys::QE_flat_SIAM) = sys.center_parameter["center_ee"]
-center_ne(sys::QE_flat_SIAM) = sys.center_parameter["center_ne"]
-center_t(sys::QE_flat_SIAM) = sys.center_parameter["center_t"]
+center_ee(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_ee"]
+center_ne(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_ne"]
+center_t(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_t"]
+
+center_range(sys::QE_parallel) = sys.center_parameter["center_range"]
+center_dis(sys::QE_parallel) = sys.center_parameter["center_dis"]
 
 QE_distance(sys::Union{QE_two, QE_flat_SIAM}) = sys.QE_distance
 t(sys::QE_flat_SIAM) = sys.t
@@ -373,8 +413,9 @@ function set_QE_SIAM(;
     ζ=0.5,
     init="1",
     TTN = false,
-    center_parameter = Dict(),
-    coulomb=set_Coulombic()
+    center_parameter = EMPTY_CENTER,
+    coulomb=set_Coulombic(),
+    kwargs...
     )
 
     if typeof(N) == Int
@@ -434,6 +475,25 @@ offset_scale(sys::QE_G_SIAM) = offset_scale(sys.system)
 
 sitemap(sys::QE_G_SIAM) = sys.sitemap
 
+
+function QE_determiner(key; kwargs...)
+
+    if key == "QE_two"
+        sys=  set_QE_two(;  kwargs...)
+
+    elseif key == "QE_SIAM"
+        sys = set_QE_SIAM(; kwargs...)
+
+    elseif key == "QE_parallel"
+        sys = set_QE_parallel(; kwargs...)
+
+    else
+        error("Unrecognized QE key")
+    end 
+
+    @show sys
+    return sys
+end 
 
 struct DPT <: systems
 

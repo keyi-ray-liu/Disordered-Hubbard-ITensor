@@ -1,5 +1,5 @@
 # for a flat chain, return next NN until end
-HoppingNeighbor(sys::Chain_only, j::Int) = j < dims(sys) ? [[t(sys), j + 1] ] : []
+HoppingNeighbor(sys::Chain_only, j::Int) = j < L(sys) ? [[t(sys), j + 1] ] : []
 
 
 """
@@ -22,7 +22,7 @@ end
 function HoppingNeighbor(sys::QE_parallel, j::Int)
 
     uppertotal = get_uppertotal(sys)
-    
+
     if j <= uppertotal
         hop = HoppingNeighbor(sys.upper, j)
 

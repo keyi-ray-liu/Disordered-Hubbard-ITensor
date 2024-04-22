@@ -1,4 +1,6 @@
 
+
+""" A general principle is that we always use native indexing in the subsystem"""
 DenDenNeighbor(sys::systems, j) = []
 
 function DenDenNeighbor(sys::QE_flat_SIAM, j)
@@ -60,6 +62,37 @@ function DenDenNeighbor(sys::QE_two, j)
         # shift back position of each k
         den = [ [U, k + 2] for (U, k) in den]
     end
+
+    return den
+end 
+
+function DenDenNeighbor(sys::QE_parallel, j)
+
+    uppertotal = get_uppertotal(sys)
+    systotal = get_systotal(sys)
+
+    if j <= uppertotal
+        den =  DenDenNeighbor(sys.upper, j)
+
+    elseif j < systotal
+        den =  [ [U, k + uppertotal] for (U, k) in DenDenNeighbor(sys.lower, j - uppertotal)]
+
+    # the contact site, physically sits in the middle of two chains. We move to the native chain coordinates
+    else
+        upperchain = get_upperchain(sys)
+        lowerchain = get_lowerchain(sys)
+
+        uppercenter = div(upperchain, 2) + 1
+        lowercenter = div(lowerchain, 2) + 1
+        
+        upperoffset = QESITES
+        loweroffset = uppertotal + QESITES
+
+        den = vcat(
+            [ [ center_ee(sys) / (dis(i, uppercenter, sys) + center_dis(sys)), i + upperoffset] for i in  max( 1, uppercenter - center_range(sys) ) : min( upperchain, uppercenter + center_range(sys))],
+            [ [ center_ee(sys) / (dis(i, lowercenter, sys) + center_dis(sys)), i + loweroffset] for i in  max( 1, lowercenter - center_range(sys) ) : min( lowerchain, lowercenter + center_range(sys))]
+        )
+    end 
 
     return den
 end 

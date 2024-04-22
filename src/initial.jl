@@ -13,6 +13,7 @@ gen_state_str(sys::QE_flat_SIAM) = vcat(
     reduce(vcat, [vcat(shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ]), QE_str(sys)[j]) for j in 1 + legleft(sys) : legright(sys) + legleft(sys)])
     )
 
+gen_state_str(sys::QE_parallel) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower), ["Occ"])
 
 gen_state_map(sys::QE_G_SIAM, sites) = Dict( s => gen_state_str(sys.system)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
 
