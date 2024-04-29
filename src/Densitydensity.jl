@@ -70,15 +70,16 @@ function DenDenNeighbor(sys::QE_parallel, j)
 
     uppertotal = get_uppertotal(sys)
     systotal = get_systotal(sys)
+    center_lower = systotal - 1
 
     if j <= uppertotal
         den =  DenDenNeighbor(sys.upper, j)
 
-    elseif j < systotal
+    elseif j < center_lower
         den =  [ [U, k + uppertotal] for (U, k) in DenDenNeighbor(sys.lower, j - uppertotal)]
 
     # the contact site, physically sits in the middle of two chains. We move to the native chain coordinates
-    else
+    elseif j == center_lower
         upperchain = get_upperchain(sys)
         lowerchain = get_lowerchain(sys)
 
@@ -92,6 +93,10 @@ function DenDenNeighbor(sys::QE_parallel, j)
             [ [ center_ee(sys) / (dis(i, uppercenter, sys) + center_dis(sys)), i + upperoffset] for i in  max( 1, uppercenter - center_range(sys) ) : min( upperchain, uppercenter + center_range(sys))],
             [ [ center_ee(sys) / (dis(i, lowercenter, sys) + center_dis(sys)), i + loweroffset] for i in  max( 1, lowercenter - center_range(sys) ) : min( lowerchain, lowercenter + center_range(sys))]
         )
+
+    else
+
+        den = []
     end 
 
     return den
@@ -105,6 +110,8 @@ function DenDenNeighbor(sys::Chain_only, j::Int)
     return [ [λ_ee * ifexch(j, k, sys) / ( dis(j, k, sys) + ζ), k] for k in max(1, j - range) : j - 1]
     
 end 
+
+DenDenNeighbor(sys::GQS, j::Int) = DenDenNeighbor(sys.chain_only, j)
 
 function DenDenNeighbor(sys::DPT, j::Int)
 
@@ -121,6 +128,7 @@ function DenDenNeighbor(sys::DPT, j::Int)
     return den
 
 end 
+
 
 
 function add_DensityDensity!(sys::systems, res::OpSum)

@@ -33,16 +33,6 @@ function run_dynamic_simulation(sys::systems, simulation::Dynamic, ψ::MPS)
 end 
 
 
-function run_Static_chain(L, N;  kwargs...)
 
-
-    sys = set_Chain(; L=L, N=N, kwargs...)
-
-    simulation = set_Static(;kwargs...)
-    ψ = gen_state(sys)
-
-    run_static_simulation(sys, simulation, ψ)
-
-end 
 
 

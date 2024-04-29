@@ -3,7 +3,9 @@ gen_state_str(sys::systems) = shuffle([ get_type_dict(type(sys))[i] for i= 1:4 f
 gen_state_str(sys::QE_two) = vcat(QE_str(sys)[1], gen_state_str(sys.chain_only), QE_str(sys)[2])
 
 
-gen_state_str(sys::DPT) = vcat([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]],  [ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Occ", "Emp"])
+gen_state_str(sys::DPT) = vcat(shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]]),  shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]]), ["Occ", "Emp"])
+
+gen_state_str(sys::DPT_mixed) = gen_state_str(sys.dpt)
 
 gen_state_str(sys::LSR_SIAM) = vcat([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
@@ -13,10 +15,35 @@ gen_state_str(sys::QE_flat_SIAM) = vcat(
     reduce(vcat, [vcat(shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ]), QE_str(sys)[j]) for j in 1 + legleft(sys) : legright(sys) + legleft(sys)])
     )
 
-gen_state_str(sys::QE_parallel) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower), ["Occ"])
+gen_state_str(sys::QE_parallel) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower), ["Emp", "Occ"])
 
 gen_state_map(sys::QE_G_SIAM, sites) = Dict( s => gen_state_str(sys.system)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
 
+
+
+
+function gen_state(sys::GQS; QN=true, kwargs...)
+    if init(sys) == 1
+        return gen_state(sys.chain_only; QN=QN, kwargs...)
+
+    elseif init(sys) == 2
+        sites = siteinds(type(sys), get_systotal(sys); conserve_qns=QN)
+
+        @show state_str1 = vcat(["Occ" for _ in 1:N(sys)[2]], ["Emp" for _ in 1:N(sys)[1]])
+
+        @show state_str2 = [ isodd(n) ? "Emp" : "Occ" for n in 1:L(sys)]
+
+        ψ1 = randomMPS(sites, state_str1)
+        ψ2 = randomMPS(sites, state_str2)
+
+        ψ = sqrt(0.9) * ψ1 + sqrt(0.1) * ψ2
+        return ψ
+
+    else
+        error("unknonwn init")
+
+    end 
+end 
 
 function QE_str(sys::Union{QE_two})
 
@@ -78,6 +105,8 @@ function gen_state(sys::QE_G_SIAM; QN=true, kwargs...)
     return ψ
 
 end 
+
+
 
 function gen_state(sys::systems; QN=true, kwargs...)
 

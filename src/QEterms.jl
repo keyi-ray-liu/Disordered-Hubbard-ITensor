@@ -28,11 +28,12 @@ function QECoupling(sys::QE_parallel, j)
 
     uppertotal = get_uppertotal(sys)
     systotal = get_systotal(sys)
+    center_lower = systotal - 1
 
     if j <= uppertotal
         qe =  QECoupling(sys.upper, j)
 
-    elseif j < systotal
+    elseif j < center_lower
         qe =  [ [U, k + uppertotal] for (U, k) in QECoupling(sys.lower, j - uppertotal)]
 
     # no QE on contact

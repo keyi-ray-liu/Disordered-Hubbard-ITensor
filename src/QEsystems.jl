@@ -1,9 +1,19 @@
-function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 0, QEmul=1.0, center_parameter = EMPTY_CENTER, kwargs...)
+
+
+function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 0, QEmul=1.0, fin=200, center_parameter = EMPTY_CENTER, kwargs...)
+    try
+        QEen = load_plsmon(output) * QEmul
+        println("QE file found, QE energy = ", QEen)
+    catch
+        println("QE file not found,beginning next stage, QE energy = ", QEen)
+    end
 
 
     # if no QEen, we need to perform further calculations on the initial state
-    if QEen == 0 || !product
+    # the basic logic is that this is a QE calculation, QEen =0 makes no sense
+    if QEen == 0 || (!product && !check_ψ(output))
         
+
         println("Calculating initial state")
         ex = (QEen == 0) ? 2 : 1
         # we set up the decoupled sys from the QE
@@ -21,12 +31,18 @@ function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 
 
     sys = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, kwargs...)
 
-    ψ = (!product && staticex == 0) ? load_ψ(output) : gen_state(sys)
 
     if staticex == 0
-        dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=τ, fin=200*τ, kwargs...)
+
+        start = get(kwargs, :start, τ)
+        init_key = start == τ ? output : start - τ
+        ψ = !product ? load_ψ(init_key) : gen_state(sys)
+
+        dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=start, fin=fin*τ, kwargs...)
         run_dynamic_simulation(sys, dynamic, ψ)
     else
+        ψ = !product ? load_ψ(output) : gen_state(sys)
+
         static = set_Static(; ex=staticex, sweepdim=TEdim, kwargs...)
         run_static_simulation(sys, static, ψ)
     end 
@@ -70,8 +86,12 @@ function QE_parallel_wrapper()
     TEdim = get(qe_parallel_in, "TEdim", 64)
     center_parameter = get(qe_parallel_in, "center_parameter", EMPTY_CENTER)
 
+    τ = get(qe_parallel_in, "timestep", 1.0)
+    start = get(qe_parallel_in, "start", τ)
+    fin = get(qe_parallel_in, "fin", 200)
+
     #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
-    run_QE("QE_parallel", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, center_parameter=center_parameter)
+    run_QE("QE_parallel", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, start = start, fin=fin, center_parameter=center_parameter)
     dyna_occ()
     dyna_EE()
 

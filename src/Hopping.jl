@@ -1,7 +1,7 @@
 # for a flat chain, return next NN until end
 HoppingNeighbor(sys::Chain_only, j::Int) = j < L(sys) ? [[t(sys), j + 1] ] : []
 
-
+HoppingNeighbor(sys::GQS, j ::Int) = HoppingNeighbor(sys.chain_only, j)
 """
 Here, we have either the offset hopping in the QE, or the chain hopping
 """
@@ -22,12 +22,18 @@ end
 function HoppingNeighbor(sys::QE_parallel, j::Int)
 
     uppertotal = get_uppertotal(sys)
+    systotal = get_systotal(sys)
+
+    center_lower = systotal - 1
 
     if j <= uppertotal
         hop = HoppingNeighbor(sys.upper, j)
 
-    elseif j < get_systotal(sys)
+    elseif j < center_lower
         hop = [ [t, site + uppertotal] for (t, site) in HoppingNeighbor(sys.lower, j - uppertotal)]
+
+    elseif j == center_lower
+        hop = [ [center_internal_t(sys), systotal]]
 
     else
         hop = []
@@ -98,6 +104,20 @@ function HoppingNeighbor(sys::DPT, j::Int)
         hop = [[t_reservoir(sys), j + 1]]
 
     elseif j == L(sys) + R(sys) + 1
+        hop = [[t_doubledot(sys), j + 1]]
+
+    else
+        hop = []
+    end 
+
+    return hop
+
+end 
+
+# no hopping except DD
+function HoppingNeighbor(sys::DPT_mixed, j::Int)
+
+    if j == L(sys) + R(sys) + 1
         hop = [[t_doubledot(sys), j + 1]]
 
     else

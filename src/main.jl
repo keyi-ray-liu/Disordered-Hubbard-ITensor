@@ -50,6 +50,8 @@ include("DPT.jl")
 include("LSR_SIAM.jl")
 include("QEsystems.jl")
 include("NF.jl")
+include("Chain.jl")
+include("specific.jl")
 
 disable_blas = true
 
@@ -66,12 +68,14 @@ end
 
 if test
 
-    #DPT_wrapper()
+    #dyna_pϕ()
+    #GQS_wrapper()
+    DPT_wrapper()
     #NF_wrapper()
     #dyna_EE()
     #QE_SIAM_wrapper()
     #QE_two_wrapper()
-    QE_parallel_wrapper()
+    #QE_parallel_wrapper()
 
 
 else

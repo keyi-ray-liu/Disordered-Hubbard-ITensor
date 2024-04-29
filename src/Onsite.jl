@@ -22,14 +22,16 @@ end
 function Onsite(sys::QE_parallel, j) 
 
     uppertotal = get_uppertotal(sys)
+    systotal = get_systotal(sys)
+    center_lower = systotal - 1
 
     if j <= uppertotal
         onsite = Onsite(sys.upper, j)
 
-    elseif j < get_systotal(sys)
+    elseif j < center_lower
         onsite = Onsite(sys.lower, j - uppertotal)
 
-    else
+    elseif j == center_lower
         upperchain = get_upperchain(sys)
         lowerchain = get_lowerchain(sys)
 
@@ -41,6 +43,8 @@ function Onsite(sys::QE_parallel, j)
             sum( [ center_ne(sys) / (dis(i, lowercenter, sys) + center_dis(sys)) for i in  max( 1, lowercenter - center_range(sys) ) : min( lowerchain, lowercenter + center_range(sys))]
         ) ) 
 
+    else
+        onsite = 0.0
     end 
 
     return onsite
@@ -101,6 +105,8 @@ function Onsite(sys::Chain_only, j::Int) :: Float64
 
 end 
 
+Onsite(sys::GQS, j::Int) = Onsite(sys.chain_only, j)
+
 """For NF NxN, we add to the inner square, that is from row 2 to row N - 1, from col 2 to col N - 1"""
 function Onsite(sys::NF_square, j::Int) :: Float64
     
@@ -153,6 +159,32 @@ function Onsite(sys::DPT, j ::Int) :: Float64
         end 
 
     end
+
+    return onsite
+
+end 
+
+# Onsite interactions for mixed,
+function Onsite(sys::DPT_mixed, j::Int)
+
+    if j <= L(sys) + R(sys)
+        
+        #  since the energy is pre-bias energy, we need to bias the system
+        bias = LR(sys)[j] > 0 ? bias_L(sys) : bias_R(sys)
+        onsite = energies(sys)[j] + bias
+    
+    
+    # elseif j == L(sys) + 1
+    elseif j == L(sys) + R(sys) + 1
+        onsite = bias_doubledot(sys)[1]
+        # offset from int term
+        onsite -= U(sys) *  couple_range(sys)
+
+    #upper
+    #elseif j == L(sys) + 2
+    elseif j == L(sys) + R(sys) + 2
+        onsite = bias_doubledot(sys)[2]
+    end 
 
     return onsite
 

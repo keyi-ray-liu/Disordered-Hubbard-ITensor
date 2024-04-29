@@ -42,7 +42,7 @@ function scan_ee(ψ::MPS, max_order::Int)
         append!(soi, s)
     end 
 
-    return mapreduce(permutedims, vcat, [ entropies(ψ, i, max_order) for i in soi]), [ maximum(size(ψ[ j])) for j in soi] 
+    return vectomat([ entropies(ψ, i, max_order) for i in soi]), [ maximum(size(ψ[ j])) for j in soi] 
   
 end 
 
@@ -164,6 +164,45 @@ function dyna_dptcurrent()
 
 end 
 
+function dyna_dptcurrent_mix()
+
+    T = []
+    currentLR = []
+
+    workdir = getworkdir()
+
+    ks = readdlm( workdir * "ks")
+    LR = readdlm( workdir * "LR")
+
+    UL, UR = Uk(1, ks, LR)
+    ULR = UL .* UR'
+
+    for file in get_dyna_files()
+
+        ψ = load_ψ(file)
+        t = get_time(file)
+        append!(T, t)
+
+        println("Calculating DPT mix current, $t")
+
+        # except the DD sites
+        L = length(ψ) - 2
+
+        corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L)
+        
+        @assert size(ULR) == size(corr)
+
+        @show append!(currentLR, 2 * imag( sum(ULR .* corr)))
+
+    end 
+
+    writedlm(workdir* "times", T)
+    writedlm(workdir* "currentLR", currentLR)
+
+
+end 
+
+
 function dyna_LSRcurrent()
 
     T = []
@@ -189,5 +228,39 @@ function dyna_LSRcurrent()
     writedlm(workdir* "times", T)
     writedlm(workdir* "current", current)
 
+
+end 
+
+function dyna_pϕ()
+
+    pϕ = []
+    T = []
+
+    workdir = getworkdir()
+
+    for file in get_dyna_files()
+
+        ψ = load_ψ(file)
+        t = get_time(file)
+        append!(T, t)
+
+        println("Calculating partial contraction, $t")
+
+        #state = [ partial_contract(ψ, [i, i+1]) for i in 1:div(length(ψ), 2) ]
+        state = partial_contract(ψ, [1, 2])
+
+        normalize!(state)
+        c1, c2 = state[1, 2], state[2, 1]
+        ϕ1, ϕ2 = angle(c1), angle(c2)
+        p1 = abs2(c1) / (abs2(c1) + abs2(c2))
+        ϕ = ((ϕ2 - ϕ1)/pi )% 2
+
+        append!(pϕ, [[p1, ϕ]])
+
+    end 
+
+
+    writedlm(workdir* "times", T)
+    writedlm(workdir* "coefficients", pϕ)
 
 end 

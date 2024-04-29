@@ -22,7 +22,10 @@ function getworkdir()
 
   return workdir
 
+
 end 
+
+vectomat( vec ) = mapreduce( permutedims, vcat, vec)
 
 
 load_JSON(location) = JSON3.read(location, Dict{String, Any} )
@@ -34,6 +37,8 @@ function variance(H::MPO, psi::MPS)
     return var
   end
 end
+
+check_ψ(output) = isfile( getworkdir() * output * ".h5")
 
 
 function load_ψ(output::String; tag ="psi1")
@@ -57,6 +62,8 @@ function load_ψ(t::Float64; tag ="psi1")
 
   return ψ
 end 
+
+load_ψ(t::Int; tag ="psi1") = load_psi( float(t); tag = tag)
 
 function load_plsmon(output)
   ex = readdlm( getworkdir() * output * "ex")
@@ -167,3 +174,25 @@ function get_sitemap(sys::QE_flat_SIAM)
 end 
 
 
+function partial_contract(ψ::MPS, sites::Vector{Int})
+
+  ψ = dense(ψ)
+  s = siteinds(ψ)
+  result = ITensor(1.)
+
+  for j in eachindex(ψ)
+
+    if j in sites
+      result *= ψ[j]
+    else 
+      
+      LHS = ITensor([1.0, 1.0],s[j])
+      result *= LHS * ψ[j]
+
+    end
+
+  end
+
+  #@show result
+  return result
+end 

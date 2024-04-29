@@ -2,16 +2,16 @@
 const QESITES = 2
 const GLOBAL_CNT = 60
 const TOL = 1e-8
-const INITIAL_STR = "initialstate"
 const DYNA_STR = "tTDVP"
 const DPT_INIT_BIAS = [-100.0, 100.0]
-const BIAS_LR = 0.25
+const BIAS_LR = 0.5
 const EMPTY_CENTER = Dict(
     "center_ee" => 0.0,
     "center_ne" => 0.0,
     "center_t" => 0.0,
     "center_range" => 0,
-    "center_dis" => 1.0
+    "center_dis" => 1.0,
+    "center_internal_t" => 0.0
 )
 
 
@@ -183,6 +183,20 @@ function set_Chain(;
 
 end 
 
+struct GQS <: systems
+    chain_only :: Chain_only
+    init :: Int
+end 
+
+set_GQS(;init=1, kwargs...) = GQS( set_Chain(;kwargs...), init)
+
+init(sys::GQS) = sys.init
+N(sys::GQS) = N(sys.chain_only)
+L(sys::GQS) = L(sys.chain_only)
+type(sys::GQS) = type(sys.chain_only)
+get_systotal(sys::GQS) = get_systotal(sys.chain_only)
+
+
 struct Rectangular <: systems
 
     Lx :: Int
@@ -327,7 +341,7 @@ end
 get_upperchain(sys::QE_parallel) = L(sys.upper)
 get_lowerchain(sys::QE_parallel) = L(sys.lower)
 QEen(sys::QE_parallel) = QEen(sys.upper)
-get_systotal(sys::QE_parallel) = get_systotal(sys.upper) + get_systotal(sys.lower) + 1
+get_systotal(sys::QE_parallel) = get_systotal(sys.upper) + get_systotal(sys.lower) + 2
 get_uppertotal(sys::QE_parallel) = get_systotal(sys.upper)
 get_lowertotal(sys::QE_parallel) = get_systotal(sys.lower)
 type(sys::QE_parallel) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
@@ -387,6 +401,7 @@ type(sys::QE_flat_SIAM) = sys.type
 center_ee(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_ee"]
 center_ne(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_ne"]
 center_t(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_t"]
+center_internal_t(sys::QE_parallel) = sys.center_parameter["center_internal_t"]
 
 center_range(sys::QE_parallel) = sys.center_parameter["center_range"]
 center_dis(sys::QE_parallel) = sys.center_parameter["center_dis"]
@@ -524,7 +539,8 @@ function set_DPT(;
     contact_t = 1.0,
     bias_doubledot = [0.0, 0.0], 
     bias_L = 0.0,
-    bias_R = 0.0
+    bias_R = 0.0,
+    kwargs...
     )
 
     return DPT(
@@ -557,9 +573,55 @@ t_doubledot(sys::DPT) = sys.t_doubledot
 contact(sys::DPT) = sys.contact
 contact_t(sys::DPT) = sys.contact_t
 get_systotal(sys::DPT) = 2 + L(sys) + R(sys)
-
 N(sys::DPT) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
+
+struct DPT_mixed <: systems
+    dpt :: DPT
+    energies :: Vector
+    ks :: Vector
+    LR :: Vector
+    #U :: Matrix
+   # w :: Vector
+end 
+
+function set_DPT_mixed(;
+    energies = [],
+    ks = [],
+    LR = [],
+    kwargs...
+)
+    dpt = set_DPT(;kwargs...)
+
+    return DPT_mixed(
+        dpt,
+        energies,
+        ks,
+        LR
+       # U,
+       # w
+    )
+
+end 
+
+type(sys::DPT_mixed) = type(sys.dpt)
+U(sys::DPT_mixed) = U(sys.dpt)
+L(sys::DPT_mixed) = L(sys.dpt)
+R(sys::DPT_mixed) = R(sys.dpt)
+couple_range(sys::DPT_mixed) = couple_range(sys.dpt)
+bias_doubledot(sys::DPT_mixed) = bias_doubledot(sys.dpt)
+bias_L(sys::DPT_mixed) = bias_L(sys.dpt)
+bias_R(sys::DPT_mixed) = bias_R(sys.dpt)
+t_reservoir(sys::DPT_mixed) = t_reservoir(sys.dpt)
+t_doubledot(sys::DPT_mixed) = t_doubledot(sys.dpt)
+contact(sys::DPT_mixed) = contact(sys.dpt)
+contact_t(sys::DPT_mixed) = contact_t(sys.dpt)
+get_systotal(sys::DPT_mixed) = 2 + L(sys) + R(sys)
+N(sys::DPT_mixed) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
+
+energies(sys::DPT_mixed) = sys.energies
+ks(sys::DPT_mixed) = sys.ks
+LR(sys::DPT_mixed) = sys.LR
 
 
 

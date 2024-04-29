@@ -1,3 +1,15 @@
+using DelimitedFiles
+using Glob
+using ITensors
+using ITensors.HDF5
+using ITensors: OneITensor, linkind, siteinds, tr
+using JSON3
+using LinearAlgebra
+using StatsBase
+using Suppressor
+using ITensorTDVP
+using Random
+
 #using DataGraphs: edge_data, vertex_data
 #using Dictionaries: Dictionary
 using Graphs: nv, vertices, edges, src, dst
@@ -24,43 +36,85 @@ using Test: @test, @test_broken, @testset
 using ITensorUnicodePlots: @visualize
 
 
-let 
 
-  g = NamedGraph()
-  L = 4
-  ARM = 4
+# please refer to the following repo 
+# https://github.com/mtfishman/ITensorNetworks.jl/blob/v0.6.0/test/test_treetensornetworks/test_solvers/test_dmrg.jl
+#https://github.com/mtfishman/NamedGraphs.jl
 
-  for i in 1:ARM
-    for j in 1:L
-      add_vertex!(g, (i, j))
-    end 
-  end 
+function gen_mixed(L, R, bias_L, bias_R; random=false)
 
-  add_vertex!(g, (5, 1))
+    unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
+    L_val = [ (2 *  cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
+    R_val = [ (2 *  cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
 
-  for i in 1:ARM
+    if random
+        result = shuffle( vcat(L_val, R_val))
+    else
+        result = sort( vcat(L_val, R_val), rev=true )
+    end
 
-    add_edge!(g, ((5,1), (i, 1)))
-    for j in 1:L - 1
-      add_edge!(g, ((i, j), (i, j + 1)))
-    end 
-  end 
+    energies, ks, LR= unzip(result)
+    energies -= LR * bias_L
+    
+    @show ks
+    @show energies
+end
 
   
-  for e in edges(g)
-    println(src(e), dst(e))
-  end 
+gen_mixed(128, 128, 0.25, -0.25; random=false)
 
-  d = Dict()
-  for (i, v) in enumerate(vertices(g))
-    d[v] = isodd(i) ? "Up" : "Dn"
-  end
-  states = v -> d[v]
+# let
+#   qn = true
 
-  println(typeof(states))
-  #@visualize g
+#   N = 10
+#   s = siteinds("Fermion",N; 
+#   conserve_qns = qn
+#   )
 
-end 
+#   state = [ isodd(n) ? "Emp" : "Occ" for n in 1:N]
+#   psi = randomMPS(s, state;linkdims=10)
+
+#   partial_contract(psi, [4, 5, 6])
+
+# end
+
+# let 
+
+#   g = NamedGraph()
+#   L = 4
+#   ARM = 4
+
+#   for i in 1:ARM
+#     for j in 1:L
+#       add_vertex!(g, (i, j))
+#     end 
+#   end 
+
+#   add_vertex!(g, (5, 1))
+
+#   for i in 1:ARM
+
+#     add_edge!(g, ((5,1), (i, 1)))
+#     for j in 1:L - 1
+#       add_edge!(g, ((i, j), (i, j + 1)))
+#     end 
+#   end 
+
+  
+#   for e in edges(g)
+#     println(src(e), dst(e))
+#   end 
+
+#   d = Dict()
+#   for (i, v) in enumerate(vertices(g))
+#     d[v] = isodd(i) ? "Up" : "Dn"
+#   end
+#   states = v -> d[v]
+
+#   println(typeof(states))
+#   #@visualize g
+
+# end 
 
 
 
