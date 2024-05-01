@@ -46,6 +46,23 @@ function QECoupling(sys::QE_parallel, j)
 end 
 
 
+function QECoupling(sys::QE_HOM, j)
+
+    uppertotal = get_uppertotal(sys)
+    systotal = get_systotal(sys)
+
+    if j <= uppertotal
+        qe =  QECoupling(sys.upper, j)
+
+    elseif j < systotal
+        qe =  [ [U, k + uppertotal] for (U, k) in QECoupling(sys.lower, j - uppertotal)]
+    end 
+
+    return qe
+
+end 
+
+
 """For the flat X QE, currently chain sites only couple to their respective QE"""
 function QECoupling(sys::QE_flat_SIAM, j) 
 

@@ -14,27 +14,40 @@ end
 
 function add_specific_int!(sys:: DPT_mixed, res)
 
+    println("Adding mixed int")
     lower = get_systotal(sys) - 1
+    #LR connection 
+    UL, UR = Uk(1, sys)
+    ULR = UL .* UR'
+
+    for k = 1:L(sys) + R(sys)
+        for l =1:L(sys) + R(sys)
+
+            if ULR[k, l] != 0 
+                res += ULR[k, l], "Cdag", k, "C", l
+                res += ULR[k, l], "Cdag", l, "C", k
+            end 
+
+        end 
+    end 
+
+
     # couple range L
     for j in 1:couple_range(sys)
 
         UL, UR = Uk(j, sys)
         UNN = UL .* UL' + UR .* UR'
 
-        for k = 1:L(sys) + R(sys)
-            for l =1:L(sys) + R(sys)
 
-                if UNN[k, l] != 0
-                    res += U(sys) * UNN[k, l], "N", lower, "Cdag", k, "C", l
+        if U(sys) != 0
+            for k = 1:L(sys) + R(sys)
+                for l =1:L(sys) + R(sys)
+
+                    if UNN[k, l] != 0 
+                        res += U(sys) * UNN[k, l], "N", lower, "Cdag", k, "C", l
+                    end 
+
                 end 
-                #if LR(sys)[k] == LR(sys)[l]
-
-                    #res += U(sys) * Uk( ks(sys)[k], j, sys) * Uk( ks(sys)[l], j, sys), "N", lower, "Cdag", k, "C", l
-                    #res += - 1/2 * Uk( ks(sys)[k], j, sys) * Uk( ks(sys)[l], j, sys), "Cdag", k, "C", l
-
-                    
-                #end 
-
             end 
         end 
     end 

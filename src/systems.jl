@@ -370,6 +370,46 @@ function set_QE_parallel(;
 
 end 
 
+
+struct QE_HOM <: systems
+
+    upper :: QE_two
+    lower :: QE_two
+    center_parameter :: Dict
+end 
+
+get_upperchain(sys::QE_HOM) = L(sys.upper)
+get_lowerchain(sys::QE_HOM) = L(sys.lower)
+QEen(sys::QE_HOM) = QEen(sys.upper)
+get_systotal(sys::QE_HOM) = get_systotal(sys.upper) + get_systotal(sys.lower) 
+get_uppertotal(sys::QE_HOM) = get_systotal(sys.upper)
+get_lowertotal(sys::QE_HOM) = get_systotal(sys.lower)
+type(sys::QE_HOM) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
+offset_scale(sys::QE_HOM) = offset_scale(sys.upper)
+
+function set_QE_HOM(;
+    center_parameter = EMPTY_CENTER,
+    inits = "1",
+    kwargs...
+)   
+
+    if inits == "1"
+        initstr = ["Left", "None"]
+    else
+        initstr = ["Left", "Left"]
+    end 
+
+    upper = set_QE_two(; init=initstr[1], kwargs...)
+    lower = set_QE_two(; init=initstr[2], kwargs...)
+
+    return QE_HOM(
+        upper,
+        lower,
+        center_parameter
+    )
+
+end 
+
 """QE X SIAM system struct, here we assume each leg is attached to each QE, and all legs are connect via a SINGLE 'center' site """
 struct QE_flat_SIAM <: systems
 
@@ -403,7 +443,7 @@ center_ne(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_
 center_t(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_t"]
 center_internal_t(sys::QE_parallel) = sys.center_parameter["center_internal_t"]
 
-center_range(sys::QE_parallel) = sys.center_parameter["center_range"]
+center_range(sys::Union{QE_parallel, QE_HOM}) = sys.center_parameter["center_range"]
 center_dis(sys::QE_parallel) = sys.center_parameter["center_dis"]
 
 QE_distance(sys::Union{QE_two, QE_flat_SIAM}) = sys.QE_distance

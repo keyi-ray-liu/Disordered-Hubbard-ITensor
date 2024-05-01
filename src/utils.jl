@@ -196,3 +196,12 @@ function partial_contract(ψ::MPS, sites::Vector{Int})
   #@show result
   return result
 end 
+
+
+function saveham(file, s)
+
+  open( getworkdir() * "H" * file ,"w") do io
+    write(io, string(s))
+  end
+
+end 

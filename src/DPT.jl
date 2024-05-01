@@ -46,7 +46,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
         # GS calculation
         ψ = gen_state(eq)
-        run_static_simulation(eq, Static, ψ; message = "No init file found. Start init calculation")
+        run_static_simulation(eq, Static, ψ; message = "Init")
     end 
 
     # Stage1, no bias, GS, start negative time
@@ -55,7 +55,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     ψ = load_ψ(eqinit_str)
 
-    run_dynamic_simulation(eq, Stage1, ψ; message="Stage 1 begin")
+    run_dynamic_simulation(eq, Stage1, ψ; message="Stage1")
 
     # now we switch on the bias in L/R, 0 time
 
@@ -69,7 +69,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     ψ = load_ψ(0.0)
 
-    run_dynamic_simulation(noneq, Stage2, ψ; message="Stage 2 begin")
+    run_dynamic_simulation(noneq, Stage2, ψ; message="Stage2")
 
     # we then switch on the tunneling b/w drain_offset
 
@@ -83,7 +83,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     ψ = load_ψ(t_switch)
 
-    run_dynamic_simulation(noneqtun, Stage3, ψ; message="Stage 3 begin")
+    run_dynamic_simulation(noneqtun, Stage3, ψ; message="Stage3")
 
 
 end 

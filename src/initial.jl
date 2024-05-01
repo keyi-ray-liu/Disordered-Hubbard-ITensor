@@ -17,6 +17,8 @@ gen_state_str(sys::QE_flat_SIAM) = vcat(
 
 gen_state_str(sys::QE_parallel) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower), ["Emp", "Occ"])
 
+gen_state_str(sys::QE_HOM) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower))
+
 gen_state_map(sys::QE_G_SIAM, sites) = Dict( s => gen_state_str(sys.system)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
 
 
@@ -33,8 +35,8 @@ function gen_state(sys::GQS; QN=true, kwargs...)
 
         @show state_str2 = [ isodd(n) ? "Emp" : "Occ" for n in 1:L(sys)]
 
-        ψ1 = randomMPS(sites, state_str1)
-        ψ2 = randomMPS(sites, state_str2)
+        ψ1 = randomMPS(sites, state_str1; linkdims=10)
+        ψ2 = randomMPS(sites, state_str2; linkdims=10)
 
         ψ = sqrt(0.9) * ψ1 + sqrt(0.1) * ψ2
         return ψ
@@ -115,7 +117,7 @@ function gen_state(sys::systems; QN=true, kwargs...)
 
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
     @show gen_state_str(sys)
-    ψ = randomMPS(sites, gen_state_str(sys) )
+    ψ = randomMPS(sites, gen_state_str(sys) ; linkdims=10)
 
     return ψ
 

@@ -42,6 +42,25 @@ function HoppingNeighbor(sys::QE_parallel, j::Int)
     return hop
 end 
 
+function HoppingNeighbor(sys::QE_HOM, j::Int)
+
+    uppertotal = get_uppertotal(sys)
+    systotal = get_systotal(sys)
+
+
+    if j <= uppertotal
+        hop = HoppingNeighbor(sys.upper, j)
+
+    elseif j < systotal
+        hop = [ [t, site + uppertotal] for (t, site) in HoppingNeighbor(sys.lower, j - uppertotal)]
+
+    else
+        hop = []
+    end 
+
+    return hop
+end 
+
 """Flattened X QE, each 'arm' is staggered, as QE + chain, ... , center, chain, QE, ...."""
 function HoppingNeighbor(sys::QE_flat_SIAM, j::Int)
 

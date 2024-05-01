@@ -102,6 +102,26 @@ function DenDenNeighbor(sys::QE_parallel, j)
     return den
 end 
 
+function DenDenNeighbor(sys::QE_HOM, j)
+
+    uppertotal = get_uppertotal(sys)
+    uppercenter = div(uppertotal, 2)
+
+    minrange = max(QESITES + 1, uppercenter - center_range(sys))
+    maxrange
+
+    if j <= uppertotal
+        den =  DenDenNeighbor(sys.upper, j)
+
+        coupling = [ [ center_ee(sys) / (dis(i, uppercenter, sys) + center_dis(sys)), i + upperoffset] for i in  max( 1, uppercenter - center_range(sys) ) : min( upperchain, uppercenter + center_range(sys))]
+
+    else
+        den =  [ [U, k + uppertotal] for (U, k) in DenDenNeighbor(sys.lower, j - uppertotal)]
+    end 
+
+    return den
+end 
+
 function DenDenNeighbor(sys::Chain_only, j::Int)
 
     λ_ee, _, exch, _, range, _, ζ = CoulombParameters(sys)
