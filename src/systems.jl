@@ -52,7 +52,7 @@ function set_Static(;
     prev_var =Float64[], 
     sweepcnt= 60,
     sweepdim =64, 
-    noise=false, 
+    noise=true, 
     cutoff=1e-9, 
     krylovdim=8, 
     weight=10,

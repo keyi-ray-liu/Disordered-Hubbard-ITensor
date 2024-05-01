@@ -24,7 +24,9 @@ function add_specific_int!(sys:: DPT_mixed, res)
         for k = 1:L(sys) + R(sys)
             for l =1:L(sys) + R(sys)
 
-                res += U(sys) * UNN[k, l], "N", lower, "Cdag", k, "C", l
+                if UNN[k, l] != 0
+                    res += U(sys) * UNN[k, l], "N", lower, "Cdag", k, "C", l
+                end 
                 #if LR(sys)[k] == LR(sys)[l]
 
                     #res += U(sys) * Uk( ks(sys)[k], j, sys) * Uk( ks(sys)[l], j, sys), "N", lower, "Cdag", k, "C", l

@@ -153,6 +153,7 @@ function dyna_dptcurrent()
         L = div(length(ψ), 2) - 1
         corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L+1)
 
+
         @show append!(currentLR, 2 * imag(corr[L, L + 1]))
 
         #println(imag(corr))
@@ -177,6 +178,8 @@ function dyna_dptcurrent_mix()
     UL, UR = Uk(1, ks, LR)
     ULR = UL .* UR'
 
+    #@show diag(ULR)
+
     for file in get_dyna_files()
 
         ψ = load_ψ(file)
@@ -191,8 +194,10 @@ function dyna_dptcurrent_mix()
         corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L)
         
         @assert size(ULR) == size(corr)
+        
 
-        @show append!(currentLR, 2 * imag( sum(ULR .* corr)))
+        @show current = 2 * imag( sum(ULR .* corr))
+        append!(currentLR, current)
 
     end 
 

@@ -39,11 +39,15 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
     end 
 
     # we make sure the sweepdim and TEdim match
-    Static = set_Static(; output=eqinit_str, sweepdim=get(kwargs, :TEdim, 64), sweepcnt=100)
 
-    # GS calculation
-    ψ = gen_state(eq)
-    run_static_simulation(eq, Static, ψ)
+    if !check_ψ(eqinit_str)
+        
+        Static = set_Static(; output=eqinit_str, sweepdim=get(kwargs, :TEdim, 64) * 2, sweepcnt=100, cutoff=1E-11)
+
+        # GS calculation
+        ψ = gen_state(eq)
+        run_static_simulation(eq, Static, ψ; message = "No init file found. Start init calculation")
+    end 
 
     # Stage1, no bias, GS, start negative time
 
@@ -51,7 +55,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     ψ = load_ψ(eqinit_str)
 
-    run_dynamic_simulation(eq, Stage1, ψ)
+    run_dynamic_simulation(eq, Stage1, ψ; message="Stage 1 begin")
 
     # now we switch on the bias in L/R, 0 time
 
@@ -65,12 +69,12 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     ψ = load_ψ(0.0)
 
-    run_dynamic_simulation(noneq, Stage2, ψ)
+    run_dynamic_simulation(noneq, Stage2, ψ; message="Stage 2 begin")
 
     # we then switch on the tunneling b/w drain_offset
 
     if mixed
-        noneqtun = set_DPT(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR)
+        noneqtun = set_DPT_mixed(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR)
     else
         noneqtun = set_DPT(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R)
     end 
@@ -79,7 +83,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     ψ = load_ψ(t_switch)
 
-    run_dynamic_simulation(noneqtun, Stage3, ψ)
+    run_dynamic_simulation(noneqtun, Stage3, ψ; message="Stage 3 begin")
 
 
 end 

@@ -1,6 +1,7 @@
 """we completely decoupled the code logic of static simulations, it is required that one provides an initial state"""
-function run_static_simulation(sys::systems, simulation::Static, ψ::MPS)
+function run_static_simulation(sys::systems, simulation::Static, ψ::MPS; message = "Start static")
 
+    println(message)
     h = gen_hamiltonian(sys)
 
     @show h 
@@ -22,8 +23,9 @@ end
 
 """we completely decoupled the code logic of dynamic simulations, it is required that one provides an initial state"""
 
-function run_dynamic_simulation(sys::systems, simulation::Dynamic, ψ::MPS)
+function run_dynamic_simulation(sys::systems, simulation::Dynamic, ψ::MPS; message = "Start dynamic")
 
+    println(message)
     h = gen_hamiltonian(sys)
     H = MPO(h, siteinds(ψ))
 

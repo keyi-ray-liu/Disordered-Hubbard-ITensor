@@ -71,6 +71,7 @@ if test
     #dyna_pϕ()
     #GQS_wrapper()
     DPT_wrapper()
+    #dyna_dptcurrent_mix()
     #NF_wrapper()
     #dyna_EE()
     #QE_SIAM_wrapper()
