@@ -105,15 +105,22 @@ end
 function DenDenNeighbor(sys::QE_HOM, j)
 
     uppertotal = get_uppertotal(sys)
-    uppercenter = div(uppertotal, 2)
 
-    minrange = max(QESITES + 1, uppercenter - center_range(sys))
-    maxrange
+    minrange = max(QESITES + 1, ceil(true_center(sys) - center_range(sys)))
+    maxrange = min(uppertotal - QESITES, floor(true_center(sys) + center_range(sys)))
+
+    @show minrange, maxrange
 
     if j <= uppertotal
         den =  DenDenNeighbor(sys.upper, j)
 
-        coupling = [ [ center_ee(sys) / (dis(i, uppercenter, sys) + center_dis(sys)), i + upperoffset] for i in  max( 1, uppercenter - center_range(sys) ) : min( upperchain, uppercenter + center_range(sys))]
+        # here, all the sites within the range in the upper chain are interacting with the lower chain wihtin that range window
+
+        if minrange <= j <= maxrange
+            coupling = [ [ center_ee(sys) / parallel_dis(i, j, sys) , i + uppertotal] for i in  minrange:maxrange]
+
+            den = vcat(den, coupling)
+        end 
 
     else
         den =  [ [U, k + uppertotal] for (U, k) in DenDenNeighbor(sys.lower, j - uppertotal)]

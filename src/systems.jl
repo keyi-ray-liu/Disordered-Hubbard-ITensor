@@ -10,8 +10,9 @@ const EMPTY_CENTER = Dict(
     "center_ne" => 0.0,
     "center_t" => 0.0,
     "center_range" => 0,
-    "center_dis" => 1.0,
-    "center_internal_t" => 0.0
+    "center_dis" => 2.0,
+    "center_internal_t" => 0.0,
+    "center_slope" => 0.5
 )
 
 
@@ -438,14 +439,15 @@ get_systotal(sys::QE_flat_SIAM) = 1 + (legleft(sys) + legright(sys)) * (siteseac
 left(sys::QE_flat_SIAM) = legleft(sys) * (siteseach(sys) + QESITES)
 type(sys::QE_flat_SIAM) = sys.type
 
-center_ee(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_ee"]
-center_ne(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_ne"]
+center_ee(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.center_parameter["center_ee"]
+center_ne(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.center_parameter["center_ne"]
 center_t(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_t"]
 center_internal_t(sys::QE_parallel) = sys.center_parameter["center_internal_t"]
 
 center_range(sys::Union{QE_parallel, QE_HOM}) = sys.center_parameter["center_range"]
-center_dis(sys::QE_parallel) = sys.center_parameter["center_dis"]
+center_dis(sys::Union{QE_parallel, QE_HOM}) = sys.center_parameter["center_dis"]
 
+center_slope(sys::QE_HOM) = sys.center_parameter["center_slope"]
 QE_distance(sys::Union{QE_two, QE_flat_SIAM}) = sys.QE_distance
 t(sys::QE_flat_SIAM) = sys.t
 QEen(sys::Union{QE_two, QE_flat_SIAM}) = sys.QEen
@@ -541,6 +543,9 @@ function QE_determiner(key; kwargs...)
 
     elseif key == "QE_parallel"
         sys = set_QE_parallel(; kwargs...)
+
+    elseif key == "QE_HOM"
+        sys = set_QE_HOM(; kwargs...)
 
     else
         error("Unrecognized QE key")
@@ -718,6 +723,22 @@ N(sys::LSR_SIAM) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
 
 dis(i, j, sys::systems) = abs(i- j)
+
+function true_center(sys::QE_HOM) 
+    uppertotal = get_uppertotal(sys)
+    return isodd( uppertotal) ? div(uppertotal, 2) : div(uppertotal, 2) + 1/2
+end 
+
+"""this function calculate i, j distance, i in chain 1, j in chain 2. We define an 'X' shape geometry for the y direction"""
+function parallel_dis(i, j, sys::QE_HOM) 
+
+    x = abs(i - j)
+    y = center_dis(sys) + (abs(i - true_center(sys)) + abs(j - true_center(sys))) * center_slope(sys)
+
+    return sqrt(x^2 + y^2)
+end 
+
+
 qedis(i, j, sys::QE_flat_SIAM) = abs(i -j) + QE_distance(sys)
 qedis(i, j, sys::QE_two) = abs(i - j) + QE_distance(sys)
 

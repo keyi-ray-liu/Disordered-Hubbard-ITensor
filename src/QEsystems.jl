@@ -23,7 +23,7 @@ function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 
         static = set_Static(; ex=ex, output=output, sweepdim=TEdim, kwargs...)
 
         ϕ = gen_state(decoupled)
-        run_static_simulation(decoupled, static, ϕ)
+        run_static_simulation(decoupled, static, ϕ; message="QEinit")
 
         QEen = load_plsmon(output) * QEmul
 
@@ -39,7 +39,7 @@ function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 
         ψ = !product ? load_ψ(init_key) : gen_state(sys)
 
         dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=start, fin=fin*τ, kwargs...)
-        run_dynamic_simulation(sys, dynamic, ψ)
+        run_dynamic_simulation(sys, dynamic, ψ; message="QEdyna")
     else
         ψ = !product ? load_ψ(output) : gen_state(sys)
 
@@ -91,7 +91,7 @@ function QE_parallel_wrapper()
     fin = get(qe_parallel_in, "fin", 200)
 
     #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
-    run_QE("QE_parallel", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, start = start, fin=fin, center_parameter=center_parameter)
+    run_QE("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter)
     dyna_occ()
     dyna_EE()
 

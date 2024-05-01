@@ -56,6 +56,9 @@ function QECoupling(sys::QE_HOM, j)
 
     elseif j < systotal
         qe =  [ [U, k + uppertotal] for (U, k) in QECoupling(sys.lower, j - uppertotal)]
+
+    else
+        qe = [] 
     end 
 
     return qe
