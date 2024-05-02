@@ -1,7 +1,6 @@
 using DelimitedFiles
 using Glob
 using ITensors
-using ITensors.HDF5
 using ITensors: OneITensor, linkind, siteinds, tr
 using JSON3
 using LinearAlgebra
@@ -9,6 +8,7 @@ using StatsBase
 using Suppressor
 using ITensorTDVP
 using Random
+using HDF5
 
 #using DataGraphs: edge_data, vertex_data
 #using Dictionaries: Dictionary
@@ -26,11 +26,10 @@ using ITensorNetworks:
   mpo,
   random_mps,
   random_ttn,
-  relabel_sites,
   siteinds
 #using ITensorNetworks.ModelHamiltonians: ModelHamiltonians
 #using KrylovKit: eigsolve
-using NamedGraphs: named_comb_tree, rem_vertex!, add_vertex!, add_edge!, NamedGraph
+using NamedGraphs:  rem_vertex!, add_vertex!, add_edge!, NamedGraph
 using Observers: observer
 using Test: @test, @test_broken, @testset
 using ITensorUnicodePlots: @visualize
@@ -92,6 +91,10 @@ else
     elseif ARG == "EE" 
         dyna_EE()
 
+
+    elseif ARG == "mixcurrent"
+        dyna_dptcurrent_mix()
+        
     elseif ARG == "dptcurrent"
         dyna_dptcurrent()
 
