@@ -176,7 +176,8 @@ function dyna_dptcurrent_mix()
     LR = readdlm( workdir * "LR")
 
     UL, UR = Uk(1, ks, LR)
-    ULR = UL .* UR'
+    #ULR = UL .* UR'
+    ULR = UR .* UL'
 
     #@show diag(ULR)
 
