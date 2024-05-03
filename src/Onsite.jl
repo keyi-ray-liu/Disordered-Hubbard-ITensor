@@ -51,6 +51,31 @@ function Onsite(sys::QE_parallel, j)
     
 end 
 
+
+function Onsite(sys::QE_HOM, j) 
+
+    uppertotal = get_uppertotal(sys)
+    minrange = max(QESITES + 1, ceil(true_center(sys) - center_range(sys)))
+    maxrange = min(uppertotal - QESITES, floor(true_center(sys) + center_range(sys)))
+
+    @show minrange, maxrange
+
+    if j <= uppertotal
+        onsite = Onsite(sys.upper, j)
+
+        if minrange <= j <= maxrange
+            onsite += sum([ [ center_ne(sys) / parallel_dis(i, j, sys) , i + uppertotal] for i in  minrange:maxrange])
+
+        end 
+
+    else
+        onsite = Onsite(sys.lower, j - uppertotal)
+    end 
+
+    return onsite
+    
+end 
+
 function Onsite(sys::QE_flat_SIAM, chain_begin, chain_end, j)
 
     _, λ_ne, _, _, range, CN, ζ = CoulombParameters(sys)

@@ -45,6 +45,7 @@ function add_specific_int!(sys:: DPT_mixed, res)
 
                     if UNN[k, l] != 0 
                         res += U(sys) * UNN[k, l], "N", lower, "Cdag", k, "C", l
+                        res -= 1/2 *U(sys) * UNN[k, l],  "Cdag", k, "C", l
                     end 
 
                 end 

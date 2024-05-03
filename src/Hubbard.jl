@@ -19,7 +19,9 @@ function add_HubbardRepulsion!(sys::systems, res::OpSum)
 
     for j=1 :systotal
         # E-E and N-
-        res += HubbardRepulsion(sys, j), op, sitemap(sys, j)
+        if HubbardRepulsion(sys, j) != 0
+            res += HubbardRepulsion(sys, j), op, sitemap(sys, j)
+        end 
     end 
 
     return res
