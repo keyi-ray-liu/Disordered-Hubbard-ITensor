@@ -64,12 +64,15 @@ function Onsite(sys::QE_HOM, j)
         onsite = Onsite(sys.upper, j)
 
         if minrange <= j <= maxrange
-            onsite += sum([ [ center_ne(sys) / parallel_dis(i, j, sys) , i + uppertotal] for i in  minrange:maxrange])
-
+            onsite -= sum([  center_ne(sys) / parallel_dis(i, j, sys) for i in  minrange:maxrange])
         end 
 
     else
         onsite = Onsite(sys.lower, j - uppertotal)
+
+        if minrange <= j - uppertotal <= maxrange
+            onsite -= sum([  center_ne(sys) / parallel_dis(i, j - uppertotal, sys) for i in  minrange:maxrange])
+        end 
     end 
 
     return onsite

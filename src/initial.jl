@@ -117,7 +117,9 @@ function gen_state(sys::systems; QN=true, kwargs...)
 
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
     @show gen_state_str(sys)
-    ψ = randomMPS(sites, gen_state_str(sys) ; linkdims=10)
+    ψ = randomMPS(sites, gen_state_str(sys) 
+    #; linkdims=10
+    )
 
     return ψ
 

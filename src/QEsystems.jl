@@ -1,6 +1,7 @@
 
 
 function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 0, QEmul=1.0, fin=200, center_parameter = EMPTY_CENTER, kwargs...)
+
     try
         QEen = load_plsmon(output) * QEmul
         println("QE file found, QE energy = ", QEen)
@@ -81,6 +82,7 @@ function QE_parallel_wrapper()
     L = get(qe_parallel_in, "L", 20)
     N = get(qe_parallel_in, "N", div(L, 2))
     QEmul = get(qe_parallel_in, "QEmul", 1.0)
+    dp = get(qe_parallel_in, "dp", 1.0)
 
     #τ = get(qe_two_in, "timestep", 0.125)
     TEdim = get(qe_parallel_in, "TEdim", 64)
@@ -91,7 +93,7 @@ function QE_parallel_wrapper()
     fin = get(qe_parallel_in, "fin", 200)
 
     #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
-    run_QE("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter)
+    run_QE("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, dp=dp)
     dyna_occ()
     dyna_EE()
 
