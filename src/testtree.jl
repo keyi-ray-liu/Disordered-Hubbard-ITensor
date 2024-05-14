@@ -61,7 +61,24 @@ function gen_mixed(L, R, bias_L, bias_R; random=false)
 end
 
   
-gen_mixed(128, 128, 0.25, -0.25; random=false)
+#gen_mixed(128, 128, 0.25, -0.25; random=false)
+
+
+using DelimitedFiles
+
+function occ()
+
+    #occ = expect(ψ, "N")
+    occ = zeros(10)
+    open( pwd()  * "/occ", "a") do io
+        writedlm(io, [occ])
+    end 
+
+end 
+
+for _ in 1:1
+    occ()
+end 
 
 # let
 #   qn = true

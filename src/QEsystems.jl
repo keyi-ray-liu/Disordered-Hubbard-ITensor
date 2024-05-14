@@ -92,8 +92,9 @@ function QE_parallel_wrapper()
     start = get(qe_parallel_in, "start", τ)
     fin = get(qe_parallel_in, "fin", 200)
 
+    inits = get(qe_parallel_in, "inits", "1")
     #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
-    run_QE("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, dp=dp)
+    run_QE("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, dp=dp, inits=inits)
     dyna_occ()
     dyna_EE()
 

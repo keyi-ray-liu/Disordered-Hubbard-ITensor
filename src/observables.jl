@@ -91,6 +91,8 @@ function dyna_EE(; max_order=3)
 
 end 
 
+
+
 function dyna_occ(; type="Fermion")
 
     T = []

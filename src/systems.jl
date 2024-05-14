@@ -54,7 +54,7 @@ function set_Static(;
     sweepcnt= 60,
     sweepdim =64, 
     noise=true, 
-    cutoff=1e-9, 
+    cutoff=1e-12, 
     krylovdim=8, 
     weight=10,
     output ="wf",
@@ -93,7 +93,7 @@ function set_Dynamic(;
     τ = 0.1,
     start = 0.1,
     fin=20.0,
-    TEcutoff=1E-9,
+    TEcutoff=1E-12,
     TEdim=64,
     nsite=2,
     kwargs...

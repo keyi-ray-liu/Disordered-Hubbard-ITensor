@@ -42,7 +42,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     if !check_ψ(eqinit_str)
         
-        Static = set_Static(; output=eqinit_str, sweepdim=get(kwargs, :TEdim, 64) * 2, sweepcnt=100, cutoff=1E-11)
+        Static = set_Static(; output=eqinit_str, sweepdim=get(kwargs, :TEdim, 64) , sweepcnt=100, cutoff=1E-11)
 
         # GS calculation
         ψ = gen_state(eq)
@@ -65,7 +65,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
         noneq = set_DPT(;U=U, L=L, R=R, t_doubledot=0.0,bias_L=bias_L, bias_R=bias_R)
     end 
 
-    Stage2 = set_Dynamic(;τ=τ, start=τ, fin=t_switch , kwargs...)
+    Stage2 = set_Dynamic(;τ=τ, start=τ, fin=t_switch , TEcutoff=1E-11, kwargs...)
 
     ψ = load_ψ(0.0)
 
@@ -79,7 +79,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
         noneqtun = set_DPT(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R)
     end 
 
-    Stage3 = set_Dynamic(;τ=τ, start=t_switch +τ, fin=t_switch * 2, kwargs...)
+    Stage3 = set_Dynamic(;τ=τ, start=t_switch +τ, TEcutoff=1E-11, fin=t_switch * 2, kwargs...)
 
     ψ = load_ψ(t_switch)
 

@@ -16,6 +16,8 @@ function add_specific_int!(sys:: DPT_mixed, res)
 
     println("Adding mixed int")
     lower = get_systotal(sys) - 1
+
+    
     #LR connection 
     UL, UR = Uk(1, sys)
     ULR = UL .* UR'
