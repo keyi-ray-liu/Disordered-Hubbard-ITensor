@@ -1,6 +1,6 @@
 
 
-function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 0, QEmul=1.0, fin=200, center_parameter = EMPTY_CENTER, kwargs...)
+function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 0, QEmul=1.0, fin=200, center_parameter = EMPTY_CENTER, save_every=false, kwargs...)
 
     try
         QEen = load_plsmon(output) * QEmul
@@ -35,12 +35,13 @@ function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 
 
     if staticex == 0
 
+        obs = [dyna_EE, dyna_occ, dyna_corr]
         start = get(kwargs, :start, τ)
         init_key = start == τ ? output : start - τ
         ψ = !product ? load_ψ(init_key) : gen_state(sys)
 
         dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=start, fin=fin*τ, kwargs...)
-        run_dynamic_simulation(sys, dynamic, ψ; message="QEdyna")
+        run_dynamic_simulation(sys, dynamic, ψ; message="QEdyna", save_every=save_every, obs=obs)
     else
         ψ = !product ? load_ψ(output) : gen_state(sys)
 

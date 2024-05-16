@@ -131,7 +131,7 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
 end 
 
 
-function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic)
+function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=Function[])
 
     τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
 
@@ -145,12 +145,28 @@ function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic)
         #println( "inner", abs(inner(ψ1, ψ)))
         ψ = ψ1
 
+        # we might need to calculate observables on the go
+        for ob in obs
+            ob(;ψ=ψ, t=dt)
+        end 
 
-        wf = h5open( getworkdir() * "tTDVP" * string(dt) * ".h5", "w")
+        if save_every
+            wf = h5open( getworkdir() * "tTDVP" * string(dt) * ".h5", "w")
+        else
+            wf = h5open( getworkdir() * "tTDVPlaststate.h5", "w")
+
+            open(getworkdir() * "tTDVPlasttime", "w") do io
+                writedlm(io, dt)
+            end 
+
+        end 
+
         write(wf, "psi1", ψ)
         close(wf)
 
     end 
+
+    return ψ
 
 end 
 

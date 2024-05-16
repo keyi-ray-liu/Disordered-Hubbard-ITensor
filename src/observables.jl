@@ -48,129 +48,174 @@ end
 
 
 
-function dyna_EE(; max_order=3)
+function dyna_EE(; max_order=3, ψ=nothing, kwargs...)
 
-    T = []
-    bonds = []
-    SvN = []
-    SRenyi = [[] for _ in 2:max_order]
+
     #sites = []
     workdir = getworkdir()
 
-    for file in get_dyna_files()
+    if isnothing(ψ)
+        T = []
+        bonds = []
+        SvN = []
+        SRenyi = [[] for _ in 2:max_order]
 
-        ψ = load_ψ(file)
-        t = get_time(file)
+        for file in get_dyna_files()
 
-        println("Calculating EE, $t")
-        ee, bond = scan_ee(ψ, max_order)
-        
-        print(ee)
-        vN = ee[:, 1]
+            ψ = load_ψ(file)
+            t = get_time(file)
+
+            println("Calculating EE, $t")
+            ee, bond = scan_ee(ψ, max_order)
+            
+            print(ee)
+            vN = ee[:, 1]
+
+            for (i, order) in enumerate(2:max_order)
+                Renyi = ee[:, order]
+                append!(SRenyi[i], [Renyi])
+            end 
+            
+            append!(T, t)
+            append!(SvN, [vN])
+            append!(bonds, [bond])
+            #append!(sites, [site])
+
+        end 
+
+        writedlm(workdir * "times", T)
+        writedlm(workdir * "SvN", SvN)
+        writedlm(workdir * "bonds", bonds)
 
         for (i, order) in enumerate(2:max_order)
-            Renyi = ee[:, order]
-            append!(SRenyi[i], [Renyi])
+            writedlm(workdir * "SRenyi" * string(order), SRenyi[i])
         end 
-        
-        append!(T, t)
-        append!(SvN, [vN])
-        append!(bonds, [bond])
-        #append!(sites, [site])
+        #writedlm(workdir * "sites", sites)
+
+    else
+        ee, _ = scan_ee(ψ, max_order)
+
+        open(workdir * "SvN", "a") do io
+            writedlm(io, [ee[:,1]])
+        end 
+
+        for order in 2:max_order
+            open(workdir * "SRenyi" * string(order), "a") do io
+                writedlm(io, [ee[:,order]])
+            end 
+        end 
 
     end 
-
-    writedlm(workdir * "times", T)
-    writedlm(workdir * "SvN", SvN)
-    writedlm(workdir * "bonds", bonds)
-
-    for (i, order) in enumerate(2:max_order)
-        writedlm(workdir * "SRenyi" * string(order), SRenyi[i])
-    end 
-    #writedlm(workdir * "sites", sites)
 
 end 
 
 
 
-function dyna_occ(; type="Fermion")
+function dyna_occ(; type="Fermion", ψ=nothing, kwargs...)
 
-    T = []
     
     workdir = getworkdir()
 
-    if type == "Electron"
-        occup = []
-        occdn = []
-    else
-        occs =[]
-    end 
+    if isnothing(ψ)
+        if type == "Electron"
+            occup = []
+            occdn = []
+        else
+            occs =[]
+        end 
 
-    for file in get_dyna_files()
+        T = []
 
-        ψ = load_ψ(file)
-        t = get_time(file)
-        append!(T, t)
+        for file in get_dyna_files()
 
-        println("Calculating occ, $t")
+            ψ = load_ψ(file)
+            t = get_time(file)
+            append!(T, t)
+
+            println("Calculating occ, $t")
+
+            if type == "Electron"
+                append!(occup, [expect(ψ, "Nup")])
+                append!(occdn, [expect(ψ, "Ndn")])
+        
+            else
+                @show occ = expect(ψ, "N")
+                append!(occs, [occ])
+            end 
+
+        end 
 
         if type == "Electron"
-            append!(occup, [expect(ψ, "Nup")])
-            append!(occdn, [expect(ψ, "Ndn")])
+            writedlm(workdir * "occup", occup)   
+            writedlm(workdir * "occdn", occdn)   
     
         else
-            @show occ = expect(ψ, "N")
-            append!(occs, [occ])
+            writedlm(workdir * "occ", occs)   
+        end 
+
+        writedlm(workdir* "times", T)
+
+    else
+        open(workdir * "occ", "a") do io
+            writedlm( io, [expect(ψ, "N")])
         end 
 
     end 
 
-    if type == "Electron"
-        writedlm(workdir * "occup", occup)   
-        writedlm(workdir * "occdn", occdn)   
-  
-    else
-        writedlm(workdir * "occ", occs)   
-    end 
-
-    writedlm(workdir* "times", T)
-
 end 
 
-function dyna_dptcurrent()
+function dyna_dptcurrent(; ψ=nothing, kwargs...)
 
-    T = []
-    currentLR = []
+    function work(ψ)
+        L = div(length(ψ), 2) - 1
+        corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L+1)
+        return 2 * imag(corr[L, L + 1])
+    end 
 
     workdir = getworkdir()
 
-    for file in get_dyna_files()
+    if isnothing(ψ)
+        T = []
+        currentLR = []
 
-        ψ = load_ψ(file)
-        t = get_time(file)
-        append!(T, t)
+        for file in get_dyna_files()
 
-        println("Calculating DPT current, $t")
+            ψ = load_ψ(file)
+            t = get_time(file)
+            append!(T, t)
 
-        L = div(length(ψ), 2) - 1
-        corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L+1)
+            println("Calculating DPT current, $t")
 
+            current = work(ψ)
+            @show append!(currentLR, current)
 
-        @show append!(currentLR, 2 * imag(corr[L, L + 1]))
+        end 
 
-        #println(imag(corr))
+        writedlm(workdir* "times", T)
+        writedlm(workdir* "currentLR", currentLR)
+    else
+
+        current = work(ψ)
+        open( workdir * "currentLR", "a") do io
+            writedlm(io, current)
+        end 
+
     end 
-
-    writedlm(workdir* "times", T)
-    writedlm(workdir* "currentLR", currentLR)
 
 
 end 
 
-function dyna_dptcurrent_mix()
+function dyna_dptcurrent_mix(; ψ=nothing, kwargs...)
 
-    T = []
-    currentLR = []
+    function work(ψ, ULR)
+        # except the DD sites
+        L = length(ψ) - 2
+        corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L)
+        
+        @assert size(ULR) == size(corr)
+        return 2 * imag( sum(ULR .* corr))
+    end 
+
 
     workdir = getworkdir()
 
@@ -181,35 +226,82 @@ function dyna_dptcurrent_mix()
     #ULR = UL .* UR'
     ULR = UR .* UL'
 
-    #@show diag(ULR)
+    if isnothing(ψ)
+        T = []
+        currentLR = []
 
-    for file in get_dyna_files()
+        #@show diag(ULR)
 
-        ψ = load_ψ(file)
-        t = get_time(file)
-        append!(T, t)
+        for file in get_dyna_files()
 
-        println("Calculating DPT mix current, $t")
+            ψ = load_ψ(file)
+            t = get_time(file)
+            append!(T, t)
 
-        # except the DD sites
-        L = length(ψ) - 2
+            println("Calculating DPT mix current, $t")
 
-        corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L)
+            current = work(ψ, ULR)
+            append!(currentLR, current)
+
+        end 
+
+        writedlm(workdir* "times", T)
+        writedlm(workdir* "currentLR", currentLR)
+    else
+
+        current = work(ψ, ULR)
+        open( workdir * "currentLR", "a") do io
+            writedlm(io, current)
+        end 
         
-        @assert size(ULR) == size(corr)
-        
-
-        @show current = 2 * imag( sum(ULR .* corr))
-        append!(currentLR, current)
-
     end 
-
-    writedlm(workdir* "times", T)
-    writedlm(workdir* "currentLR", currentLR)
 
 
 end 
 
+
+function dyna_corr(; ψ=nothing, op1="Cdag", op2="C", t=nothing)
+
+    function work(ψ)
+
+        corr = correlation_matrix(ψ, op1, op2)
+        return corr
+    end 
+
+    workdir = getworkdir()
+    outfile = workdir * "corr.h5"
+
+    if isnothing(ψ)
+
+        for file in get_dyna_files()
+
+            ψ = load_ψ(file)
+            t = get_time(file)
+
+            println("Calculating corr, $op1, $op2, $t")
+
+            corr = work(ψ)
+            h5open(outfile, isfile( outfile) ? "r+" : "w") do io
+                write(io, string(t), corr)
+            end 
+
+        
+
+        end 
+
+        writedlm(workdir* "times", T)
+
+    else
+        
+        corr = work(ψ)
+        h5open(outfile, isfile( outfile) ? "r+" : "w") do io
+            write(io, string(t), corr)
+        end 
+
+    end 
+
+
+end 
 
 function dyna_LSRcurrent()
 

@@ -25,7 +25,7 @@ end
 
 
 """worker function that runs DPT calculations"""
-function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, random=false, kwargs...)
+function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, random=false, save_every=false,kwargs...)
 
 
     eqinit_str = "EqInit"
@@ -34,15 +34,19 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
     if mixed
         energies, ks, LR = gen_mixed(L, R, bias_L, bias_R; random=random)
         eq = set_DPT_mixed(; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, energies=energies, ks=ks, LR=LR)
+
+        obs = [dyna_EE, dyna_occ, dyna_dptcurrent_mix]
     else
         eq = set_DPT(;U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0)
+
+        obs = [dyna_EE, dyna_occ, dyna_dptcurrent]
     end 
 
     # we make sure the sweepdim and TEdim match
 
     if !check_ψ(eqinit_str)
         
-        Static = set_Static(; output=eqinit_str, sweepdim=get(kwargs, :TEdim, 64) , sweepcnt=100, cutoff=1E-11)
+        Static = set_Static(; output=eqinit_str, sweepdim=get(kwargs, :TEdim, 64) , sweepcnt=80)
 
         # GS calculation
         ψ = gen_state(eq)
@@ -53,9 +57,9 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     Stage1 = set_Dynamic(;τ=τ, start= - 4.0 + τ, fin=0, kwargs...)
 
-    ψ = load_ψ(eqinit_str)
+    ψ0 = load_ψ(eqinit_str)
 
-    run_dynamic_simulation(eq, Stage1, ψ; message="Stage1")
+    ψ1 = run_dynamic_simulation(eq, Stage1, ψ0; message="Stage1", save_every=save_every, obs=obs)
 
     # now we switch on the bias in L/R, 0 time
 
@@ -65,11 +69,10 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
         noneq = set_DPT(;U=U, L=L, R=R, t_doubledot=0.0,bias_L=bias_L, bias_R=bias_R)
     end 
 
-    Stage2 = set_Dynamic(;τ=τ, start=τ, fin=t_switch , TEcutoff=1E-11, kwargs...)
+    Stage2 = set_Dynamic(;τ=τ, start=τ, fin=t_switch , kwargs...)
+    #ψ = load_ψ(0.0)
 
-    ψ = load_ψ(0.0)
-
-    run_dynamic_simulation(noneq, Stage2, ψ; message="Stage2")
+    ψ2 = run_dynamic_simulation(noneq, Stage2, ψ1; message="Stage2", save_every=save_every, obs=obs)
 
     # we then switch on the tunneling b/w drain_offset
 
@@ -79,13 +82,13 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
         noneqtun = set_DPT(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R)
     end 
 
-    Stage3 = set_Dynamic(;τ=τ, start=t_switch +τ, TEcutoff=1E-11, fin=t_switch * 2, kwargs...)
+    Stage3 = set_Dynamic(;τ=τ, start=t_switch +τ, fin=t_switch * 2, kwargs...)
 
-    ψ = load_ψ(t_switch)
+    #ψ = load_ψ(t_switch)
 
-    run_dynamic_simulation(noneqtun, Stage3, ψ; message="Stage3")
+     _ = run_dynamic_simulation(noneqtun, Stage3, ψ2; message="Stage3",  save_every=save_every, obs=obs)
 
-
+    return nothing
 end 
 
 
@@ -107,13 +110,13 @@ function DPT_wrapper()
 
     run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, random=random)
 
-    dyna_occ()
-    dyna_EE()
+    # dyna_occ()
+    # dyna_EE()
 
-    if mixed
-        dyna_dptcurrent_mix()
-    else
-        dyna_dptcurrent()
-    end 
+    # if mixed
+    #     dyna_dptcurrent_mix()
+    # else
+    #     dyna_dptcurrent()
+    # end 
 
 end 
