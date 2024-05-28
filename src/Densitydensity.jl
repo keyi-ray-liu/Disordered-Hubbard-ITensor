@@ -157,6 +157,20 @@ function DenDenNeighbor(sys::DPT, j::Int)
 end 
 
 
+function DenDenNeighbor(sys::DPT_mixed, j::Int)
+
+    # if center region is not under mixed basis, they are still interacting spatially 
+    if !includeU(sys)
+        den = DenDenNeighbor(sys.dpt, j)
+    else
+        den = []
+    end 
+
+    return den
+end 
+
+
+
 
 function add_DensityDensity!(sys::systems, res::OpSum)
     

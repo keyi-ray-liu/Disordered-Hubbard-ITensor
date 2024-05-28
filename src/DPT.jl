@@ -1,7 +1,13 @@
 """get mixed basis reservoir parameters, the energies returned are at 0 bias, however the order is done at finite bias"""
-function gen_mixed(L, R, bias_L, bias_R; random=false)
+function gen_mixed(L, R, bias_L, bias_R; random=false, includeU=true, couple_range=2)
 
     unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
+
+    if !includeU
+        L -= couple_range
+        R -= couple_range
+    end 
+
     L_val = [ (2 *  cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
     R_val = [ (2 *  cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
 
@@ -25,17 +31,23 @@ end
 
 
 """worker function that runs DPT calculations"""
-function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, random=false, save_every=false,kwargs...)
+function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, save_every=false,  kwargs...)
 
 
     eqinit_str = "EqInit"
+
+    includeU = get(kwargs, :includeU, true)
+    couple_range = get(kwargs, :couple_range, 2)
+    random = get(kwargs, :random, false)
+
     # we first run a calculation with no bias on the LR, 
 
     if mixed
-        energies, ks, LR = gen_mixed(L, R, bias_L, bias_R; random=random)
-        eq = set_DPT_mixed(; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, energies=energies, ks=ks, LR=LR)
+        energies, ks, LR = gen_mixed(L, R, bias_L, bias_R; random=random, includeU=includeU, couple_range = couple_range)
+        eq = set_DPT_mixed(; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range)
 
-        obs = [dyna_EE, dyna_occ, dyna_dptcurrent_mix]
+        current_obs = includeU ? dyna_dptcurrent_mix : dyna_dptcurrent
+        obs = [dyna_EE, dyna_occ, current_obs]
     else
         eq = set_DPT(;U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0)
 
@@ -64,7 +76,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
     # now we switch on the bias in L/R, 0 time
 
     if mixed
-        noneq = set_DPT_mixed(;U=U, L=L, R=R, t_doubledot=0.0, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR)
+        noneq = set_DPT_mixed(;U=U, L=L, R=R, t_doubledot=0.0, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range)
     else
         noneq = set_DPT(;U=U, L=L, R=R, t_doubledot=0.0,bias_L=bias_L, bias_R=bias_R)
     end 
@@ -77,7 +89,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
     # we then switch on the tunneling b/w drain_offset
 
     if mixed
-        noneqtun = set_DPT_mixed(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR)
+        noneqtun = set_DPT_mixed(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range)
     else
         noneqtun = set_DPT(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R)
     end 
@@ -106,9 +118,9 @@ function DPT_wrapper()
     bias_LR = get(dpt_in, "bias_LR", BIAS_LR)
     mixed = get(dpt_in, "mixed", false)
     random = get(dpt_in, "random", false)
-    
+    includeU = get(dpt_in, "includeU", true)
 
-    run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, random=random)
+    run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, random=random, includeU=includeU)
 
     # dyna_occ()
     # dyna_EE()

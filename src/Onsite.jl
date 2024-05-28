@@ -195,23 +195,54 @@ end
 # Onsite interactions for mixed,
 function Onsite(sys::DPT_mixed, j::Int)
 
-    if j <= L(sys) + R(sys)
-        
-        #  since the energy is pre-bias energy, we need to bias the system
-        bias = LR(sys)[j] > 0 ? bias_L(sys) : bias_R(sys)
-        onsite = energies(sys)[j] + bias
-    
-    
-    # elseif j == L(sys) + 1
-    elseif j == L(sys) + R(sys) + 1
+    # 'true' reservoir L, regardless of contact region
+
+    # lower
+    # we do these two first in case we move the dd sites around
+    if j == dd_lower(sys) 
         onsite = bias_doubledot(sys)[1]
         # offset from int term
         onsite -= U(sys) *  couple_range(sys)
 
     #upper
-    #elseif j == L(sys) + 2
-    elseif j == L(sys) + R(sys) + 2
+    elseif j == dd_lower(sys) + 1
         onsite = bias_doubledot(sys)[2]
+
+    elseif j <= L(sys) - couple_range(sys)
+        bias = LR(sys)[j] > 0 ? bias_L(sys) : bias_R(sys)
+        onsite = energies(sys)[j] + bias
+
+    # left contact region
+    elseif j <= L(sys)
+
+        if !includeU(sys)
+            onsite = bias_L(sys) - 1/2 * U(sys)
+
+        else
+            bias = LR(sys)[j] > 0 ? bias_L(sys) : bias_R(sys)
+            onsite = energies(sys)[j] + bias
+        end 
+    
+    # right contact region
+    elseif j <= L(sys) + couple_range(sys)
+
+        if !includeU(sys)
+            onsite = bias_R(sys) - 1/2 * U(sys)
+
+        else
+            bias = LR(sys)[j] > 0 ? bias_L(sys) : bias_R(sys)
+            onsite = energies(sys)[j] + bias
+        end 
+
+    else
+        # we need to shift j position, because without center LR has length 2 * L - 2 * couple_range
+        if !includeU(sys)
+            j -= 2 * couple_range(sys)
+        end 
+
+        bias = LR(sys)[j ] > 0 ? bias_L(sys) : bias_R(sys)
+        onsite = energies(sys)[j] + bias
+
     end 
 
     return onsite

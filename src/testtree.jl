@@ -1,7 +1,6 @@
 using DelimitedFiles
 using Glob
 using ITensors
-using ITensors.HDF5
 using ITensors: OneITensor, linkind, siteinds, tr
 using JSON3
 using LinearAlgebra
@@ -10,30 +9,30 @@ using Suppressor
 using ITensorTDVP
 using Random
 
-#using DataGraphs: edge_data, vertex_data
-#using Dictionaries: Dictionary
-using Graphs: nv, vertices, edges, src, dst
-#using ITensors: ITensors
-#using ITensors.ITensorMPS: ITensorMPS
-using ITensorNetworks:
-  ITensorNetworks,
-  OpSum,
-  ttn,
-  apply,
-  dmrg,
-  inner,
-  linkdims,
-  mpo,
-  random_mps,
-  random_ttn,
-  relabel_sites,
-  siteinds
-#using ITensorNetworks.ModelHamiltonians: ModelHamiltonians
-#using KrylovKit: eigsolve
-using NamedGraphs: named_comb_tree, rem_vertex!, add_vertex!, add_edge!, NamedGraph
-using Observers: observer
-using Test: @test, @test_broken, @testset
-using ITensorUnicodePlots: @visualize
+# #using DataGraphs: edge_data, vertex_data
+# #using Dictionaries: Dictionary
+# using Graphs: nv, vertices, edges, src, dst
+# #using ITensors: ITensors
+# #using ITensors.ITensorMPS: ITensorMPS
+# using ITensorNetworks:
+#   ITensorNetworks,
+#   OpSum,
+#   ttn,
+#   apply,
+#   dmrg,
+#   inner,
+#   linkdims,
+#   mpo,
+#   random_mps,
+#   random_ttn,
+#   relabel_sites,
+#   siteinds
+# #using ITensorNetworks.ModelHamiltonians: ModelHamiltonians
+# #using KrylovKit: eigsolve
+# using NamedGraphs: named_comb_tree, rem_vertex!, add_vertex!, add_edge!, NamedGraph
+# using Observers: observer
+# using Test: @test, @test_broken, @testset
+# using ITensorUnicodePlots: @visualize
 
 
 
@@ -41,44 +40,52 @@ using ITensorUnicodePlots: @visualize
 # https://github.com/mtfishman/ITensorNetworks.jl/blob/v0.6.0/test/test_treetensornetworks/test_solvers/test_dmrg.jl
 #https://github.com/mtfishman/NamedGraphs.jl
 
-function gen_mixed(L, R, bias_L, bias_R; random=false)
+function get_seff(ee)
+    log.(  (sum( exp.( 3 * ee) , dims=1) / (size(ee)[1] -1 )).^ 1/3)
+end 
 
-    unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
-    L_val = [ (2 *  cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
-    R_val = [ (2 *  cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
+dims = 100
+bd = 128
+ee = ones(dims) * 128/ exp(1)
 
-    if random
-        result = shuffle( vcat(L_val, R_val))
-    else
-        result = sort( vcat(L_val, R_val), rev=true )
-    end
+get_seff(ee)
 
-    energies, ks, LR= unzip(result)
-    energies -= LR * bias_L
+# function gen_mixed(L, R, bias_L, bias_R; random=false)
+
+#     unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
+#     L_val = [ (2 *  cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
+#     R_val = [ (2 *  cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
+
+#     if random
+#         result = shuffle( vcat(L_val, R_val))
+#     else
+#         result = sort( vcat(L_val, R_val), rev=true )
+#     end
+
+#     energies, ks, LR= unzip(result)
+#     energies -= LR * bias_L
     
-    @show ks
-    @show energies
-end
+#     @show ks
+#     @show energies
+# end
 
   
-#gen_mixed(128, 128, 0.25, -0.25; random=false)
+# #gen_mixed(128, 128, 0.25, -0.25; random=false)
 
 
-using DelimitedFiles
+# function occ()
 
-function occ()
+#     #occ = expect(ψ, "N")
+#     occ = zeros(10)
+#     open( pwd()  * "/occ", "a") do io
+#         writedlm(io, [occ])
+#     end 
 
-    #occ = expect(ψ, "N")
-    occ = zeros(10)
-    open( pwd()  * "/occ", "a") do io
-        writedlm(io, [occ])
-    end 
+# end 
 
-end 
-
-for _ in 1:1
-    occ()
-end 
+# for _ in 1:1
+#     occ()
+# end 
 
 # let
 #   qn = true

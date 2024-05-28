@@ -133,14 +133,19 @@ function HoppingNeighbor(sys::DPT, j::Int)
 
 end 
 
-# no hopping except DD
+# no hopping except DD and center region (if applicable)
 function HoppingNeighbor(sys::DPT_mixed, j::Int)
 
-    if j == L(sys) + R(sys) + 1
+    if j == dd_lower(sys)
         hop = [[t_doubledot(sys), j + 1]]
 
     else
-        hop = []
+
+        if !includeU(sys) && L(sys) - couple_range(sys) < j < L(sys) + couple_range(sys)
+            hop = [[t_reservoir(sys), j + 1]]
+        else
+            hop = []
+        end 
     end 
 
     return hop

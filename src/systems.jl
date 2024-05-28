@@ -626,6 +626,7 @@ struct DPT_mixed <: systems
     energies :: Vector
     ks :: Vector
     LR :: Vector
+    includeU :: Bool
     #U :: Matrix
    # w :: Vector
 end 
@@ -634,6 +635,7 @@ function set_DPT_mixed(;
     energies = [],
     ks = [],
     LR = [],
+    includeU = false,
     kwargs...
 )
     dpt = set_DPT(;kwargs...)
@@ -642,7 +644,8 @@ function set_DPT_mixed(;
         dpt,
         energies,
         ks,
-        LR
+        LR,
+        includeU
        # U,
        # w
     )
@@ -664,6 +667,11 @@ contact_t(sys::DPT_mixed) = contact_t(sys.dpt)
 get_systotal(sys::DPT_mixed) = 2 + L(sys) + R(sys)
 N(sys::DPT_mixed) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
+
+dd_lower(sys::Union{DPT_mixed, DPT}) = L(sys) + R(sys) + 1
+LR_site_offset(sys::DPT_mixed) = 2 * couple_range(sys)
+
+includeU(sys::DPT_mixed) = sys.includeU
 energies(sys::DPT_mixed) = sys.energies
 ks(sys::DPT_mixed) = sys.ks
 LR(sys::DPT_mixed) = sys.LR
