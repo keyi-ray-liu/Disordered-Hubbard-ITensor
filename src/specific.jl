@@ -23,12 +23,12 @@ function add_specific_int!(sys:: DPT_mixed, res)
         UL, UR = Uk(1, sys)
         ULR = UL .* UR'
 
-        for k = 1:L(sys) + R(sys)
-            for l =1:L(sys) + R(sys)
+        for (k_mix, k_actual) in enumerate(union(L_begin(sys): L_end(sys) , R_begin(sys) : R_end(sys)))
+            for (l_mix, l_actual) in enumerate(union(L_begin(sys): L_end(sys) , R_begin(sys) : R_end(sys)))
 
-                if ULR[k, l] != 0 
-                    res += ULR[k, l], "Cdag", k, "C", l
-                    res += ULR[k, l], "Cdag", l, "C", k
+                if ULR[k_mix, l_mix] != 0 
+                    res += ULR[k_mix, l_mix], "Cdag", k_actual, "C", l_actual
+                    res += ULR[k_mix, l_mix], "Cdag", l_actual, "C", k_actual
                 end 
 
             end 
@@ -45,12 +45,12 @@ function add_specific_int!(sys:: DPT_mixed, res)
 
 
             if U(sys) != 0
-                for k = 1:L(sys) + R(sys)
-                    for l =1:L(sys) + R(sys)
+                for (k_mix, k_actual) in enumerate(union(L_begin(sys): L_end(sys) , R_begin(sys) : R_end(sys)))
+                    for (l_mix, l_actual) in enumerate(union(L_begin(sys): L_end(sys) , R_begin(sys) : R_end(sys)))
 
-                        if UNN[k, l] != 0 
-                            res += U(sys) * UNN[k, l], "N", dd_lower(sys), "Cdag", k, "C", l
-                            res -= 1/2 *U(sys) * UNN[k, l],  "Cdag", k, "C", l
+                        if UNN[k_mix, l_mix] != 0 
+                            res += U(sys) * UNN[k_mix, l_mix], "N", dd_lower(sys), "Cdag", k_actual, "C", l_actual
+                            res -= 1/2 *U(sys) * UNN[k_mix, l_mix],  "Cdag", k_actual, "C", l_actual
                         end 
 
                     end 
@@ -61,20 +61,19 @@ function add_specific_int!(sys:: DPT_mixed, res)
     else
 
         # connection to coupled site
-        UL, UR = Uk(couple_range(sys), sys)
+        #UL, UR = Uk(couple_range(sys), sys)
+        UL, UR = Uk(1, sys)
 
         # we separate the cases as L, R true indices can be offset due to the presence of the middle section
-        for k in union(1:L(sys) - couple_range(sys) , L(sys) + couple_range(sys) + 1 : L(sys) + R(sys))
+        for (k_mix, k_actual) in enumerate(union(L_begin(sys): L_contact(sys) - 1 , R_contact(sys) + 1 : R_end(sys)))
             
-            k_mix = k > L(sys) ? k - LR_site_offset(sys) : k
-
             if UL[k_mix] != 0
-                res += UL[k_mix] * t_reservoir(sys), "Cdag", k, "C", L(sys) - couple_range(sys)
-                res += UL[k_mix] * t_reservoir(sys), "Cdag", L(sys) - couple_range(sys), "C", k
+                res += UL[k_mix] * t_reservoir(sys), "Cdag", k_actual, "C", L_contact(sys)
+                res += UL[k_mix] * t_reservoir(sys), "Cdag", L_contact(sys), "C", k_actual
 
             elseif UR[k_mix] != 0
-                res += UR[k_mix] * t_reservoir(sys), "Cdag", k, "C", L(sys) + couple_range(sys)
-                res += UR[k_mix] * t_reservoir(sys), "Cdag", L(sys) + couple_range(sys), "C", k
+                res += UR[k_mix] * t_reservoir(sys), "Cdag", k_actual, "C", R_contact(sys)
+                res += UR[k_mix] * t_reservoir(sys), "Cdag", R_contact(sys), "C", k_actual
             end 
 
         end 

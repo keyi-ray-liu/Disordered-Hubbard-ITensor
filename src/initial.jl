@@ -3,7 +3,26 @@ gen_state_str(sys::systems) = shuffle([ get_type_dict(type(sys))[i] for i= 1:4 f
 gen_state_str(sys::QE_two) = vcat(QE_str(sys)[1], gen_state_str(sys.chain_only), QE_str(sys)[2])
 
 
-gen_state_str(sys::DPT) = vcat(shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]]),  shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]]), ["Occ", "Emp"])
+function gen_state_str(sys::DPT) 
+    Lres = shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+    Rres = shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+
+    L = []
+    M = []
+    R = []
+
+    if dd_position(sys) == "L"
+        L = ["Occ", "Emp"]
+
+    elseif dd_position(sys) == "M"
+        M = ["Occ", "Emp"]
+
+    else
+        R = ["Occ", "Emp"]
+    end 
+
+    return vcat(L, Lres, M, Rres, R)
+end 
 
 gen_state_str(sys::DPT_mixed) = gen_state_str(sys.dpt)
 

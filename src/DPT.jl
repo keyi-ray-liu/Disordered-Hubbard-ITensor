@@ -11,6 +11,7 @@ function gen_mixed(L, R, bias_L, bias_R; random=false, includeU=true, couple_ran
     L_val = [ (2 *  cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
     R_val = [ (2 *  cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
 
+
     if random
         result = shuffle( vcat(L_val, R_val))
     else
@@ -119,8 +120,9 @@ function DPT_wrapper()
     mixed = get(dpt_in, "mixed", false)
     random = get(dpt_in, "random", false)
     includeU = get(dpt_in, "includeU", true)
+    dd_position = get(dpt_in, "dd_position", "R")
 
-    run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, random=random, includeU=includeU)
+    run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, random=random, includeU=includeU, dd_position=dd_position)
 
     # dyna_occ()
     # dyna_EE()

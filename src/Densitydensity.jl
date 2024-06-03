@@ -143,11 +143,11 @@ DenDenNeighbor(sys::GQS, j::Int) = DenDenNeighbor(sys.chain_only, j)
 function DenDenNeighbor(sys::DPT, j::Int)
 
     # if j == L(sys) + 1
-    if j == L(sys) + R(sys) + 1
+    if j == dd_lower(sys)
 
         #den =  vcat( [ [U(sys), j - k] for k in 1:couple_range(sys)], [[U(sys), j + 1 + k] for k in 1:couple_range(sys)])
 
-        den =  vcat( [ [U(sys), L(sys) + 1 - k] for k in 1:couple_range(sys)], [[U(sys), L(sys) + k] for k in 1:couple_range(sys)])
+        den =  vcat( [ [U(sys), k] for k in L_contact(sys):L_end(sys)], [[U(sys), k] for k in R_begin(sys):R_contact(sys)])
     else
         den = []
     end 

@@ -38,7 +38,7 @@ function run_dynamic_simulation(sys::systems, simulation::Dynamic, ψ::MPS; mess
 
     saveham(message, h)
 
-    ψ = time_evolve(H, ψ, simulation; save_every=save_every, obs=obs)
+    ψ = time_evolve(H, ψ, simulation; save_every=save_every, obs=obs, sys=sys)
 
     return ψ
 

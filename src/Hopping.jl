@@ -119,11 +119,14 @@ function HoppingNeighbor(sys::DPT, j::Int)
     # elseif j == L(sys) + 1
     #     hop = [[t_doubledot(sys), j + 1]]
 
-    if j < L(sys) + R(sys)
-        hop = [[t_reservoir(sys), j + 1]]
+    if L_begin(sys) <= j < L_end(sys) || R_begin(sys) <= j < R_end(sys)
+        @show hop = [[t_reservoir(sys), j + 1]]
 
-    elseif j == L(sys) + R(sys) + 1
-        hop = [[t_doubledot(sys), j + 1]]
+    elseif j == L_end(sys)
+        @show hop =  [[t_reservoir(sys), R_begin(sys)]]
+
+    elseif j == dd_lower(sys)
+        @show hop = [[t_doubledot(sys), j + 1]]
 
     else
         hop = []
@@ -140,13 +143,31 @@ function HoppingNeighbor(sys::DPT_mixed, j::Int)
         hop = [[t_doubledot(sys), j + 1]]
 
     else
+        # we connect within the spatial region
+        if !includeU(sys) 
+            
+            # we connect within L
+            if L_end(sys) - couple_range(sys) < j < L_end(sys)
+                hop = [[t_reservoir(sys), j + 1]]
+            
+            # we connect within R
+            elseif R_begin(sys) <= j < R_begin(sys) + couple_range(sys) - 1
+                hop  = [[t_reservoir(sys), j + 1]]
 
-        if !includeU(sys) && L(sys) - couple_range(sys) < j < L(sys) + couple_range(sys)
-            hop = [[t_reservoir(sys), j + 1]]
+            # we connect LR
+            elseif j == L_end(sys)
+                hop =  [[t_reservoir(sys), R_begin(sys)]]
+
+            else
+                hop = []
+            end 
+
         else
             hop = []
         end 
     end 
+
+    
 
     return hop
 

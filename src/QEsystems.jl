@@ -37,7 +37,7 @@ function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 
 
         obs = [dyna_EE, dyna_occ, dyna_corr]
         start = get(kwargs, :start, τ)
-        init_key = start == τ ? output : start - τ
+        init_key = start == τ ? output : LASTSTSTR
         ψ = !product ? load_ψ(init_key) : gen_state(sys)
 
         dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=start, fin=fin*τ, kwargs...)

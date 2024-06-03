@@ -164,12 +164,12 @@ function dyna_occ(; type="Fermion", ψ=nothing, kwargs...)
 
 end 
 
-function dyna_dptcurrent(; ψ=nothing, kwargs...)
+function dyna_dptcurrent(; ψ=nothing, sys=set_DPT(), kwargs...)
 
-    function work(ψ)
-        L = div(length(ψ), 2) - 1
-        corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L+1)
-        return 2 * imag(corr[L, L + 1])
+    function work(ψ, sys)
+        
+        corr = correlation_matrix(ψ, "Cdag", "C"; sites=L_end(sys):R_begin(sys))
+        return 2 * imag(corr[1, end])
     end 
 
     workdir = getworkdir()
@@ -186,7 +186,7 @@ function dyna_dptcurrent(; ψ=nothing, kwargs...)
 
             println("Calculating DPT current, $t")
 
-            current = work(ψ)
+            current = work(ψ, sys)
             @show append!(currentLR, current)
 
         end 
@@ -195,7 +195,7 @@ function dyna_dptcurrent(; ψ=nothing, kwargs...)
         writedlm(workdir* "currentLR", currentLR)
     else
 
-        current = work(ψ)
+        current = work(ψ, sys)
         open( workdir * "currentLR", "a") do io
             writedlm(io, current)
         end 
@@ -205,12 +205,11 @@ function dyna_dptcurrent(; ψ=nothing, kwargs...)
 
 end 
 
-function dyna_dptcurrent_mix(; ψ=nothing, kwargs...)
+function dyna_dptcurrent_mix(; ψ=nothing, sys=set_DPT_mixed(), kwargs...)
 
-    function work(ψ, ULR)
+    function work(ψ, ULR, sys)
         # except the DD sites
-        L = length(ψ) - 2
-        corr = correlation_matrix(ψ, "Cdag", "C"; sites=1:L)
+        corr = correlation_matrix(ψ, "Cdag", "C"; sites=union(L_begin(sys):L_end(sys), R_begin(sys):R_end(sys)))
         
         @assert size(ULR) == size(corr)
         return 2 * imag( sum(ULR .* corr))
@@ -240,7 +239,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, kwargs...)
 
             println("Calculating DPT mix current, $t")
 
-            current = work(ψ, ULR)
+            current = work(ψ, ULR, sys)
             append!(currentLR, current)
 
         end 
@@ -249,7 +248,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, kwargs...)
         writedlm(workdir* "currentLR", currentLR)
     else
 
-        current = work(ψ, ULR)
+        current = work(ψ, ULR, sys)
         open( workdir * "currentLR", "a") do io
             writedlm(io, current)
         end 

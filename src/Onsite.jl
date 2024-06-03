@@ -157,32 +157,30 @@ end
 function Onsite(sys::DPT, j ::Int) :: Float64
 
 
-    if j <= L(sys)
-        onsite = bias_L(sys)
-
-        # offset from int
-        if j > L(sys) - couple_range(sys)
-            onsite -= 1/2 * U(sys)
-        end 
-    
-    #lower
-    # elseif j == L(sys) + 1
-    elseif j == L(sys) + R(sys) + 1
+        #lower
+    if j == dd_lower(sys)
         onsite = bias_doubledot(sys)[1]
-
         # offset from int term
         onsite -= U(sys) *  couple_range(sys)
 
     #upper
     #elseif j == L(sys) + 2
-    elseif j == L(sys) + R(sys) + 2
+    elseif j == dd_lower(sys) + 1
         onsite = bias_doubledot(sys)[2]
+
+    elseif j <= L_end(sys)
+        onsite = bias_L(sys)
+
+        # offset from int
+        if j >= L_contact(sys)
+            onsite -= 1/2 * U(sys)
+        end 
 
     else
         onsite = bias_R(sys)
 
         # offset from int
-        if j <= L(sys) + couple_range(sys) 
+        if j <= R_contact(sys)
             onsite -= 1/2 * U(sys) 
         end 
 
@@ -195,6 +193,7 @@ end
 # Onsite interactions for mixed,
 function Onsite(sys::DPT_mixed, j::Int)
 
+    mix_onsite(sys, j_mix) = energies(sys)[j_mix] + (LR(sys)[j_mix] > 0 ? bias_L(sys) : bias_R(sys))
     # 'true' reservoir L, regardless of contact region
 
     # lower
@@ -208,40 +207,40 @@ function Onsite(sys::DPT_mixed, j::Int)
     elseif j == dd_lower(sys) + 1
         onsite = bias_doubledot(sys)[2]
 
-    elseif j <= L(sys) - couple_range(sys)
-        bias = LR(sys)[j] > 0 ? bias_L(sys) : bias_R(sys)
-        onsite = energies(sys)[j] + bias
+    # left no contact
+    elseif j < L_contact(sys)
+
+        #adjust
+        j_mix = j - L_begin(sys) + 1
+        onsite = mix_onsite(sys, j_mix)
 
     # left contact region
-    elseif j <= L(sys)
+    elseif j <= L_end(sys)
 
         if !includeU(sys)
             onsite = bias_L(sys) - 1/2 * U(sys)
 
         else
-            bias = LR(sys)[j] > 0 ? bias_L(sys) : bias_R(sys)
-            onsite = energies(sys)[j] + bias
+            j_mix = j - L_begin(sys) + 1
+            onsite = mix_onsite(sys, j_mix)
         end 
     
     # right contact region
-    elseif j <= L(sys) + couple_range(sys)
+    elseif j <= R_contact(sys)
 
         if !includeU(sys)
             onsite = bias_R(sys) - 1/2 * U(sys)
 
         else
-            bias = LR(sys)[j] > 0 ? bias_L(sys) : bias_R(sys)
-            onsite = energies(sys)[j] + bias
+            j_mix = j - L_begin(sys) + 1 - (R_begin(sys) - L_end(sys)  - 1)
+            onsite = mix_onsite(sys, j_mix)
         end 
 
+    # right no contact
     else
-        # we need to shift j position, because without center LR has length 2 * L - 2 * couple_range
-        if !includeU(sys)
-            j -= 2 * couple_range(sys)
-        end 
-
-        bias = LR(sys)[j ] > 0 ? bias_L(sys) : bias_R(sys)
-        onsite = energies(sys)[j] + bias
+        
+        j_mix = j - L_begin(sys) + 1 - (R_begin(sys) - L_end(sys) - 1) - 2 * couple_range(sys)
+        onsite = mix_onsite(sys, j_mix)
 
     end 
 

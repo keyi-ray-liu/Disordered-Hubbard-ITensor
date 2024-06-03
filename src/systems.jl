@@ -5,6 +5,7 @@ const TOL = 1e-8
 const DYNA_STR = "tTDVP"
 const DPT_INIT_BIAS = [-100.0, 100.0]
 const BIAS_LR = 0.5
+const LASTSTSTR = "tTDVPlaststate"
 const EMPTY_CENTER = Dict(
     "center_ee" => 0.0,
     "center_ne" => 0.0,
@@ -569,8 +570,51 @@ struct DPT <: systems
     bias_doubledot :: Vector{Float64}
     bias_L :: Float64
     bias_R :: Float64
+    lattice_info :: Dict
 
 end 
+
+
+function set_lattice(dd_position, L, R, couple_range)
+
+    lattice_info = Dict{Any, Any}(
+        "dd_position" => dd_position
+    )
+
+    if dd_position == "R"
+        lattice_info["dd_lower"] = L + R + 1
+        lattice_info["L_begin"] = 1
+        lattice_info["L_end"] = L
+        lattice_info["R_begin"] = L + 1
+        lattice_info["R_end"] = L + R
+        lattice_info["L_contact"] = L - couple_range + 1
+        lattice_info["R_contact"] = L + couple_range
+        
+    elseif dd_position == "M"
+        lattice_info["dd_lower"] = L + 1
+        lattice_info["L_begin"] = 1
+        lattice_info["L_end"] = L
+        lattice_info["R_begin"] = L + 3
+        lattice_info["R_end"] = L + R + 2
+        lattice_info["L_contact"] = L - couple_range + 1
+        lattice_info["R_contact"] = L + couple_range + 2
+
+    elseif dd_position == "L"
+        lattice_info["dd_lower"] = 1
+        lattice_info["L_begin"] = 3
+        lattice_info["L_end"] = L + 2
+        lattice_info["R_begin"] = L + 3
+        lattice_info["R_end"] = L + R + 2
+        lattice_info["L_contact"] = L - couple_range + 3
+        lattice_info["R_contact"] = L + couple_range + 2
+
+    else
+        error("Unrecognized dd pos")
+    end 
+
+    return lattice_info
+end 
+
 
 function set_DPT(;
     U = 2.0,
@@ -585,8 +629,11 @@ function set_DPT(;
     bias_doubledot = [0.0, 0.0], 
     bias_L = 0.0,
     bias_R = 0.0,
+    dd_position = "R",
     kwargs...
     )
+
+    lattice_info = set_lattice(dd_position, L, R, couple_range)
 
     return DPT(
     U,
@@ -600,7 +647,8 @@ function set_DPT(;
     couple_range,
     bias_doubledot,
     bias_L,
-    bias_R
+    bias_R,
+    lattice_info
     )
 
 end 
@@ -619,7 +667,14 @@ contact(sys::DPT) = sys.contact
 contact_t(sys::DPT) = sys.contact_t
 get_systotal(sys::DPT) = 2 + L(sys) + R(sys)
 N(sys::DPT) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
-
+dd_lower(sys::DPT) = sys.lattice_info["dd_lower"]
+L_begin(sys::DPT) = sys.lattice_info["L_begin"] 
+L_end(sys::DPT) = sys.lattice_info["L_end"] 
+R_begin(sys::DPT) = sys.lattice_info["R_begin"] 
+R_end(sys::DPT) = sys.lattice_info["R_end"] 
+L_contact(sys::DPT) = sys.lattice_info["L_contact"]
+R_contact(sys::DPT) = sys.lattice_info["R_contact"]
+dd_position(sys::DPT) = sys.lattice_info["dd_position"]
 
 struct DPT_mixed <: systems
     dpt :: DPT
@@ -668,8 +723,18 @@ get_systotal(sys::DPT_mixed) = 2 + L(sys) + R(sys)
 N(sys::DPT_mixed) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
 
-dd_lower(sys::Union{DPT_mixed, DPT}) = L(sys) + R(sys) + 1
-LR_site_offset(sys::DPT_mixed) = 2 * couple_range(sys)
+dd_lower(sys::DPT_mixed) = dd_lower(sys.dpt)
+L_begin(sys::DPT_mixed) = L_begin(sys.dpt)
+L_end(sys::DPT_mixed) = L_end(sys.dpt)
+R_begin(sys::DPT_mixed) = R_begin(sys.dpt)
+R_end(sys::DPT_mixed) = R_end(sys.dpt)
+L_contact(sys::DPT_mixed) = L_contact(sys.dpt)
+R_contact(sys::DPT_mixed) = R_contact(sys.dpt)
+dd_position(sys::DPT_mixed) = dd_position(sys.dpt)
+
+# this always ties to the L end, regardless of geometry
+L_contact(sys::Union{DPT, DPT_mixed}) = L_end(sys) - couple_range(sys) + 1
+R_contact(sys::Union{DPT, DPT_mixed}) = R_begin(sys) + couple_range(sys) - 1
 
 includeU(sys::DPT_mixed) = sys.includeU
 energies(sys::DPT_mixed) = sys.energies
