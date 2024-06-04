@@ -575,13 +575,13 @@ struct DPT <: systems
 end 
 
 
-function set_lattice(dd_position, L, R, couple_range)
+function set_lattice(ddposition, L, R, couple_range)
 
     lattice_info = Dict{Any, Any}(
-        "dd_position" => dd_position
+        "ddposition" => ddposition
     )
 
-    if dd_position == "R"
+    if ddposition == "R"
         lattice_info["dd_lower"] = L + R + 1
         lattice_info["L_begin"] = 1
         lattice_info["L_end"] = L
@@ -590,7 +590,7 @@ function set_lattice(dd_position, L, R, couple_range)
         lattice_info["L_contact"] = L - couple_range + 1
         lattice_info["R_contact"] = L + couple_range
         
-    elseif dd_position == "M"
+    elseif ddposition == "M"
         lattice_info["dd_lower"] = L + 1
         lattice_info["L_begin"] = 1
         lattice_info["L_end"] = L
@@ -599,7 +599,7 @@ function set_lattice(dd_position, L, R, couple_range)
         lattice_info["L_contact"] = L - couple_range + 1
         lattice_info["R_contact"] = L + couple_range + 2
 
-    elseif dd_position == "L"
+    elseif ddposition == "L"
         lattice_info["dd_lower"] = 1
         lattice_info["L_begin"] = 3
         lattice_info["L_end"] = L + 2
@@ -612,6 +612,7 @@ function set_lattice(dd_position, L, R, couple_range)
         error("Unrecognized dd pos")
     end 
 
+    @show lattice_info
     return lattice_info
 end 
 
@@ -629,11 +630,11 @@ function set_DPT(;
     bias_doubledot = [0.0, 0.0], 
     bias_L = 0.0,
     bias_R = 0.0,
-    dd_position = "R",
+    ddposition = "R",
     kwargs...
     )
 
-    lattice_info = set_lattice(dd_position, L, R, couple_range)
+    lattice_info = set_lattice(ddposition, L, R, couple_range)
 
     return DPT(
     U,
@@ -674,7 +675,7 @@ R_begin(sys::DPT) = sys.lattice_info["R_begin"]
 R_end(sys::DPT) = sys.lattice_info["R_end"] 
 L_contact(sys::DPT) = sys.lattice_info["L_contact"]
 R_contact(sys::DPT) = sys.lattice_info["R_contact"]
-dd_position(sys::DPT) = sys.lattice_info["dd_position"]
+ddposition(sys::DPT) = sys.lattice_info["ddposition"]
 
 struct DPT_mixed <: systems
     dpt :: DPT
@@ -730,7 +731,7 @@ R_begin(sys::DPT_mixed) = R_begin(sys.dpt)
 R_end(sys::DPT_mixed) = R_end(sys.dpt)
 L_contact(sys::DPT_mixed) = L_contact(sys.dpt)
 R_contact(sys::DPT_mixed) = R_contact(sys.dpt)
-dd_position(sys::DPT_mixed) = dd_position(sys.dpt)
+ddposition(sys::DPT_mixed) = ddposition(sys.dpt)
 
 # this always ties to the L end, regardless of geometry
 L_contact(sys::Union{DPT, DPT_mixed}) = L_end(sys) - couple_range(sys) + 1

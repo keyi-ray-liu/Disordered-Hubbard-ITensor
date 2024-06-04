@@ -120,13 +120,13 @@ function HoppingNeighbor(sys::DPT, j::Int)
     #     hop = [[t_doubledot(sys), j + 1]]
 
     if L_begin(sys) <= j < L_end(sys) || R_begin(sys) <= j < R_end(sys)
-        @show hop = [[t_reservoir(sys), j + 1]]
+        hop = [[t_reservoir(sys), j + 1]]
 
     elseif j == L_end(sys)
-        @show hop =  [[t_reservoir(sys), R_begin(sys)]]
+        hop =  [[t_reservoir(sys), R_begin(sys)]]
 
     elseif j == dd_lower(sys)
-        @show hop = [[t_doubledot(sys), j + 1]]
+        hop = [[t_doubledot(sys), j + 1]]
 
     else
         hop = []

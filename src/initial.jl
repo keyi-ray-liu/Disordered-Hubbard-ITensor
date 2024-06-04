@@ -11,10 +11,10 @@ function gen_state_str(sys::DPT)
     M = []
     R = []
 
-    if dd_position(sys) == "L"
+    if ddposition(sys) == "L"
         L = ["Occ", "Emp"]
 
-    elseif dd_position(sys) == "M"
+    elseif ddposition(sys) == "M"
         M = ["Occ", "Emp"]
 
     else

@@ -239,7 +239,12 @@ function Onsite(sys::DPT_mixed, j::Int)
     # right no contact
     else
         
-        j_mix = j - L_begin(sys) + 1 - (R_begin(sys) - L_end(sys) - 1) - 2 * couple_range(sys)
+        if !includeU(sys)
+            j_mix = j - L_begin(sys) + 1 - (R_begin(sys) - L_end(sys) - 1) - 2 * couple_range(sys)
+        else
+            j_mix = j - L_begin(sys) + 1 - (R_begin(sys) - L_end(sys) - 1) 
+        end 
+        
         onsite = mix_onsite(sys, j_mix)
 
     end 
