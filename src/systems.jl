@@ -1,21 +1,11 @@
 
-const QESITES = 2
+
 const GLOBAL_CNT = 60
 const TOL = 1e-8
 const DYNA_STR = "tTDVP"
 const DPT_INIT_BIAS = [-100.0, 100.0]
 const BIAS_LR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
-const EMPTY_CENTER = Dict(
-    "center_ee" => 0.0,
-    "center_ne" => 0.0,
-    "center_t" => 0.0,
-    "center_range" => 0,
-    "center_dis" => 2.0,
-    "center_internal_t" => 0.0,
-    "center_slope" => 0.5
-)
-
 
 
 abstract type systems end 
@@ -288,273 +278,6 @@ end
 
 
 
-"""Regular two QE sys """
-struct QE_two <: systems
-
-    QE_distance :: Float64
-    offset_scale :: Float64
-    QEen :: Float64
-    dp :: Float64
-    init :: String
-    product :: Bool
-    chain_only :: Chain_only
-    
-end 
-
-product(sys::QE_two) = sys.product
-get_systotal(sys::QE_two) = get_systotal(sys.chain_only) + 2 * QESITES
-type(sys::QE_two) = type(sys.chain_only)
-t(sys::QE_two) = t(sys.chain_only)
-ζ(sys::QE_two) = ζ(sys.chain_only)
-L(sys::QE_two) = L(sys.chain_only)
-
-function set_QE_two(;
-    QE_distance = 2.0,
-    offset_scale=0.5,
-    QEen=0.0,
-    dp=1.0,
-    init ="Left",
-    product=false,
-    kwargs...
-    )
-
-    chain_only = set_Chain(;kwargs...)
-
-    return QE_two(
-        QE_distance,
-        offset_scale,
-        QEen,
-        dp,
-        init,
-        product,
-        chain_only
-    )
-
-end 
-
-""" Currently the QE sys 1 and QEsys 2 are put side-by-side , with the center site at the very end"""
-struct QE_parallel <: systems
-
-    upper :: QE_two
-    lower :: QE_two
-    center_parameter :: Dict
-end 
-
-get_upperchain(sys::QE_parallel) = L(sys.upper)
-get_lowerchain(sys::QE_parallel) = L(sys.lower)
-QEen(sys::QE_parallel) = QEen(sys.upper)
-get_systotal(sys::QE_parallel) = get_systotal(sys.upper) + get_systotal(sys.lower) + 2
-get_uppertotal(sys::QE_parallel) = get_systotal(sys.upper)
-get_lowertotal(sys::QE_parallel) = get_systotal(sys.lower)
-type(sys::QE_parallel) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
-offset_scale(sys::QE_parallel) = offset_scale(sys.upper)
-
-function set_QE_parallel(;
-    center_parameter = EMPTY_CENTER,
-    inits = "1",
-    kwargs...
-)   
-
-    if inits == "1"
-        initstr = ["Left", "None"]
-    else
-        initstr = ["Left", "Left"]
-    end 
-
-    upper = set_QE_two(; init=initstr[1], kwargs...)
-    lower = set_QE_two(; init=initstr[2], kwargs...)
-
-    return QE_parallel(
-        upper,
-        lower,
-        center_parameter
-    )
-
-end 
-
-
-struct QE_HOM <: systems
-
-    upper :: QE_two
-    lower :: QE_two
-    center_parameter :: Dict
-end 
-
-get_upperchain(sys::QE_HOM) = L(sys.upper)
-get_lowerchain(sys::QE_HOM) = L(sys.lower)
-QEen(sys::QE_HOM) = QEen(sys.upper)
-get_systotal(sys::QE_HOM) = get_systotal(sys.upper) + get_systotal(sys.lower) 
-get_uppertotal(sys::QE_HOM) = get_systotal(sys.upper)
-get_lowertotal(sys::QE_HOM) = get_systotal(sys.lower)
-type(sys::QE_HOM) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
-offset_scale(sys::QE_HOM) = offset_scale(sys.upper)
-
-function set_QE_HOM(;
-    center_parameter = EMPTY_CENTER,
-    inits = "1",
-    kwargs...
-)   
-
-    if inits == "1"
-        initstr = ["Left", "None"]
-    else
-        initstr = ["Left", "Left"]
-    end 
-
-    upper = set_QE_two(; init=initstr[1], kwargs...)
-    lower = set_QE_two(; init=initstr[2], kwargs...)
-
-    return QE_HOM(
-        upper,
-        lower,
-        center_parameter
-    )
-
-end 
-
-"""QE X SIAM system struct, here we assume each leg is attached to each QE, and all legs are connect via a SINGLE 'center' site """
-struct QE_flat_SIAM <: systems
-
-    legleft::Int
-    legright::Int
-    siteseach::Int
-    N::Vector{Int}
-    type::String
-    QE_distance :: Float64
-    offset_scale::Float64
-    QEen:: Float64
-    t :: Float64
-    dp :: Float64
-    ζ:: Float64
-    init :: String
-    center_parameter :: Dict
-    coulomb::Coulombic
-
-end 
-
-legleft(sys::QE_flat_SIAM) = sys.legleft
-legright(sys::QE_flat_SIAM) = sys.legright
-siteseach(sys::QE_flat_SIAM) = sys.siteseach
-N(sys::QE_flat_SIAM) = sys.N
-get_systotal(sys::QE_flat_SIAM) = 1 + (legleft(sys) + legright(sys)) * (siteseach(sys) + QESITES)
-left(sys::QE_flat_SIAM) = legleft(sys) * (siteseach(sys) + QESITES)
-type(sys::QE_flat_SIAM) = sys.type
-
-center_ee(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.center_parameter["center_ee"]
-center_ne(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.center_parameter["center_ne"]
-center_t(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_t"]
-center_internal_t(sys::QE_parallel) = sys.center_parameter["center_internal_t"]
-
-center_range(sys::Union{QE_parallel, QE_HOM}) = sys.center_parameter["center_range"]
-center_dis(sys::Union{QE_parallel, QE_HOM}) = sys.center_parameter["center_dis"]
-
-center_slope(sys::QE_HOM) = sys.center_parameter["center_slope"]
-QE_distance(sys::Union{QE_two, QE_flat_SIAM}) = sys.QE_distance
-t(sys::QE_flat_SIAM) = sys.t
-QEen(sys::Union{QE_two, QE_flat_SIAM}) = sys.QEen
-init(sys::Union{QE_two, QE_flat_SIAM}) = sys.init
-dp(sys::Union{QE_two, QE_flat_SIAM}) = sys.dp
-ζ(sys::QE_flat_SIAM) = sys.ζ
-offset_scale(sys::Union{QE_two, QE_flat_SIAM}) = sys.offset_scale
-
-function set_QE_SIAM(;
-    legleft=2,
-    legright=2,
-    siteseach=10,
-    N=1,
-    type="Fermion",
-    QE_distance=2,
-    offset_scale=0.5,
-    QEen=0.0,
-    t=-1.0,
-    dp=1.0,
-    ζ=0.5,
-    init="1",
-    TTN = false,
-    center_parameter = EMPTY_CENTER,
-    coulomb=set_Coulombic(),
-    kwargs...
-    )
-
-    if typeof(N) == Int
-        N = [siteseach - N, N, 0, 0]
-    end 
-
-    sys = QE_flat_SIAM(
-        legleft,
-        legright,
-        siteseach,
-        N,
-        type,
-        QE_distance,
-        offset_scale,
-        QEen,
-        t,
-        dp,
-        ζ,
-        init,
-        center_parameter,
-        coulomb
-    )
-
-    if !TTN
-        return sys
-    else
-
-        
-        ITensors.enable_auto_fermion()
-        sitemap = get_sitemap(sys)
-        return QE_G_SIAM(sys, sitemap)
-    end
-
-end 
-
-struct QE_G_SIAM <: systems
-    system :: QE_flat_SIAM
-    sitemap :: Dict
-end 
-
-legleft(sys::QE_G_SIAM) = legleft(sys.system)
-legright(sys::QE_G_SIAM) = legright(sys.system)
-siteseach(sys::QE_G_SIAM) = siteseach(sys.system)
-N(sys::QE_G_SIAM) = N(sys.system)
-get_systotal(sys::QE_G_SIAM) = get_systotal(sys.system)
-left(sys::QE_G_SIAM) = left(sys.system)
-type(sys::QE_G_SIAM) = type(sys.system)
-t(sys::QE_G_SIAM) = t(sys.system)
-
-
-QE_distance(sys::QE_G_SIAM) = QE_distance(sys.system)
-QEen(sys::QE_G_SIAM) = QEen(sys.system)
-init(sys::QE_G_SIAM) = init(sys.system)
-dp(sys::QE_G_SIAM) = dp(sys.system)
-ζ(sys::QE_G_SIAM) = ζ(sys.system)
-offset_scale(sys::QE_G_SIAM) = offset_scale(sys.system)
-
-sitemap(sys::QE_G_SIAM) = sys.sitemap
-
-
-function QE_determiner(key; kwargs...)
-
-    if key == "QE_two"
-        sys=  set_QE_two(;  kwargs...)
-
-    elseif key == "QE_SIAM"
-        sys = set_QE_SIAM(; kwargs...)
-
-    elseif key == "QE_parallel"
-        sys = set_QE_parallel(; kwargs...)
-
-    elseif key == "QE_HOM"
-        sys = set_QE_HOM(; kwargs...)
-
-    else
-        error("Unrecognized QE key")
-    end 
-
-    @show sys
-    return sys
-end 
 
 struct DPT <: systems
 
@@ -708,30 +431,9 @@ function set_DPT_mixed(;
 
 end 
 
-type(sys::DPT_mixed) = type(sys.dpt)
-U(sys::DPT_mixed) = U(sys.dpt)
-L(sys::DPT_mixed) = L(sys.dpt)
-R(sys::DPT_mixed) = R(sys.dpt)
-couple_range(sys::DPT_mixed) = couple_range(sys.dpt)
-bias_doubledot(sys::DPT_mixed) = bias_doubledot(sys.dpt)
-bias_L(sys::DPT_mixed) = bias_L(sys.dpt)
-bias_R(sys::DPT_mixed) = bias_R(sys.dpt)
-t_reservoir(sys::DPT_mixed) = t_reservoir(sys.dpt)
-t_doubledot(sys::DPT_mixed) = t_doubledot(sys.dpt)
-contact(sys::DPT_mixed) = contact(sys.dpt)
-contact_t(sys::DPT_mixed) = contact_t(sys.dpt)
+
 get_systotal(sys::DPT_mixed) = 2 + L(sys) + R(sys)
 N(sys::DPT_mixed) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
-
-
-dd_lower(sys::DPT_mixed) = dd_lower(sys.dpt)
-L_begin(sys::DPT_mixed) = L_begin(sys.dpt)
-L_end(sys::DPT_mixed) = L_end(sys.dpt)
-R_begin(sys::DPT_mixed) = R_begin(sys.dpt)
-R_end(sys::DPT_mixed) = R_end(sys.dpt)
-L_contact(sys::DPT_mixed) = L_contact(sys.dpt)
-R_contact(sys::DPT_mixed) = R_contact(sys.dpt)
-ddposition(sys::DPT_mixed) = ddposition(sys.dpt)
 
 # this always ties to the L end, regardless of geometry
 L_contact(sys::Union{DPT, DPT_mixed}) = L_end(sys) - couple_range(sys) + 1
@@ -741,6 +443,21 @@ includeU(sys::DPT_mixed) = sys.includeU
 energies(sys::DPT_mixed) = sys.energies
 ks(sys::DPT_mixed) = sys.ks
 LR(sys::DPT_mixed) = sys.LR
+
+struct DPT_graph <: systems
+
+    dpt :: Union{DPT, DPT_mixed}
+
+end 
+
+
+for func ∈ [type, 
+    U, L, R, couple_range, bias_doubledot, bias_L, bias_R, t_reservoir, t_doubledot, contact, contact_t, dd_lower, L_begin, L_end, R_begin, R_end, L_contact, R_contact, ddposition
+    ]
+    
+    func = Symbol(func)
+    @eval $func(sys::DPT_mixed) = $func(sys.dpt)
+end 
 
 
 
@@ -798,29 +515,8 @@ N(sys::LSR_SIAM) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
 dis(i, j, sys::systems) = abs(i- j)
 
-function true_center(sys::QE_HOM) 
-    uppertotal = get_uppertotal(sys)
-    return isodd( uppertotal) ? div(uppertotal, 2) : div(uppertotal, 2) + 1/2
-end 
-
-"""this function calculate i, j distance, i in chain 1, j in chain 2. We define an 'X' shape geometry for the y direction"""
-function parallel_dis(i, j, sys::QE_HOM) 
-
-    x = abs(i - j)
-    y = center_dis(sys) + (abs(i - true_center(sys)) + abs(j - true_center(sys))) * center_slope(sys)
-
-    return sqrt(x^2 + y^2)
-end 
-
-
-qedis(i, j, sys::QE_flat_SIAM) = abs(i -j) + QE_distance(sys)
-qedis(i, j, sys::QE_two) = abs(i - j) + QE_distance(sys)
 
 CoulombParameters(sys::Chain_only) = CoulombParameters(sys.coulomb::Coulombic)
-
-CoulombParameters(sys::QE_flat_SIAM) = CoulombParameters(sys.coulomb::Coulombic)
-
-CoulombParameters(sys::QE_two) = CoulombParameters(sys.coulomb::Coulombic)
 
 
 CoulombParameters(sys::Coulombic) = sys.λ_ee, sys.λ_ne, sys.exch, sys.scr, sys.range, sys.CN, sys.ζ

@@ -1,135 +1,305 @@
 
+const QESITES = 2
+const EMPTY_CENTER = Dict(
+    "center_ee" => 0.0,
+    "center_ne" => 0.0,
+    "center_t" => 0.0,
+    "center_range" => 0,
+    "center_dis" => 2.0,
+    "center_internal_t" => 0.0,
+    "center_slope" => 0.5
+)
 
-function run_QE(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 0, QEmul=1.0, fin=200, center_parameter = EMPTY_CENTER, save_every=false, kwargs...)
 
-    try
-        QEen = load_plsmon(output) * QEmul
-        println("QE file found, QE energy = ", QEen)
-    catch
-        println("QE file not found,beginning next stage, QE energy = ", QEen)
+"""Regular two QE sys """
+struct QE_two <: systems
+
+    QE_distance :: Float64
+    offset_scale :: Float64
+    QEen :: Float64
+    dp :: Float64
+    init :: String
+    product :: Bool
+    chain_only :: Chain_only
+    
+end 
+
+product(sys::QE_two) = sys.product
+get_systotal(sys::QE_two) = get_systotal(sys.chain_only) + 2 * QESITES
+type(sys::QE_two) = type(sys.chain_only)
+t(sys::QE_two) = t(sys.chain_only)
+ζ(sys::QE_two) = ζ(sys.chain_only)
+L(sys::QE_two) = L(sys.chain_only)
+
+function set_QE_two(;
+    QE_distance = 2.0,
+    offset_scale=0.5,
+    QEen=0.0,
+    dp=1.0,
+    init ="Left",
+    product=false,
+    kwargs...
+    )
+
+    chain_only = set_Chain(;kwargs...)
+
+    return QE_two(
+        QE_distance,
+        offset_scale,
+        QEen,
+        dp,
+        init,
+        product,
+        chain_only
+    )
+
+end 
+
+""" Currently the QE sys 1 and QEsys 2 are put side-by-side , with the center site at the very end"""
+struct QE_parallel <: systems
+
+    upper :: QE_two
+    lower :: QE_two
+    center_parameter :: Dict
+end 
+
+get_upperchain(sys::QE_parallel) = L(sys.upper)
+get_lowerchain(sys::QE_parallel) = L(sys.lower)
+QEen(sys::QE_parallel) = QEen(sys.upper)
+get_systotal(sys::QE_parallel) = get_systotal(sys.upper) + get_systotal(sys.lower) + 2
+get_uppertotal(sys::QE_parallel) = get_systotal(sys.upper)
+get_lowertotal(sys::QE_parallel) = get_systotal(sys.lower)
+type(sys::QE_parallel) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
+offset_scale(sys::QE_parallel) = offset_scale(sys.upper)
+
+function set_QE_parallel(;
+    center_parameter = EMPTY_CENTER,
+    inits = "1",
+    kwargs...
+)   
+
+    if inits == "1"
+        initstr = ["Left", "None"]
+    else
+        initstr = ["Left", "Left"]
+    end 
+
+    upper = set_QE_two(; init=initstr[1], kwargs...)
+    lower = set_QE_two(; init=initstr[2], kwargs...)
+
+    return QE_parallel(
+        upper,
+        lower,
+        center_parameter
+    )
+
+end 
+
+
+struct QE_HOM <: systems
+
+    upper :: QE_two
+    lower :: QE_two
+    center_parameter :: Dict
+end 
+
+get_upperchain(sys::QE_HOM) = L(sys.upper)
+get_lowerchain(sys::QE_HOM) = L(sys.lower)
+QEen(sys::QE_HOM) = QEen(sys.upper)
+get_systotal(sys::QE_HOM) = get_systotal(sys.upper) + get_systotal(sys.lower) 
+get_uppertotal(sys::QE_HOM) = get_systotal(sys.upper)
+get_lowertotal(sys::QE_HOM) = get_systotal(sys.lower)
+type(sys::QE_HOM) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
+offset_scale(sys::QE_HOM) = offset_scale(sys.upper)
+
+function set_QE_HOM(;
+    center_parameter = EMPTY_CENTER,
+    inits = "1",
+    kwargs...
+)   
+
+    if inits == "1"
+        initstr = ["Left", "None"]
+    else
+        initstr = ["Left", "Left"]
+    end 
+
+    upper = set_QE_two(; init=initstr[1], kwargs...)
+    lower = set_QE_two(; init=initstr[2], kwargs...)
+
+    return QE_HOM(
+        upper,
+        lower,
+        center_parameter
+    )
+
+end 
+
+"""QE X SIAM system struct, here we assume each leg is attached to each QE, and all legs are connect via a SINGLE 'center' site """
+struct QE_flat_SIAM <: systems
+
+    legleft::Int
+    legright::Int
+    siteseach::Int
+    N::Vector{Int}
+    type::String
+    QE_distance :: Float64
+    offset_scale::Float64
+    QEen:: Float64
+    t :: Float64
+    dp :: Float64
+    ζ:: Float64
+    init :: String
+    center_parameter :: Dict
+    coulomb::Coulombic
+
+end 
+
+legleft(sys::QE_flat_SIAM) = sys.legleft
+legright(sys::QE_flat_SIAM) = sys.legright
+siteseach(sys::QE_flat_SIAM) = sys.siteseach
+N(sys::QE_flat_SIAM) = sys.N
+get_systotal(sys::QE_flat_SIAM) = 1 + (legleft(sys) + legright(sys)) * (siteseach(sys) + QESITES)
+left(sys::QE_flat_SIAM) = legleft(sys) * (siteseach(sys) + QESITES)
+type(sys::QE_flat_SIAM) = sys.type
+
+center_ee(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.center_parameter["center_ee"]
+center_ne(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.center_parameter["center_ne"]
+center_t(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_t"]
+center_internal_t(sys::QE_parallel) = sys.center_parameter["center_internal_t"]
+
+center_range(sys::Union{QE_parallel, QE_HOM}) = sys.center_parameter["center_range"]
+center_dis(sys::Union{QE_parallel, QE_HOM}) = sys.center_parameter["center_dis"]
+
+center_slope(sys::QE_HOM) = sys.center_parameter["center_slope"]
+QE_distance(sys::Union{QE_two, QE_flat_SIAM}) = sys.QE_distance
+t(sys::QE_flat_SIAM) = sys.t
+QEen(sys::Union{QE_two, QE_flat_SIAM}) = sys.QEen
+init(sys::Union{QE_two, QE_flat_SIAM}) = sys.init
+dp(sys::Union{QE_two, QE_flat_SIAM}) = sys.dp
+ζ(sys::QE_flat_SIAM) = sys.ζ
+offset_scale(sys::Union{QE_two, QE_flat_SIAM}) = sys.offset_scale
+
+function set_QE_SIAM(;
+    legleft=2,
+    legright=2,
+    siteseach=10,
+    N=1,
+    type="Fermion",
+    QE_distance=2,
+    offset_scale=0.5,
+    QEen=0.0,
+    t=-1.0,
+    dp=1.0,
+    ζ=0.5,
+    init="1",
+    TTN = false,
+    center_parameter = EMPTY_CENTER,
+    coulomb=set_Coulombic(),
+    kwargs...
+    )
+
+    if typeof(N) == Int
+        N = [siteseach - N, N, 0, 0]
+    end 
+
+    sys = QE_flat_SIAM(
+        legleft,
+        legright,
+        siteseach,
+        N,
+        type,
+        QE_distance,
+        offset_scale,
+        QEen,
+        t,
+        dp,
+        ζ,
+        init,
+        center_parameter,
+        coulomb
+    )
+
+    if !TTN
+        return sys
+    else
+
+        
+        ITensors.enable_auto_fermion()
+        sitemap = get_sitemap(sys)
+        return QE_G_SIAM(sys, sitemap)
     end
 
+end 
 
-    # if no QEen, we need to perform further calculations on the initial state
-    # the basic logic is that this is a QE calculation, QEen =0 makes no sense
-    if QEen == 0 || (!product && !check_ψ(output))
-        
+struct QE_G_SIAM <: systems
+    system :: QE_flat_SIAM
+    sitemap :: Dict
+end 
 
-        println("Calculating initial state")
-        ex = (QEen == 0) ? 2 : 1
-        # we set up the decoupled sys from the QE
-        decoupled = QE_determiner(key; QEen=0.0, dp=0.0, center_parameter = EMPTY_CENTER, kwargs...)
-
-        # get plasmon energy
-        static = set_Static(; ex=ex, output=output, sweepdim=TEdim, kwargs...)
-
-        ϕ = gen_state(decoupled)
-        run_static_simulation(decoupled, static, ϕ; message="QEinit")
-
-        QEen = load_plsmon(output) * QEmul
-
-    end 
-
-    sys = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, kwargs...)
+legleft(sys::QE_G_SIAM) = legleft(sys.system)
+legright(sys::QE_G_SIAM) = legright(sys.system)
+siteseach(sys::QE_G_SIAM) = siteseach(sys.system)
+N(sys::QE_G_SIAM) = N(sys.system)
+get_systotal(sys::QE_G_SIAM) = get_systotal(sys.system)
+left(sys::QE_G_SIAM) = left(sys.system)
+type(sys::QE_G_SIAM) = type(sys.system)
+t(sys::QE_G_SIAM) = t(sys.system)
 
 
-    if staticex == 0
+QE_distance(sys::QE_G_SIAM) = QE_distance(sys.system)
+QEen(sys::QE_G_SIAM) = QEen(sys.system)
+init(sys::QE_G_SIAM) = init(sys.system)
+dp(sys::QE_G_SIAM) = dp(sys.system)
+ζ(sys::QE_G_SIAM) = ζ(sys.system)
+offset_scale(sys::QE_G_SIAM) = offset_scale(sys.system)
 
-        obs = [dyna_EE, dyna_occ, dyna_corr]
-        start = get(kwargs, :start, τ)
-        init_key = start == τ ? output : LASTSTSTR
-        ψ = !product ? load_ψ(init_key) : gen_state(sys)
+sitemap(sys::QE_G_SIAM) = sys.sitemap
 
-        dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=start, fin=fin*τ, kwargs...)
-        run_dynamic_simulation(sys, dynamic, ψ; message="QEdyna", save_every=save_every, obs=obs)
+
+function QE_determiner(key; kwargs...)
+
+    if key == "QE_two"
+        sys=  set_QE_two(;  kwargs...)
+
+    elseif key == "QE_SIAM"
+        sys = set_QE_SIAM(; kwargs...)
+
+    elseif key == "QE_parallel"
+        sys = set_QE_parallel(; kwargs...)
+
+    elseif key == "QE_HOM"
+        sys = set_QE_HOM(; kwargs...)
+
     else
-        ψ = !product ? load_ψ(output) : gen_state(sys)
-
-        static = set_Static(; ex=staticex, sweepdim=TEdim, kwargs...)
-        run_static_simulation(sys, static, ψ)
+        error("Unrecognized QE key")
     end 
-    
 
+    @show sys
+    return sys
 end 
 
 
 
-function QE_two_wrapper()
-
-    product = false
-    qe_two_in = load_JSON( pwd() * "/qetwopara.json")
-
-    QEen = get(qe_two_in, "QEen", 0.0)
-    L = get(qe_two_in, "L", 20)
-    N = get(qe_two_in, "N", div(L, 2))
-    QEmul = get(qe_two_in, "QEmul", 1.0)
-
-    #τ = get(qe_two_in, "timestep", 0.125)
-    TEdim = get(qe_two_in, "TEdim", 64)
-
-    #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
-    run_QE("QE_two", QEen, "initialqe2state", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N)
-    dyna_occ()
-    dyna_EE()
-
+function true_center(sys::QE_HOM) 
+    uppertotal = get_uppertotal(sys)
+    return isodd( uppertotal) ? div(uppertotal, 2) : div(uppertotal, 2) + 1/2
 end 
 
-function QE_parallel_wrapper()
+"""this function calculate i, j distance, i in chain 1, j in chain 2. We define an 'X' shape geometry for the y direction"""
+function parallel_dis(i, j, sys::QE_HOM) 
 
-    product = false
-    qe_parallel_in = load_JSON( pwd() * "/qeparallelpara.json")
+    x = abs(i - j)
+    y = center_dis(sys) + (abs(i - true_center(sys)) + abs(j - true_center(sys))) * center_slope(sys)
 
-    QEen = get(qe_parallel_in, "QEen", 0.0)
-    L = get(qe_parallel_in, "L", 20)
-    N = get(qe_parallel_in, "N", div(L, 2))
-    QEmul = get(qe_parallel_in, "QEmul", 1.0)
-    dp = get(qe_parallel_in, "dp", 1.0)
-
-    #τ = get(qe_two_in, "timestep", 0.125)
-    TEdim = get(qe_parallel_in, "TEdim", 64)
-    center_parameter = get(qe_parallel_in, "center_parameter", EMPTY_CENTER)
-
-    τ = get(qe_parallel_in, "timestep", 1.0)
-    start = get(qe_parallel_in, "start", τ)
-    fin = get(qe_parallel_in, "fin", 200)
-
-    inits = get(qe_parallel_in, "inits", "1")
-    #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
-    run_QE("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, dp=dp, inits=inits)
-    dyna_occ()
-    dyna_EE()
-
+    return sqrt(x^2 + y^2)
 end 
 
 
-function QE_SIAM_wrapper()
-
-    
-    prod = false
-    qe_siam_in = load_JSON( pwd() * "/qesiampara.json")
-
-    QEen = get(qe_siam_in, "QEen", 0.0)
-    legleft = get(qe_siam_in, "legleft", 2)
-    legright = get(qe_siam_in, "legright", legleft)
-    siteseach = get(qe_siam_in, "siteseach", 2)
-    N = get(qe_siam_in, "N", div(siteseach, 2))
-    QEmul = get(qe_siam_in, "QEmul", 1.0)
-    init = get(qe_siam_in, "init", "1")
-    TTN = get(qe_siam_in, "TTN", false)
-    center_parameter = get(qe_siam_in, "center_parameter", EMPTY_CENTER)
+qedis(i, j, sys::QE_flat_SIAM) = abs(i -j) + QE_distance(sys)
+qedis(i, j, sys::QE_two) = abs(i - j) + QE_distance(sys)
 
 
-    #τ = get(qe_siam_in, "timestep", 0.125)
-    TEdim = get(qe_siam_in, "TEdim", 64)
-    timestep = get(qe_siam_in, "timestep", 1.0)
+CoulombParameters(sys::QE_flat_SIAM) = CoulombParameters(sys.coulomb::Coulombic)
 
-    run_QE_SIAM("QE_SIAM", QEen, "initialqesiamstate", prod; siteseach=siteseach, N=N,  TTN=TTN, init= init, legleft=legleft, legright=legright, τ=timestep, QEmul=QEmul, TEdim = TEdim, center_parameter=center_parameter)
-
-    dyna_occ()
-    dyna_EE()
-    #dyna_dptcurrent()
-
-
-    
-
-end 
+CoulombParameters(sys::QE_two) = CoulombParameters(sys.coulomb::Coulombic)

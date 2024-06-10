@@ -38,7 +38,7 @@ function scan_ee(ψ::MPS, max_order::Int)
     L = length(ψ)
     soi = []
 
-    for s in 2:L - 1
+    for s in 2:L 
         append!(soi, s)
     end 
 
@@ -259,7 +259,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=set_DPT_mixed(), kwargs...)
 end 
 
 
-function dyna_corr(; ψ=nothing, op1="Cdag", op2="C", t=nothing)
+function dyna_corr(; ψ=nothing, op1="Cdag", op2="C", t=nothing, kwargs...)
 
     function work(ψ)
 

@@ -48,11 +48,11 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
         eq = set_DPT_mixed(; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition)
 
         current_obs = includeU ? dyna_dptcurrent_mix : dyna_dptcurrent
-        obs = [dyna_EE, dyna_occ, current_obs]
+        obs = [dyna_EE, dyna_occ, current_obs, dyna_corr]
     else
         eq = set_DPT(;U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, ddposition=ddposition)
 
-        obs = [dyna_EE, dyna_occ, dyna_dptcurrent]
+        obs = [dyna_EE, dyna_occ, dyna_dptcurrent, dyna_corr]
     end 
 
     # we make sure the sweepdim and TEdim match
