@@ -253,6 +253,8 @@ function Onsite(sys::DPT_mixed, j::Int)
 
 end 
 
+Onsite(sys::DPT_graph, j::Int) = Onsite(sys.dpt, j)
+
 function Onsite(sys::LSR_SIAM, j::Int)
 
 
@@ -273,7 +275,7 @@ end
 
 function add_onsite!(sys::systems, res::OpSum)
     
-    println("Adding onsite")
+    @info "Adding onsite"
     sys_type = type(sys)
 
     systotal = get_systotal(sys)

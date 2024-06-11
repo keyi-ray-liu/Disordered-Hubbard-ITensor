@@ -173,6 +173,8 @@ function HoppingNeighbor(sys::DPT_mixed, j::Int)
 
 end 
 
+HoppingNeighbor(sys::DPT_graph, j::Int) = HoppingNeighbor(sys.dpt, j)
+
 function HoppingNeighbor(sys::LSR_SIAM, j::Int)
 
     # if L or R
@@ -194,7 +196,7 @@ end
 function add_hop!(sys::systems, res::OpSum)
     
 
-    println("Adding all hopping")
+    @info "Adding all hopping"
     sys_type = type(sys)
     systotal = get_systotal(sys)
 

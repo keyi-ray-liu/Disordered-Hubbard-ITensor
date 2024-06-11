@@ -1,6 +1,8 @@
 
 
 Uk(j::Int, sys::DPT_mixed) = Uk(j, ks(sys), LR(sys))
+Uk(j::Int, sys::DPT_graph) = typeof(sys.dpt) == DPT_mixed ? Uk(j, sys.dpt) : error("subsystem not mixed")
+
 
 """generate the  transformation LR vectors for the reservoir(s) SPATIAL site j, with given ordering of the momentum space, with LR cross terms being zero"""
 function Uk(j::Int, ks, LR)
@@ -12,10 +14,14 @@ function Uk(j::Int, ks, LR)
     return UL, UR
 end 
 
-function add_specific_int!(sys:: DPT_mixed, res)
+function add_specific_int!(sys:: Union{DPT_mixed, DPT_graph}, res)
 
-    println("Adding mixed int")
 
+    if typeof(sys) == DPT_graph && typeof(sys.dpt) == DPT
+        return res
+    end 
+
+    @info "Adding mixed int"
 
     if includeU(sys)
 
@@ -27,8 +33,8 @@ function add_specific_int!(sys:: DPT_mixed, res)
             for (l_mix, l_actual) in enumerate(union(L_begin(sys): L_end(sys) , R_begin(sys) : R_end(sys)))
 
                 if ULR[k_mix, l_mix] != 0 
-                    res += ULR[k_mix, l_mix], "Cdag", k_actual, "C", l_actual
-                    res += ULR[k_mix, l_mix], "Cdag", l_actual, "C", k_actual
+                    res += ULR[k_mix, l_mix], "Cdag", sitemap(sys, k_actual), "C", sitemap(sys, l_actual)
+                    res += ULR[k_mix, l_mix], "Cdag", sitemap(sys, l_actual), "C", sitemap(sys, k_actual)
                 end 
 
             end 
@@ -49,8 +55,8 @@ function add_specific_int!(sys:: DPT_mixed, res)
                     for (l_mix, l_actual) in enumerate(union(L_begin(sys): L_end(sys) , R_begin(sys) : R_end(sys)))
 
                         if UNN[k_mix, l_mix] != 0 
-                            res += U(sys) * UNN[k_mix, l_mix], "N", dd_lower(sys), "Cdag", k_actual, "C", l_actual
-                            res -= 1/2 *U(sys) * UNN[k_mix, l_mix],  "Cdag", k_actual, "C", l_actual
+                            res += U(sys) * UNN[k_mix, l_mix], "N", sitemap(sys, dd_lower(sys)), "Cdag", sitemap(sys, k_actual), "C", sitemap(sys, l_actual)
+                            res -= 1/2 *U(sys) * UNN[k_mix, l_mix],  "Cdag", sitemap(sys, k_actual), "C", sitemap(sys, l_actual)
                         end 
 
                     end 
@@ -68,12 +74,12 @@ function add_specific_int!(sys:: DPT_mixed, res)
         for (k_mix, k_actual) in enumerate(union(L_begin(sys): L_contact(sys) - 1 , R_contact(sys) + 1 : R_end(sys)))
             
             if UL[k_mix] != 0
-                res += UL[k_mix] * t_reservoir(sys), "Cdag", k_actual, "C", L_contact(sys)
-                res += UL[k_mix] * t_reservoir(sys), "Cdag", L_contact(sys), "C", k_actual
+                res += UL[k_mix] * t_reservoir(sys), "Cdag", sitemap(sys, k_actual), "C", sitemap(sys, L_contact(sys))
+                res += UL[k_mix] * t_reservoir(sys), "Cdag", sitemap(sys, L_contact(sys)), "C", sitemap(sys, k_actual)
 
             elseif UR[k_mix] != 0
-                res += UR[k_mix] * t_reservoir(sys), "Cdag", k_actual, "C", R_contact(sys)
-                res += UR[k_mix] * t_reservoir(sys), "Cdag", R_contact(sys), "C", k_actual
+                res += UR[k_mix] * t_reservoir(sys), "Cdag", sitemap(sys, k_actual), "C", sitemap(sys, R_contact(sys))
+                res += UR[k_mix] * t_reservoir(sys), "Cdag", sitemap(sys, R_contact(sys)), "C", sitemap(sys, k_actual)
             end 
 
         end 

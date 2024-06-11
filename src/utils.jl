@@ -131,7 +131,8 @@ function gen_graph(sys::QE_G_SIAM)
 end 
 
 sitemap(sys::systems, j) = j
-sitemap(sys::QE_G_SIAM, j) = sitemap(sys)[j]
+sitemap(sys::Union{QE_G_SIAM, DPT_graph}, j) = sitemap(sys)[j]
+
 
 """maps the flattened index to graph index"""
 
@@ -174,6 +175,145 @@ function get_sitemap(sys::QE_flat_SIAM)
 end 
 
 
+function gen_graph(sys::DPT_graph)
+
+  g = NamedGraph()
+
+  if typeof(sys.dpt) == DPT
+    #L
+    for j ∈ 1: L(sys) + R(sys)
+      add_vertex!(g, (1, j))
+    end 
+
+    #dd
+    for j ∈ 1:2
+      add_vertex!(g, (2, j))
+    end 
+
+
+    for j ∈ 1:L(sys) + R(sys) - 1
+      add_edge!(g, ((1, j), (1, j + 1)))
+    end 
+
+    add_edge!(g, ((2, 1), (1, L(sys))))
+    add_edge!(g, ((2, 1), (2, 2)))
+
+  else
+
+    for j ∈ 1: L_contact(sys) - 1
+      add_vertex!(g, (j, 1))
+    end 
+
+    for j ∈ 1 : 2 * couple_range(sys)
+      add_vertex!(g, (L_contact(sys) , j))
+    end 
+
+    for j ∈ 1:2
+      add_vertex!(g, (L_contact(sys) + 1, j))
+    end 
+
+    for j ∈ R_contact(sys) + 1:get_systotal(sys)
+      
+      leg = j - 2*couple_range(sys)
+      add_vertex!(g, (leg, 1))
+      add_edge!(g, ((leg, 1), (L_contact(sys), 2 * couple_range(sys))))
+    end 
+
+    for j ∈ 1: L_contact(sys) - 1
+      add_edge!(g,((j, 1), (L_contact(sys), 1)))
+    end 
+
+    add_edge!(g, ((L_contact(sys) + 1, 1), (L_contact(sys) + 1, 2)))
+    add_edge!(g, ((L_contact(sys) + 1, 1), (L_contact(sys) , couple_range(sys))))
+
+    for j ∈ 1:2*couple_range(sys) - 1
+      add_edge!(g, ((L_contact(sys), j), (L_contact(sys), j + 1)))
+    end 
+
+  end 
+
+  #@show g
+  @visualize g
+
+  return g
+  
+
+end 
+
+function get_sitemap(sys::DPT)
+
+  d = Dict()
+
+  for j in 1:get_systotal(sys)
+
+    if j <= L(sys)
+
+      leg = 1
+      idx = j
+
+    elseif j <= L(sys) + 2
+      leg = 2
+      idx = j - L(sys)
+
+    else
+      leg = 1
+      idx = j - 2
+
+    end 
+  
+    d[(leg, idx)] = j
+    d[j] = (leg, idx)
+
+
+  end 
+
+  @show d
+  return d
+end 
+
+
+function get_sitemap(sys::DPT_mixed)
+
+  d = Dict()
+
+  for j in 1:get_systotal(sys)
+
+    if j < L_contact(sys)
+
+      leg = j
+      idx = 1
+
+    elseif j <= L(sys)
+      leg = L_contact(sys)
+      idx = j - L_contact(sys) + 1
+
+    elseif j < R_begin(sys)
+      leg = L_contact(sys) + 1
+      idx = j - L(sys)
+
+    elseif j <= R_contact(sys)
+      leg = L_contact(sys)
+      idx = j - L_contact(sys) - 1
+
+    else
+      leg = j - 2 * couple_range(sys) 
+      idx = 1
+    end 
+
+
+  
+    d[(leg, idx)] = j
+    d[j] = (leg, idx)
+
+
+  end 
+
+  @show d
+  return d
+end 
+
+
+
 function partial_contract(ψ::MPS, sites::Vector{Int})
 
   ψ = dense(ψ)
@@ -205,4 +345,5 @@ function saveham(file, s)
   end
 
 end 
+
 

@@ -4,7 +4,7 @@ HubbardRepulsion(sys::NF_square, j::Int) = U(sys)
 
 function add_HubbardRepulsion!(sys::systems, res::OpSum)
     
-    println("Adding HubbardRepulsion")
+    @info "Adding HubbardRepulsion"
     systotal = get_systotal(sys)
 
     sys_type = type(sys)

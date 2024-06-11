@@ -100,7 +100,7 @@ All logic are wrapped in respective functions. The QE diagonal Energies are wrap
 """
 function add_qe!(sys::systems, res::OpSum)
 
-    println("Adding QE")
+    @info "Adding QE"
 
     sys_type = type(sys)
     systotal = get_systotal(sys)

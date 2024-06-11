@@ -8,6 +8,12 @@ function gen_mixed(L, R, bias_L, bias_R; random=false, includeU=true, couple_ran
         R -= couple_range
     end 
 
+    # HACK 
+    # we test the unsorted version
+    # bias_L = 100
+    # bias_R = -100
+
+
     L_val = [ (2 *  cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
     R_val = [ (2 *  cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
 
@@ -32,7 +38,7 @@ end
 
 
 """worker function that runs DPT calculations"""
-function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, save_every=false,  ddposition="R", kwargs...)
+function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, save_every=false,  ddposition="R", graph=false, kwargs...)
 
 
     eqinit_str = "EqInit"
@@ -45,17 +51,22 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     if mixed
         energies, ks, LR = gen_mixed(L, R, bias_L, bias_R; random=random, includeU=includeU, couple_range = couple_range)
-        eq = set_DPT_mixed(; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition)
+        eq = set_DPT_mixed(; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
         current_obs = includeU ? dyna_dptcurrent_mix : dyna_dptcurrent
         obs = [dyna_EE, dyna_occ, current_obs, dyna_corr]
     else
-        eq = set_DPT(;U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, ddposition=ddposition)
-
+        eq = set_DPT(;U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, ddposition=ddposition, graph=graph)
         obs = [dyna_EE, dyna_occ, dyna_dptcurrent, dyna_corr]
     end 
 
-    # we make sure the sweepdim and TEdim match
+    if get_systotal(eq) > 80
+        filter!( e->e ∉ [dyna_corr], obs)
+    end 
+
+    @show obs
+
+    # if not present, we calculate the initial state
 
     if !check_ψ(eqinit_str)
         
@@ -63,23 +74,22 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
         # GS calculation
         ψ = gen_state(eq)
-        run_static_simulation(eq, Static, ψ; message = "Init")
+        ψ0 =  run_static_simulation(eq, Static, ψ; message = "Init")[1]
+    else
+        ψ0 = load_ψ(eqinit_str)
     end 
 
     # Stage1, no bias, GS, start negative time
 
     Stage1 = set_Dynamic(;τ=τ, start= - 4.0 + τ, fin=0, kwargs...)
-
-    ψ0 = load_ψ(eqinit_str)
-
     ψ1 = run_dynamic_simulation(eq, Stage1, ψ0; message="Stage1", save_every=save_every, obs=obs)
 
     # now we switch on the bias in L/R, 0 time
 
     if mixed
-        noneq = set_DPT_mixed(;U=U, L=L, R=R, t_doubledot=0.0, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition)
+        noneq = set_DPT_mixed(;U=U, L=L, R=R, t_doubledot=0.0, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
     else
-        noneq = set_DPT(;U=U, L=L, R=R, t_doubledot=0.0,bias_L=bias_L, bias_R=bias_R, ddposition=ddposition)
+        noneq = set_DPT(;U=U, L=L, R=R, t_doubledot=0.0,bias_L=bias_L, bias_R=bias_R, ddposition=ddposition, graph=graph)
     end 
 
     Stage2 = set_Dynamic(;τ=τ, start=τ, fin=t_switch , kwargs...)
@@ -90,9 +100,9 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
     # we then switch on the tunneling b/w drain_offset
 
     if mixed
-        noneqtun = set_DPT_mixed(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition)
+        noneqtun = set_DPT_mixed(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
     else
-        noneqtun = set_DPT(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R, ddposition=ddposition)
+        noneqtun = set_DPT(;U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R, ddposition=ddposition, graph=graph)
     end 
 
     Stage3 = set_Dynamic(;τ=τ, start=t_switch +τ, fin=t_switch * 2, kwargs...)
@@ -132,5 +142,16 @@ function DPT_wrapper()
     # else
     #     dyna_dptcurrent()
     # end 
+
+end 
+
+
+function DPT_graph_test()
+
+    #sys = set_DPT_mixed(; L =8, R=8, graph=true )
+    sys = set_DPT(; L =6, R=6, graph=true )
+
+    ψ = gen_state(sys)
+
 
 end 

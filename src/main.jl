@@ -27,12 +27,15 @@ using ITensorNetworks:
   random_mps,
   random_ttn,
   siteinds
+
+#using ITensorNetworks : tdvp
 #using ITensorNetworks.ModelHamiltonians: ModelHamiltonians
 #using KrylovKit: eigsolve
 using NamedGraphs:  rem_vertex!, add_vertex!, add_edge!, NamedGraph
 using Observers: observer
 using Test: @test, @test_broken, @testset
 using ITensorUnicodePlots: @visualize
+#using StableRNGs: StableRNG
 
 
 include("systems.jl")
@@ -78,6 +81,7 @@ if test
     #QE_SIAM_wrapper()
     #QE_two_wrapper()
     #QE_parallel_wrapper()
+    #DPT_graph_test()
 
 
 else
@@ -112,6 +116,9 @@ else
 
     elseif ARG == "QE_parallel"
         QE_parallel_wrapper()
+
+    elseif ARG == "TEST"
+        DPT_graph_test()
 
     else
         error("Unrecognized option")

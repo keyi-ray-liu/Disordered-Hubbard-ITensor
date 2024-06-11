@@ -21,7 +21,8 @@ function gen_state_str(sys::DPT)
         R = ["Occ", "Emp"]
     end 
 
-    return vcat(L, Lres, M, Rres, R)
+    state_str = vcat(L, Lres, M, Rres, R)
+    return state_str
 end 
 
 gen_state_str(sys::DPT_mixed) = gen_state_str(sys.dpt)
@@ -40,7 +41,7 @@ gen_state_str(sys::QE_HOM) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.
 
 gen_state_map(sys::QE_G_SIAM, sites) = Dict( s => gen_state_str(sys.system)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
 
-
+gen_state_map(sys::DPT_graph, sites) = Dict( s => gen_state_str(sys.dpt)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
 
 
 function gen_state(sys::GQS; QN=true, kwargs...)
@@ -113,19 +114,25 @@ function QE_str(sys::QE_flat_SIAM)
 end 
 
 
-function gen_state(sys::QE_G_SIAM; QN=true, kwargs...)
-
+function gen_state(sys::Union{QE_G_SIAM, DPT_graph}; QN=true, kwargs...)
+    @info "gen state for graph"
     g = gen_graph(sys)
     sites = siteinds(type(sys), g; conserve_qns=QN)
 
-    #print(sites)
+    @show typeof(sites)
+    @show size(sites)
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
-    @show gen_state_map(sys, sites)
-    ψ = ttn(sites, g -> gen_state_map(sys, sites)[g])
+
+    #@show gen_state_map(sys, sites)
+    ψ = ttn( g -> gen_state_map(sys, sites)[g], sites)
+
+    #rng = StableRNG(111)
+    #ψ = normalize(random_ttn(rng, sites; link_space=20))
 
     return ψ
 
 end 
+
 
 
 

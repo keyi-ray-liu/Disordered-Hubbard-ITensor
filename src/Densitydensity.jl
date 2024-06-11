@@ -169,13 +169,13 @@ function DenDenNeighbor(sys::DPT_mixed, j::Int)
     return den
 end 
 
-
+DenDenNeighbor(sys::DPT_graph, j::Int) = DenDenNeighbor(sys.dpt, j)
 
 
 function add_DensityDensity!(sys::systems, res::OpSum)
     
 
-    println("Adding EE and NE")
+    @info "Adding EE and NE"
     sys_type = type(sys)
 
     systotal = get_systotal(sys)

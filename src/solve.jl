@@ -124,6 +124,7 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
   
     close(wf)
 
+    return prev_state
     #return prev_energy, prev_state, allenergy, allvars, prev_var
 
     
@@ -138,7 +139,7 @@ function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=
     for dt in start:τ:fin
 
 
-        println("TDVP time : $dt")
+        @info "TDVP time : $dt"
         #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
         ψ1 = tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true)
 
@@ -204,17 +205,15 @@ function solve(H::ITensorNetworks.TreeTensorNetwork{Any}, ϕ::ITensorNetworks.Tr
 
 
             #energy, ψ = dmrg(H, ϕ, sweeps; eigsolve_krylovdim = krylovdim)
-            ψ= dmrg(H, ϕ; nsweeps = sweepcnt, maxdim = sweepdim, cutoff = TEcutoff, nsites = 2, updater_kwargs=(; krylovdim=krylovdim))
+            energy, ψ= dmrg(H, ϕ; nsweeps = sweepcnt, maxdim = sweepdim, cutoff = TEcutoff, nsites = 2, updater_kwargs=(; krylovdim=krylovdim), outputlevel=2)
 
-            @show energy = inner(ψ', H, ψ)
             
             cur_ex += 1
             
 
         else
-            ψ = dmrg(H, prev_state, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim, outputlevel=1) 
+            energy, ψ = dmrg(H, prev_state, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim, outputlevel=2) 
 
-            @show energy = inner(ψ', H, ψ)
             # check if cur energy is lower than previously achieved energy, if so, return to the point with lower energy (if not, start with current state as GS)
             if abs(energy - prev_energy[end]) > TOL && energy < prev_energy[end]
 
@@ -254,11 +253,11 @@ function solve(H::ITensorNetworks.TreeTensorNetwork{Any}, ϕ::ITensorNetworks.Tr
 
             
         #println(expect(ψ, "N"))
-            
+        
         # save temp results
-        wf = h5open( workdir * "temp_cur_ex" * string((cur_ex - 1)) * ".h5", "w")
-        write(wf, "psi", ψ)
-        close(wf)
+        # wf = h5open( workdir * "temp_cur_ex" * string((cur_ex - 1)) * ".h5", "w")
+        # write(wf, "psi", ψ)
+        # close(wf)
 
         # shift and invert block
 
@@ -285,40 +284,60 @@ function solve(H::ITensorNetworks.TreeTensorNetwork{Any}, ϕ::ITensorNetworks.Tr
   
     # write wf
   
-    wf = h5open( workdir * out * ".h5", "w")
+    # wf = h5open( workdir * out * ".h5", "w")
+    
+    # for (i, psi) in enumerate(prev_state)
+    #   write(wf, "psi" * string(i), psi)
+    # end
   
-    for (i, psi) in enumerate(prev_state)
-      write(wf, "psi" * string(i), psi)
-    end
-  
-    close(wf)
+    # close(wf)
 
     #return prev_energy, prev_state, allenergy, allvars, prev_var
-
+    return prev_state
     
 
 end 
 
 
-function time_evolve(H::ITensorNetworks.TreeTensorNetwork{Any}, ψ::ITensorNetworks.TreeTensorNetwork{Any}, simulation::Dynamic)
+function time_evolve(H::ITensorNetworks.TreeTensorNetwork{Any}, ψ::ITensorNetworks.TreeTensorNetwork{Any}, simulation::Dynamic; save_every=true, obs=Function[], kwargs...)
 
-    τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
+    τ, start, fin, TEcutoff, TEdim, nsites = SimulationParameters(simulation)
 
     for dt in start:τ:fin
 
 
-        println("TDVP time : $dt")
+        @info "TDVP time : $dt"
         #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
-        ψ1 = tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true)
+        ψ1 = ITensorNetworks.tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsites=nsites, time_step= -im * τ/2, normalize=true)
 
-        println( "inner", abs(inner(ψ1, ψ)))
+        #println( "inner", abs(inner(ψ1, ψ)))
         ψ = ψ1
 
+        # we might need to calculate observables on the go
+        for ob in obs
+            ob(;ψ=ψ, t=dt, kwargs...)
+        end 
 
-        wf = h5open( getworkdir() * "tTDVP" * string(dt) * ".h5", "w")
+        if save_every
+            wf = h5open( getworkdir() * "tTDVP" * string(dt) * ".h5", "w")
+        else
+            wf = h5open( getworkdir() * "tTDVPlaststate.h5", "w")
+
+            open(getworkdir() * "tTDVPlasttime", "w") do io
+                writedlm(io, dt)
+            end 
+
+            open(getworkdir() * "times", "a" ) do io
+                writedlm(io, dt)
+            end 
+
+        end 
+
         write(wf, "psi1", ψ)
         close(wf)
 
     end 
+
+    return ψ
 
 end 

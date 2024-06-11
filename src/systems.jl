@@ -22,7 +22,7 @@ abstract type simulations end
 struct Static <: simulations
 
     ex :: Int
-    prev_state :: Vector{MPS}
+    prev_state :: Vector{Any}
     prev_energy :: Vector{Float64}
     prev_var :: Vector{Float64}
     sweepcnt :: Int
@@ -344,8 +344,8 @@ function set_DPT(;
     U = 2.0,
     t_reservoir = 1.0,
     t_doubledot = 1.0,
-    L = 32,
-    R = 32,
+    L = 6,
+    R = 6,
     type = "Fermion",
     couple_range=2,
     contact = true,
@@ -354,12 +354,17 @@ function set_DPT(;
     bias_L = 0.0,
     bias_R = 0.0,
     ddposition = "R",
+    graph=false,
     kwargs...
     )
 
+    if graph
+        ddposition = "M"
+    end 
+
     lattice_info = set_lattice(ddposition, L, R, couple_range)
 
-    return DPT(
+    sys = DPT(
     U,
     t_reservoir,
     t_doubledot,
@@ -375,6 +380,11 @@ function set_DPT(;
     lattice_info
     )
 
+    if graph
+        sys = set_DPT_graph(sys)
+    end 
+
+    return sys
 end 
 
 type(sys::DPT) = sys.type
@@ -390,7 +400,7 @@ t_doubledot(sys::DPT) = sys.t_doubledot
 contact(sys::DPT) = sys.contact
 contact_t(sys::DPT) = sys.contact_t
 get_systotal(sys::DPT) = 2 + L(sys) + R(sys)
-N(sys::DPT) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
+N(sys::DPT) = [L(sys) - div(L(sys), 2), div(L(sys), 2), 0, 0]
 dd_lower(sys::DPT) = sys.lattice_info["dd_lower"]
 L_begin(sys::DPT) = sys.lattice_info["L_begin"] 
 L_end(sys::DPT) = sys.lattice_info["L_end"] 
@@ -415,11 +425,20 @@ function set_DPT_mixed(;
     ks = [],
     LR = [],
     includeU = false,
+    ddposition = "R",
+    graph = false,
     kwargs...
 )
-    dpt = set_DPT(;kwargs...)
 
-    return DPT_mixed(
+    if graph
+        ddposition="M"
+        includeU = false
+    end 
+
+    dpt = set_DPT(;graph=false, ddposition=ddposition, kwargs...)
+
+
+    sys= DPT_mixed(
         dpt,
         energies,
         ks,
@@ -429,11 +448,18 @@ function set_DPT_mixed(;
        # w
     )
 
+    if graph
+        sys = set_DPT_graph(sys)
+    end 
+    
+    return sys
+
+
 end 
 
 
-get_systotal(sys::DPT_mixed) = 2 + L(sys) + R(sys)
-N(sys::DPT_mixed) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
+get_systotal(sys::DPT_mixed) = get_systotal(sys.dpt)
+
 
 # this always ties to the L end, regardless of geometry
 L_contact(sys::Union{DPT, DPT_mixed}) = L_end(sys) - couple_range(sys) + 1
@@ -444,20 +470,51 @@ energies(sys::DPT_mixed) = sys.energies
 ks(sys::DPT_mixed) = sys.ks
 LR(sys::DPT_mixed) = sys.LR
 
+
 struct DPT_graph <: systems
 
     dpt :: Union{DPT, DPT_mixed}
+    sitemap :: Dict
 
 end 
 
+function set_DPT_graph(dpt; 
+    kwargs...
+    )
+
+
+    ITensors.enable_auto_fermion()
+    sitemap = get_sitemap(dpt)
+    return DPT_graph(dpt, sitemap)
+end 
+
+set_graph(sys::Union{DPT, DPT_mixed}, graph::Bool) = graph ? set_DPT_graph(sys) : sys
 
 for func ∈ [type, 
-    U, L, R, couple_range, bias_doubledot, bias_L, bias_R, t_reservoir, t_doubledot, contact, contact_t, dd_lower, L_begin, L_end, R_begin, R_end, L_contact, R_contact, ddposition
+    U, L, R, N, couple_range, bias_doubledot, bias_L, bias_R, t_reservoir, t_doubledot, contact, contact_t, dd_lower, L_begin, L_end, R_begin, R_end, L_contact, R_contact, ddposition
     ]
     
     func = Symbol(func)
     @eval $func(sys::DPT_mixed) = $func(sys.dpt)
+    @eval $func(sys::DPT_graph) = $func(sys.dpt)
 end 
+
+
+for func ∈ [
+    includeU, energies, ks, LR
+    ]
+    
+    func = Symbol(func)
+    @eval $func(sys::DPT_graph) = $func(sys.dpt::DPT_mixed)
+end 
+
+
+
+sitemap(sys::DPT_graph) = sys.sitemap
+get_systotal(sys::DPT_graph) = get_systotal(sys.dpt)
+
+
+
 
 
 
