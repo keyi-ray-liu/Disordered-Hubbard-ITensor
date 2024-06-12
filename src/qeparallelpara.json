@@ -1,17 +1,33 @@
 {
-    "L" : 80,
+    "L" : 12,
+    "N" : 6,
     "TEdim" : 128,
     "QEmul" : 1.0,
     "center_parameter": {
         "center_ee" : 2.0,
-        "center_ne" : 0.0,
+        "center_ne" : 1.0,
         "center_t" : 0.0,
         "center_range" : 5,
         "center_dis" : 2.0,
         "center_internal_t" : 0.0,
         "center_slope" : 0.5
     },
+    "confine_parameters" :[
+        {
+            "confine_start" : 1,
+            "confine_range" : 20,
+            "confine_potential" : -10.0
+        },
+        {
+            "confine_start" : 1,
+            "confine_range" : 1e10,
+            "confine_potential" : 0.0
+        }
+    ],
+    "range" : 1000,
     "_start" : 200.0,
     "timestep" : 2.0,
-    "fin" : 150
+    "fin" : 150,
+    "adiabatic" : 0,
+    "tswitch" : 10.0
 }

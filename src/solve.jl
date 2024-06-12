@@ -2,6 +2,8 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
 
     ex, prev_state, prev_energy, prev_var, sweepcnt, sweepdim, noise, TEcutoff, krylovdim, weight = SimulationParameters(simulation)
 
+    prev_state = convert(Vector{MPS}, prev_state)
+
     workdir = getworkdir()
     allvars = copy(prev_var)
     allenergy = copy(prev_energy)
@@ -42,7 +44,6 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
 
         else
 
-            @show prev_state
             energy, ψ = dmrg(H, prev_state, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim) 
 
             # check if cur energy is lower than previously achieved energy, if so, return to the point with lower energy (if not, start with current state as GS)

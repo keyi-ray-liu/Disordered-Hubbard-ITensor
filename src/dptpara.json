@@ -1,10 +1,12 @@
 {
-    "U": 0.0,
-    "L": 128,
-    "R": 128,
-    "tswitch": 32,
+    "U": 2.0,
+    "L": 6,
+    "R": 6,
+    "tswitch": 2,
     "timestep": 0.25,
     "TEdim": 128,
     "mixed": true,
-    "random" : false
+    "ordering" : "MATCH",
+    "includeU" : true,
+    "ddposition" : "M"
 }

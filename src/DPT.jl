@@ -1,6 +1,6 @@
 """get mixed basis reservoir parameters, the energies returned are at 0 bias, however the order is done at finite bias"""
-function gen_mixed(L, R, bias_L, bias_R; random=false, includeU=true, couple_range=2)
-
+function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, couple_range=2)
+    @info "Set mixed basis, $ordering"
     unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 
     if !includeU
@@ -9,23 +9,34 @@ function gen_mixed(L, R, bias_L, bias_R; random=false, includeU=true, couple_ran
     end 
 
     # HACK 
-    # we test the unsorted version
-    # bias_L = 100
-    # bias_R = -100
+    # we test individual version
 
 
     L_val = [ (2 *  cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
     R_val = [ (2 *  cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
 
 
-    if random
-        result = shuffle( vcat(L_val, R_val))
-    else
+    if ordering == "RNG"
+
+        seed = abs(rand(Int))
+        open(getworkdir * "randommixseed", "w") do io
+            writedlm(io, seed)
+        end 
+        result = shuffle( StableRNG(seed), vcat(L_val, R_val))
+        
+    elseif ordering == "SORTED"
         result = sort( vcat(L_val, R_val), rev=true)
+
+    elseif ordering == "MATCH"
+        result = vcat(sort(L_val, by= e -> abs(e[1]), rev=true), sort(R_val, by= e -> abs(e[1])))
+
+    else
+        error("Unknown ordering")
     end
 
     energies, ks, LR= unzip(result)
-    
+    writedlm(getworkdir() * "mixenergies", energies)
+
     energies -= LR * bias_L
 
     writedlm(getworkdir() * "ks", ks)
@@ -45,12 +56,12 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
 
     includeU = get(kwargs, :includeU, true)
     couple_range = get(kwargs, :couple_range, 2)
-    random = get(kwargs, :random, false)
+    ordering = get(kwargs, :ordering, "SORTED")
 
     # we first run a calculation with no bias on the LR, 
 
     if mixed
-        energies, ks, LR = gen_mixed(L, R, bias_L, bias_R; random=random, includeU=includeU, couple_range = couple_range)
+        energies, ks, LR = gen_mixed(L, R, bias_L, bias_R; ordering=ordering, includeU=includeU, couple_range = couple_range)
         eq = set_DPT_mixed(; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
         current_obs = includeU ? dyna_dptcurrent_mix : dyna_dptcurrent
@@ -128,11 +139,11 @@ function DPT_wrapper()
     TEdim = get(dpt_in, "TEdim", 64)
     bias_LR = get(dpt_in, "bias_LR", BIAS_LR)
     mixed = get(dpt_in, "mixed", false)
-    random = get(dpt_in, "random", false)
+    ordering = get(dpt_in, "ordering", "SORTED")
     includeU = get(dpt_in, "includeU", true)
     ddposition = get(dpt_in, "ddposition", "R")
 
-    run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, random=random, includeU=includeU, ddposition=ddposition)
+    run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, ordering=ordering, includeU=includeU, ddposition=ddposition)
 
     # dyna_occ()
     # dyna_EE()
@@ -149,9 +160,14 @@ end
 function DPT_graph_test()
 
     #sys = set_DPT_mixed(; L =8, R=8, graph=true )
-    sys = set_DPT(; L =6, R=6, graph=true )
+    # sys = set_DPT(; L =6, R=6, graph=true )
 
-    ψ = gen_state(sys)
+    # ψ = gen_state(sys)
+    energy, _, _ = gen_mixed(128, 128, 0.25, -0.25; ordering="MATCH")
+
+    open(getworkdir() * "testenergy", "w") do io
+        writedlm(io, energy)
+    end 
 
 
 end 

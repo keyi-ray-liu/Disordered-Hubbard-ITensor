@@ -109,7 +109,7 @@ function DenDenNeighbor(sys::QE_HOM, j)
     minrange = max(QESITES + 1, ceil(true_center(sys) - center_range(sys)))
     maxrange = min(uppertotal - QESITES, floor(true_center(sys) + center_range(sys)))
 
-    @show minrange, maxrange
+    #@show minrange, maxrange
 
     if j <= uppertotal
         den =  DenDenNeighbor(sys.upper, j)
