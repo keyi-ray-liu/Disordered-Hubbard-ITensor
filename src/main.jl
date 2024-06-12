@@ -72,7 +72,7 @@ end
 
 if test
     
-    rm(getworkdir())
+    rm(getworkdir(), force=true, recursive=true)
     #dyna_pϕ()
     #GQS_wrapper()
     #DPT_wrapper()
@@ -80,8 +80,8 @@ if test
     #NF_wrapper()
     #dyna_EE()
     #QE_SIAM_wrapper()
-    #QE_two_wrapper()
-    QE_HOM_wrapper()
+    QE_wrapper("QE_two")
+    #QE_HOM_wrapper()
     #DPT_graph_test()
 
 
@@ -113,10 +113,10 @@ else
 
 
     elseif ARG == "QE_two"
-        QE_two_wrapper()
+        QE_wrapper("QE_two")
 
     elseif ARG == "QE_parallel"
-        QE_HOM_wrapper()
+        QE_wrapper("QE_HOM")
 
     elseif ARG == "TEST"
         DPT_graph_test()

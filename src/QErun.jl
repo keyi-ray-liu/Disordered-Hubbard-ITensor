@@ -117,53 +117,33 @@ end
 
 
 
-function QE_two_wrapper()
+
+function QE_wrapper(key)
 
     product = false
-    qe_two_in = load_JSON( pwd() * "/qetwopara.json")
+    qe_in = load_JSON( pwd() * "/qepara.json")
 
-    QEen = get(qe_two_in, "QEen", 0.0)
-    L = get(qe_two_in, "L", 20)
-    N = get(qe_two_in, "N", div(L, 2))
-    QEmul = get(qe_two_in, "QEmul", 1.0)
-    confine_parameter = get(qe_two_in, "confine_parameter", EMPTY_CONFINE)
-    #τ = get(qe_two_in, "timestep", 0.125)
-    TEdim = get(qe_two_in, "TEdim", 64)
-
-    #QE_dyna_regular("QE_two", QEen, "initialqe2state", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N)
-    QE_confine("QE_two", QEen, "initialqe2state", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, tswitch=100.0, confine_parameter=confine_parameter)
-    dyna_occ()
-    dyna_EE()
-
-end 
-
-function QE_HOM_wrapper()
-
-    
-    product = false
-    qe_parallel_in = load_JSON( pwd() * "/qeparallelpara.json")
-
-    QEen = get(qe_parallel_in, "QEen", 0.0)
-    L = get(qe_parallel_in, "L", 20)
-    N = get(qe_parallel_in, "N", div(L, 2))
-    QEmul = get(qe_parallel_in, "QEmul", 1.0)
-    dp = get(qe_parallel_in, "dp", 1.0)
+    QEen = get(qe_in, "QEen", 0.0)
+    L = get(qe_in, "L", 20)
+    N = get(qe_in, "N", div(L, 2))
+    QEmul = get(qe_in, "QEmul", 1.0)
+    dp = get(qe_in, "dp", 1.0)
 
     #τ = get(qe_two_in, "timestep", 0.125)
-    TEdim = get(qe_parallel_in, "TEdim", 64)
-    center_parameter = get(qe_parallel_in, "center_parameter", EMPTY_CENTER)
-    confine_parameters = get(qe_parallel_in, "confine_parameters", EMPTY_CONFINES)
+    TEdim = get(qe_in, "TEdim", 64)
+    center_parameter = get(qe_in, "center_parameter", EMPTY_CENTER)
+    confine_parameters = get(qe_in, "confine_parameters", EMPTY_CONFINES)
 
-    τ = get(qe_parallel_in, "timestep", 1.0)
-    start = get(qe_parallel_in, "start", τ)
-    fin = get(qe_parallel_in, "fin", 200.0)
-    tswitch = get(qe_parallel_in, "tswitch", 50.0)
-    #adiabatic = get(qe_parallel_in, "adiabatic", 0.0)
+    τ = get(qe_in, "timestep", 1.0)
+    start = get(qe_in, "start", τ)
+    fin = get(qe_in, "fin", 200.0)
+    tswitch = get(qe_in, "tswitch", 50.0)
+    #adiabatic = get(qe_in, "adiabatic", 0.0)
 
-    inits = get(qe_parallel_in, "inits", "1")
+    inits = get(qe_in, "inits", "1")
     #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
     # QE_dyna_regular("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, dp=dp, inits=inits, adiabatic=adiabatic)
-    QE_confine("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, confine_parameters=confine_parameters, dp=dp, inits=inits, tswitch=tswitch)
+    QE_confine(key, QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, confine_parameters=confine_parameters, dp=dp, inits=inits, tswitch=tswitch)
 
 
 end 
