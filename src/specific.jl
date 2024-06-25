@@ -1,5 +1,5 @@
 
-
+Uk(j::Int, sys::DPT_avg) = Uk(j, ks(sys), LR(sys))
 Uk(j::Int, sys::DPT_mixed) = Uk(j, ks(sys), LR(sys))
 Uk(j::Int, sys::DPT_graph) = typeof(sys.dpt) == DPT_mixed ? Uk(j, sys.dpt) : error("subsystem not mixed")
 
@@ -85,6 +85,40 @@ function add_specific_int!(sys:: Union{DPT_mixed, DPT_graph}, res)
         end 
 
 
+
+    end 
+
+
+    return res
+end 
+
+
+
+function add_specific_int!(sys:: DPT_avg, res)
+
+    # spatial
+    if typeof(sys.dpt) == DPT_mixed
+
+        @info "Adding DPTavg mixed int"
+
+
+        # connection to coupled site
+        #UL, UR = Uk(couple_range(sys), sys)
+        UL, UR = Uk(1, sys)
+
+        # we separate the cases as L, R true indices can be offset due to the presence of the middle section
+        for (k_mix, k_actual) in enumerate(union(L_begin(sys): L_contact(sys) - 1 , R_contact(sys) + 1 : R_end(sys)))
+            
+            if UL[k_mix] != 0
+                res += UL[k_mix] * t_reservoir(sys), "Cdagup", sitemap(sys, k_actual), "Cup", sitemap(sys, L_contact(sys))
+                res += UL[k_mix] * t_reservoir(sys), "Cdagup", sitemap(sys, L_contact(sys)), "Cup", sitemap(sys, k_actual)
+
+            elseif UR[k_mix] != 0
+                res += UR[k_mix] * t_reservoir(sys), "Cdagup", sitemap(sys, k_actual), "Cup", sitemap(sys, R_contact(sys))
+                res += UR[k_mix] * t_reservoir(sys), "Cdagup", sitemap(sys, R_contact(sys)), "Cup", sitemap(sys, k_actual)
+            end 
+
+        end 
 
     end 
 

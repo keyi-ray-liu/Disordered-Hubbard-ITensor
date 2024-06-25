@@ -264,6 +264,24 @@ end
 
 Onsite(sys::DPT_graph, j::Int) = Onsite(sys.dpt, j)
 
+
+function Onsite(sys::DPT_avg, j::Int) 
+
+    if j == dd_lower(sys)
+        return bias_L(sys) - 1/2 * U(sys), bias_doubledot(sys)[1] - U(sys) * couple_range(sys)
+
+    elseif j == dd_lower(sys) + 1
+        return bias_R(sys) - 1/2 * U(sys), bias_doubledot(sys)[2] 
+
+    else
+        
+        onsite = Onsite(sys.dpt, j)
+        return onsite, 0
+
+    end 
+
+end
+
 function Onsite(sys::LSR_SIAM, j::Int)
 
 
@@ -282,24 +300,28 @@ function Onsite(sys::LSR_SIAM, j::Int)
 
 end 
 
+
+onsiteoperators(sys::systems) = type(sys) == "Fermion" ? ["N"] : ["Ntot"]
+onsiteoperators(sys::DPT_avg) = ["Nup", "Ndn"]
+
 function add_onsite!(sys::systems, res::OpSum)
     
     @info "Adding onsite"
-    sys_type = type(sys)
 
-    systotal = get_systotal(sys)
 
-    if sys_type == "Fermion"
-        ops = "N"
-  
-    elseif sys_type == "Electron"
-        ops = "Ntot"
-  
-    end 
-
-    for j=1 :systotal
+    for j=1 :get_systotal(sys)
         # E-E and N-
-        res += Onsite(sys, j), ops, sitemap(sys, j)
+
+        onsite..., = Onsite(sys, j)
+
+        for (i, op) in enumerate(onsiteoperators(sys))
+
+            if onsite[i] != 0
+                res += onsite[i], op, sitemap(sys, j)
+            end 
+
+        end 
+
 
     end 
 

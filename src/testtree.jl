@@ -40,15 +40,15 @@ using Random
 # https://github.com/mtfishman/ITensorNetworks.jl/blob/v0.6.0/test/test_treetensornetworks/test_solvers/test_dmrg.jl
 #https://github.com/mtfishman/NamedGraphs.jl
 
-function get_seff(ee)
-    log.(  (sum( exp.( 3 * ee) , dims=1) / (size(ee)[1] -1 )).^ 1/3)
-end 
+# function get_seff(ee)
+#     log.(  (sum( exp.( 3 * ee) , dims=1) / (size(ee)[1] -1 )).^ 1/3)
+# end 
 
-dims = 100
-bd = 128
-ee = ones(dims) * 128/ exp(1)
+# dims = 100
+# bd = 128
+# ee = ones(dims) * 128/ exp(1)
 
-get_seff(ee)
+# get_seff(ee)
 
 # function gen_mixed(L, R, bias_L, bias_R; random=false)
 
@@ -202,3 +202,49 @@ get_seff(ee)
 
 
 
+function entropies(psi::MPS, b::Int, max_order::Int)
+
+    s = siteinds(psi)  
+    orthogonalize!(psi, b)
+
+    if b==1
+        U,S,V = svd(psi[b], (s[b],))
+    else
+        U,S,V = svd(psi[b], (linkind(psi, b-1), s[b]))
+    end
+
+
+    SvN = 0.0
+    Renyi = [0.0 for _ in 2:max_order]
+    for n in 1:dim(S, 1)
+        p = S[n,n]^2
+        SvN -= p * log(p)
+
+        for (i, order) in enumerate(2:max_order)
+            Renyi[i] += p^order
+        end     
+        
+    end
+
+    for (i, order) in enumerate(2:max_order)
+        Renyi[i] = 1/(1 - order) * log(Renyi[i])
+    end  
+    
+    # return as uniform array
+    return [SvN, Renyi...]
+end
+
+
+let 
+
+    N = 20
+    state = [ isodd(n) ? "Emp" : "Occ" for n in 1:N]
+    s = siteinds("Fermion", N; conserve_qns=true)
+    M = randomMPS(s, state; linkdims=10)
+
+    for b in 1:N
+        @show entropies(M, b, 1)
+    end
+    
+
+end

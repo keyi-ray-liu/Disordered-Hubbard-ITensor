@@ -89,7 +89,7 @@ function set_Dynamic(;
     nsite=2,
     kwargs...
     )
-
+    
     return Dynamic(
         τ,
         start,
@@ -331,6 +331,15 @@ function set_lattice(ddposition, L, R, couple_range)
         lattice_info["L_contact"] = L - couple_range + 3
         lattice_info["R_contact"] = L + couple_range + 2
 
+    elseif ddposition == "avg"
+        lattice_info["dd_lower"] = L
+        lattice_info["L_begin"] = 1
+        lattice_info["L_end"] = L
+        lattice_info["R_begin"] = L + 1
+        lattice_info["R_end"] = L + R
+        lattice_info["L_contact"] = L - couple_range + 1
+        lattice_info["R_contact"] = L + couple_range
+
     else
         error("Unrecognized dd pos")
     end 
@@ -471,6 +480,13 @@ ks(sys::DPT_mixed) = sys.ks
 LR(sys::DPT_mixed) = sys.LR
 
 
+struct DPT_avg <: systems
+
+    dpt :: Union{DPT, DPT_mixed}
+
+end 
+
+
 struct DPT_graph <: systems
 
     dpt :: Union{DPT, DPT_mixed}
@@ -497,6 +513,7 @@ for func ∈ [type,
     func = Symbol(func)
     @eval $func(sys::DPT_mixed) = $func(sys.dpt)
     @eval $func(sys::DPT_graph) = $func(sys.dpt)
+    @eval $func(sys::DPT_avg) = $func(sys.dpt)
 end 
 
 
@@ -506,15 +523,50 @@ for func ∈ [
     
     func = Symbol(func)
     @eval $func(sys::DPT_graph) = $func(sys.dpt::DPT_mixed)
+    @eval $func(sys::DPT_avg) = $func(sys.dpt::DPT_mixed)
 end 
 
 
 
 sitemap(sys::DPT_graph) = sys.sitemap
 get_systotal(sys::DPT_graph) = get_systotal(sys.dpt)
+get_systotal(sys::DPT_avg) = L(sys) + R(sys)
 
 
 
+function DPT_setter(
+    mixed,
+    avg 
+    ;
+    ddposition ="R",
+    type="Fermion",
+    graph = false,
+    includeU = false,
+    kwargs...
+)  
+    # for avg, we remove the DD sites and merge it to L end
+    if avg
+        ddposition = "avg"
+        graph = false
+        includeU= false
+        type = "Electron"
+    end 
+
+
+    if mixed
+        sys = set_DPT_mixed(; type=type, ddposition = ddposition, graph=graph, includeU=includeU, kwargs...)
+
+    else
+        sys = set_DPT(; type=type, ddposition=ddposition, graph=graph, kwargs...)
+    end 
+
+    if avg
+        sys = DPT_avg(sys)
+    end 
+
+    @show sys
+
+end 
 
 
 

@@ -1,6 +1,23 @@
 gen_state_str(sys::systems) = shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])
 
-gen_state_str(sys::QE_two) = vcat(QE_str(sys)[1], gen_state_str(sys.chain_only), QE_str(sys)[2])
+function gen_state_str(sys::QE_two) 
+
+    #state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain_only), QE_str(sys)[2])
+
+    if confine_range(sys) >= L(sys)
+        state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain_only), QE_str(sys)[2])
+    else
+
+        empty_before = ["Emp" for i in 1:(confine_start(sys) - 1)]
+        mid = shuffle(vcat(["Emp" for i in 1:N(sys)[2]], ["Occ" for i in 1:N(sys)[2]] ))
+        empty_after = ["Emp" for i in (confine_range(sys) + confine_start(sys)):L(sys)]
+
+        state_str = vcat(QE_str(sys)[1], empty_before, mid, empty_after, QE_str(sys)[2])
+    end 
+
+    return state_str
+
+end 
 
 
 function gen_state_str(sys::DPT) 
@@ -24,6 +41,24 @@ function gen_state_str(sys::DPT)
     state_str = vcat(L, Lres, M, Rres, R)
     return state_str
 end 
+
+
+function gen_state_str(sys::DPT_avg)
+    Lres = shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+    Rres = shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+
+    if Lres[end] == "Up"
+        Lres[end] = "UpDn"
+
+    else
+        Lres[end] = "Dn"
+    end 
+
+
+    return vcat(Lres, Rres)
+
+end 
+
 
 gen_state_str(sys::DPT_mixed) = gen_state_str(sys.dpt)
 

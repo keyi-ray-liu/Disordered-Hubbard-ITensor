@@ -10,7 +10,13 @@ function entropies(psi::MPS, b::Int, max_order::Int)
 
     s = siteinds(psi)  
     orthogonalize!(psi, b)
-    _,S = svd(psi[b], (linkind(psi, b-1), s[b]))
+
+    if b==1
+        U,S,V = svd(psi[b], (s[b],))
+    else
+        U,S,V = svd(psi[b], (linkind(psi, b-1), s[b]))
+    end
+
     SvN = 0.0
     Renyi = [0.0 for _ in 2:max_order]
     for n in 1:dim(S, 1)
@@ -38,7 +44,7 @@ function scan_ee(ψ::MPS, max_order::Int)
     L = length(ψ)
     soi = []
 
-    for s in 2:L 
+    for s in 1:L 
         append!(soi, s)
     end 
 
@@ -93,7 +99,7 @@ function dyna_EE(; max_order=3, ψ=nothing, kwargs...)
         #writedlm(workdir * "sites", sites)
 
     else
-        ee, _ = scan_ee(ψ, max_order)
+        ee, bond = scan_ee(ψ, max_order)
 
         open(workdir * "SvN", "a") do io
             writedlm(io, [ee[:,1]])
@@ -105,19 +111,22 @@ function dyna_EE(; max_order=3, ψ=nothing, kwargs...)
             end 
         end 
 
+        open(workdir * "bonds", "a") do io
+            writedlm(io, [bond])
+        end 
+
     end 
 
 end 
 
 
 
-function dyna_occ(; type="Fermion", ψ=nothing, kwargs...)
+function dyna_occ(; sys=set_Chain(), ψ=nothing, kwargs...)
 
-    
     workdir = getworkdir()
 
     if isnothing(ψ)
-        if type == "Electron"
+        if type(sys) == "Electron"
             occup = []
             occdn = []
         else
@@ -134,7 +143,7 @@ function dyna_occ(; type="Fermion", ψ=nothing, kwargs...)
 
             println("Calculating occ, $t")
 
-            if type == "Electron"
+            if type(sys)== "Electron"
                 append!(occup, [expect(ψ, "Nup")])
                 append!(occdn, [expect(ψ, "Ndn")])
         
@@ -145,7 +154,7 @@ function dyna_occ(; type="Fermion", ψ=nothing, kwargs...)
 
         end 
 
-        if type == "Electron"
+        if type(sys) == "Electron"
             writedlm(workdir * "occup", occup)   
             writedlm(workdir * "occdn", occdn)   
     
@@ -156,8 +165,21 @@ function dyna_occ(; type="Fermion", ψ=nothing, kwargs...)
         writedlm(workdir* "times", T)
 
     else
-        open(workdir * "occ", "a") do io
-            writedlm( io, [expect(ψ, "N")])
+
+        if type(sys) == "Fermion"
+            open(workdir * "occ", "a") do io
+                writedlm( io, [expect(ψ, "N")])
+            end 
+
+        else
+            open(workdir * "occup", "a") do io
+                writedlm( io, [expect(ψ, "Nup")])
+            end 
+
+            open(workdir * "occdn", "a") do io
+                writedlm( io, [expect(ψ, "Ndn")])
+            end 
+
         end 
 
     end 
@@ -168,7 +190,13 @@ function dyna_dptcurrent(; ψ=nothing, sys=set_DPT(), kwargs...)
 
     function work(ψ, sys)
         
-        corr = correlation_matrix(ψ, "Cdag", "C"; sites=L_end(sys):R_begin(sys))
+        if type(sys) == "Fermion" 
+            op1, op2 = "Cdag", "C"
+        else
+            op1, op2 = "Cdagup", "Cup"
+        end 
+        
+        corr = correlation_matrix(ψ, op1, op2; sites=L_end(sys):R_begin(sys))
         return 2 * imag(corr[1, end])
     end 
 
@@ -259,12 +287,20 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=set_DPT_mixed(), kwargs...)
 end 
 
 
-function dyna_corr(; ψ=nothing, op1="Cdag", op2="C", t=nothing, kwargs...)
+function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
 
     function work(ψ)
 
         corr = correlation_matrix(ψ, op1, op2)
         return corr
+    end 
+
+    if type(sys) == "Fermion"
+        op1="Cdag"
+        op2="C"
+
+    elseif typeof(sys) == DPT_avg
+        op1, op2 = "Cdagup", "Cdagdn"
     end 
 
     workdir = getworkdir()

@@ -1,3 +1,6 @@
+HoppingNeighbor(sys::systems, j::Int) = []
+
+
 # for a flat chain, return next NN until end
 HoppingNeighbor(sys::Chain_only, j::Int) = j < L(sys) ? [[t(sys), j + 1] ] : []
 
@@ -175,6 +178,26 @@ end
 
 HoppingNeighbor(sys::DPT_graph, j::Int) = HoppingNeighbor(sys.dpt, j)
 
+function HoppingNeighbor(sys::DPT_avg, j::Int)
+
+    if j == dd_lower(sys)
+        return [[t_reservoir(sys), t_doubledot(sys), j + 1]]
+
+    else
+        hop =  HoppingNeighbor(sys.dpt, j)
+
+        if !isempty(hop)
+            return [[h[1], 0, h[2]] for h in hop]
+        else
+            return hop
+        end 
+
+
+    end 
+    
+
+end 
+
 function HoppingNeighbor(sys::LSR_SIAM, j::Int)
 
     # if L or R
@@ -210,15 +233,18 @@ function add_hop!(sys::systems, res::OpSum)
 
     for j in 1:systotal
 
-        for (v, k) in HoppingNeighbor(sys, j)
+        for (v..., k) in HoppingNeighbor(sys, j)
 
             k = trunc(Int, k)
-            for operator in operators
+            for (i, operator) in enumerate(operators)
 
-                op1, op2 = operator
+                if v[i] != 0
+                    op1, op2 = operator
+                    
 
-                res += v, op1, sitemap(sys, j), op2, sitemap(sys, k)
-                res += v, op1, sitemap(sys, k), op2, sitemap(sys, j)
+                    res += v[i], op1, sitemap(sys, j), op2, sitemap(sys, k)
+                    res += v[i], op1, sitemap(sys, k), op2, sitemap(sys, j)
+                end 
             end 
 
         end 

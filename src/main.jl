@@ -57,7 +57,7 @@ include("NF.jl")
 include("Chain.jl")
 include("specific.jl")
 
-disable_blas = true
+disable_blas = false
 
 if disable_blas
   BLAS.set_num_threads(1)
@@ -75,12 +75,12 @@ if test
     rm(getworkdir(), force=true, recursive=true)
     #dyna_pϕ()
     #GQS_wrapper()
-    #DPT_wrapper()
+    DPT_wrapper()
     #dyna_dptcurrent_mix()
     #NF_wrapper()
     #dyna_EE()
     #QE_SIAM_wrapper()
-    QE_wrapper("QE_two")
+    #QE_wrapper("QE_two")
     #QE_HOM_wrapper()
     #DPT_graph_test()
 

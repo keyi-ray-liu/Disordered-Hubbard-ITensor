@@ -39,6 +39,7 @@ type(sys::QE_two) = type(sys.chain_only)
 t(sys::QE_two) = t(sys.chain_only)
 ζ(sys::QE_two) = ζ(sys.chain_only)
 L(sys::QE_two) = L(sys.chain_only)
+N(sys::QE_two) = N(sys.chain_only)
 confine_range(sys::QE_two) = sys.confine_parameter["confine_range"]
 confine_potential(sys::QE_two) = sys.confine_parameter["confine_potential"]
 confine_start(sys::QE_two) = sys.confine_parameter["confine_start"]
@@ -58,7 +59,7 @@ function set_QE_two(;
 
     confine_parameter = confine_parameters[1]
     
-    if confine_parameter["confine_range"] <= L
+    if confine_parameter["confine_range"] < L
         N = div(confine_parameter["confine_range"], 2)
         @info "overriding N for confinement, N = $N"
     end 

@@ -84,7 +84,7 @@ end
 function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, center_parameter = EMPTY_CENTER, save_every=false, tswitch=0.0, confine_parameters = EMPTY_CONFINES, kwargs...)
 
     @info "Begin. QEen = $QEen"
-    QEen = get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
+    QEen = get_QEen(QEen, key, output, TEdim, QEmul, product; confine_parameters=confine_parameters, kwargs...)
     @info "After getting QEen, QEen = $QEen"
     
 
@@ -97,7 +97,7 @@ function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul
         @info "Stage 1"
         Stage1 = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, confine_parameters=confine_parameters, kwargs...)
         dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=start, fin=tswitch, kwargs...)
-        ψ = run_dynamic_simulation(Stage1, dynamic, ψ; message="QEdyna", save_every=save_every, obs=obs)
+        ψ = run_dynamic_simulation(Stage1, dynamic, ψ; message="QEStage1", save_every=save_every, obs=obs)
 
     else
         @warn "tswitch <= start, is this the expected behavior?"
@@ -109,7 +109,7 @@ function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul
     @info "Stage 2"
     Stage2= QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, confine_parameters=EMPTY_CONFINES, kwargs...)
     dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=tswitch + τ, fin=fin, kwargs...)
-    run_dynamic_simulation(Stage2, dynamic, ψ; message="QEdyna", save_every=save_every, obs=obs)
+    run_dynamic_simulation(Stage2, dynamic, ψ; message="QEStage2", save_every=save_every, obs=obs)
 
 
     

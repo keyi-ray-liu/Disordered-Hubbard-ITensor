@@ -169,35 +169,36 @@ function DenDenNeighbor(sys::DPT_mixed, j::Int)
     return den
 end 
 
+
+function DenDenNeighbor(sys::DPT_avg, j::Int)
+
+    DenDenNeighbor(sys.dpt, j)
+
+end 
+
+
 DenDenNeighbor(sys::DPT_graph, j::Int) = DenDenNeighbor(sys.dpt, j)
 
+ddoperators(sys::systems) = type(sys) == "Fermion" ? [["N", "N"]] : [["Ntot", "Ntot"]]
+ddoperators(sys::DPT_avg) =  [["Ndn", "Nup"]]
 
 function add_DensityDensity!(sys::systems, res::OpSum)
     
 
-    @info "Adding EE and NE"
-    sys_type = type(sys)
+    @info "Adding DemDen"
 
-    systotal = get_systotal(sys)
-
-    if sys_type == "Fermion"
-        ops = "N"
-  
-    elseif sys_type == "Electron"
-        ops = "Ntot"
-  
-    end 
-
-    for j=1 :systotal
+    for j=1 :get_systotal(sys)
         # E-E and N-E
 
-        for (U, k) in DenDenNeighbor(sys, j)
+        for (U..., k) in DenDenNeighbor(sys, j)
             
             k = trunc(Int, k)
-            # delta function setting up the exchange between nearest neighbor
+            for (i, operators) in enumerate( ddoperators(sys))
+                
+                op1, op2 = operators
+                res += U[i], op1, sitemap(sys, j), op2, sitemap(sys, k)
 
-            # because k < j, we check if j is in the nn of k
-            res += U, ops, sitemap(sys, j), ops, sitemap(sys, k)
+            end 
 
         end
 
