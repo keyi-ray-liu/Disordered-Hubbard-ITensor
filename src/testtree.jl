@@ -9,6 +9,8 @@ using Suppressor
 using ITensorTDVP
 using Random
 
+include("observables.jl")
+
 # #using DataGraphs: edge_data, vertex_data
 # #using Dictionaries: Dictionary
 # using Graphs: nv, vertices, edges, src, dst
@@ -201,49 +203,16 @@ using Random
 
 
 
-
-function entropies(psi::MPS, b::Int, max_order::Int)
-
-    s = siteinds(psi)  
-    orthogonalize!(psi, b)
-
-    if b==1
-        U,S,V = svd(psi[b], (s[b],))
-    else
-        U,S,V = svd(psi[b], (linkind(psi, b-1), s[b]))
-    end
-
-
-    SvN = 0.0
-    Renyi = [0.0 for _ in 2:max_order]
-    for n in 1:dim(S, 1)
-        p = S[n,n]^2
-        SvN -= p * log(p)
-
-        for (i, order) in enumerate(2:max_order)
-            Renyi[i] += p^order
-        end     
-        
-    end
-
-    for (i, order) in enumerate(2:max_order)
-        Renyi[i] = 1/(1 - order) * log(Renyi[i])
-    end  
-    
-    # return as uniform array
-    return [SvN, Renyi...]
-end
-
-
 let 
 
     N = 20
     state = [ isodd(n) ? "Emp" : "Occ" for n in 1:N]
     s = siteinds("Fermion", N; conserve_qns=true)
-    M = randomMPS(s, state; linkdims=10)
+    M = randomMPS(s, state; linkdims=20)
 
     for b in 1:N
-        @show entropies(M, b, 1)
+        @show b
+        RDM(M, b)
     end
     
 

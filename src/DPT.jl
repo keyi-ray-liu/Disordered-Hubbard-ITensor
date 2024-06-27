@@ -1,7 +1,7 @@
 """get mixed basis reservoir parameters, the energies returned are at 0 bias, however the order is done at finite bias"""
 
 gen_mixed(mixed, args...; kwargs...) =  mixed ? gen_mixed(args...;kwargs...) : ([], [], [])
-gen_obs(mixed, includeU) = [dyna_EE, dyna_occ, (mixed && includeU) ? dyna_dptcurrent_mix : dyna_dptcurrent, dyna_corr]
+gen_obs(mixed, includeU) = [dyna_EE, dyna_occ, (mixed && includeU) ? dyna_dptcurrent_mix : dyna_dptcurrent, dyna_corr, dyna_SRDM]
 
 function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, couple_range=2)
     @info "Set mixed basis, $ordering"
@@ -59,7 +59,7 @@ end
 
 
 """worker function that runs DPT calculations"""
-function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, save_every=false,  ddposition="R", graph=false, avg=false, switchinterval ::Int=1, kwargs...)
+function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, save_every=true,  ddposition="R", graph=false, avg=false, switchinterval ::Int=1, kwargs...)
 
 
     eqinit_str = "EqInit"
@@ -77,6 +77,11 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
         filter!( e->e ∉ [dyna_corr], obs)
     end 
 
+    if get(kwargs, :TEdim, 64) > 512
+        save_every=false
+    end 
+
+    @show save_every
     @show obs
 
     eq = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=0.0, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
@@ -152,7 +157,7 @@ function DPT_wrapper()
     ddposition = get(dpt_in, "ddposition", "R")
     avg = get(dpt_in, "avg", false)
     switchinterval = get(dpt_in, "switchinterval", 20)
-    sweepcnt = get(dpt_in, "sweepcnt", 10)
+    sweepcnt = get(dpt_in, "sweepcnt", 30)
 
     run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, ordering=ordering, includeU=includeU, ddposition=ddposition, avg=avg, switchinterval=switchinterval, sweepcnt=sweepcnt)
 
@@ -185,4 +190,15 @@ function DPT_graph_test()
     # end 
 
     return nothing
+end
+
+
+function DPT_corr()
+
+    dpt_in = load_JSON( pwd() * "/dptpara.json")
+    avg = get(dpt_in, "avg", false)
+
+    sys = DPT_setter(true, avg )
+    dyna_corr(; sys=sys)
+
 end 

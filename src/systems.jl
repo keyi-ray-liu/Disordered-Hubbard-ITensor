@@ -89,7 +89,7 @@ function set_Dynamic(;
     nsite=2,
     kwargs...
     )
-    
+
     return Dynamic(
         τ,
         start,
@@ -535,8 +535,8 @@ get_systotal(sys::DPT_avg) = L(sys) + R(sys)
 
 
 function DPT_setter(
-    mixed,
-    avg 
+    mixed :: Bool,
+    avg :: Bool 
     ;
     ddposition ="R",
     type="Fermion",

@@ -72,10 +72,11 @@ end
 
 if test
     
-    rm(getworkdir(), force=true, recursive=true)
+    #rm(getworkdir(), force=true, recursive=true)
     #dyna_pϕ()
     #GQS_wrapper()
-    DPT_wrapper()
+    #DPT_wrapper()
+    DPT_corr()
     #dyna_dptcurrent_mix()
     #NF_wrapper()
     #dyna_EE()
