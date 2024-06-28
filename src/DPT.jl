@@ -37,6 +37,9 @@ function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, coupl
     elseif ordering == "KMATCHED"
         result = sort( vcat(L_val, R_val), by= e-> e[2])
 
+    elseif ordering == "ABSSORTED"
+        result = sort( vcat(L_val, R_val), by = e-> abs(e[1]), rev=true)
+
     else
         error("Unknown ordering")
     end
@@ -59,7 +62,7 @@ end
 
 
 """worker function that runs DPT calculations"""
-function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, save_every=true,  ddposition="R", graph=false, avg=false, switchinterval ::Int=1, kwargs...)
+function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, save_every=false,  ddposition="R", graph=false, avg=false, switchinterval ::Int=1, kwargs...)
 
 
     eqinit_str = "EqInit"
@@ -73,11 +76,11 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
     energies, ks, LR = gen_mixed(mixed, L, R, bias_L, bias_R; ordering=ordering, includeU=includeU, couple_range = couple_range)
     obs = gen_obs(mixed, includeU)
     
-    if L > 80
+    if L > 140
         filter!( e->e ∉ [dyna_corr], obs)
     end 
 
-    if get(kwargs, :TEdim, 64) > 512
+    if get(kwargs, :TEdim, 64) > 256 || L > 40
         save_every=false
     end 
 
@@ -142,6 +145,8 @@ end
 
 function DPT_wrapper()
 
+    
+
     dpt_in = load_JSON( pwd() * "/dptpara.json")
 
     U = get(dpt_in, "U", 2.0)
@@ -157,7 +162,15 @@ function DPT_wrapper()
     ddposition = get(dpt_in, "ddposition", "R")
     avg = get(dpt_in, "avg", false)
     switchinterval = get(dpt_in, "switchinterval", 20)
-    sweepcnt = get(dpt_in, "sweepcnt", 30)
+    sweepcnt = get(dpt_in, "sweepcnt", 60)
+
+    if DISABLE_BLAS && L > 256
+        @show ITensors.enable_threaded_blocksparse()
+        @show ITensors.enable_threaded_blocksparse()
+    else
+        @show ITensors.disable_threaded_blocksparse()
+        @show ITensors.disable_threaded_blocksparse()
+    end 
 
     run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, ordering=ordering, includeU=includeU, ddposition=ddposition, avg=avg, switchinterval=switchinterval, sweepcnt=sweepcnt)
 
@@ -179,11 +192,11 @@ function DPT_graph_test()
     # sys = set_DPT(; L =6, R=6, graph=true )
 
     # ψ = gen_state(sys)
-    L = 32
+    L = 128
     energy, _, _ = gen_mixed(L, L, 0.25, -0.25; ordering="LRSORTED")
     energy, _, _ = gen_mixed(L, L, 0.25, -0.25; ordering="SORTED")
     energy, _, _ = gen_mixed(L, L, 0.25, -0.25; ordering="KMATCHED")
-    #energy, _, _ = gen_mixed(128, 128, 0.25, -0.25; ordering="ABSSORTED")
+    energy, _, _ = gen_mixed(L, L, 0.25, -0.25; ordering="ABSSORTED")
 
     # open(getworkdir() * "testenergy", "w") do io
     #     writedlm(io, energy)
@@ -200,5 +213,6 @@ function DPT_corr()
 
     sys = DPT_setter(true, avg )
     dyna_corr(; sys=sys)
+    dyna_SRDM()
 
 end 

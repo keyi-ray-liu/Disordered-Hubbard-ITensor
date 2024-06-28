@@ -57,9 +57,9 @@ include("NF.jl")
 include("Chain.jl")
 include("specific.jl")
 
-disable_blas = false
+const DISABLE_BLAS = true
 
-if disable_blas
+if DISABLE_BLAS
   BLAS.set_num_threads(1)
   ITensors.Strided.set_num_threads(1)
 end 
@@ -72,11 +72,12 @@ end
 
 if test
     
-    #rm(getworkdir(), force=true, recursive=true)
+    rm(getworkdir(), force=true, recursive=true)
     #dyna_pϕ()
     #GQS_wrapper()
-    #DPT_wrapper()
-    DPT_corr()
+    DPT_wrapper()
+    #DPT_corr()
+    #benchmark()
     #dyna_dptcurrent_mix()
     #NF_wrapper()
     #dyna_EE()
@@ -99,6 +100,8 @@ else
     elseif ARG == "EE" 
         dyna_EE()
 
+    elseif ARG == "DPT_corr"
+        DPT_corr()
 
     elseif ARG == "mixcurrent"
         dyna_dptcurrent_mix()

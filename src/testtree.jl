@@ -9,6 +9,7 @@ using Suppressor
 using ITensorTDVP
 using Random
 
+
 include("observables.jl")
 
 # #using DataGraphs: edge_data, vertex_data
@@ -203,17 +204,19 @@ include("observables.jl")
 
 
 
-let 
+# let 
 
-    N = 20
-    state = [ isodd(n) ? "Emp" : "Occ" for n in 1:N]
-    s = siteinds("Fermion", N; conserve_qns=true)
-    M = randomMPS(s, state; linkdims=20)
+#     N = 20
+#     state = [ isodd(n) ? "Emp" : "Occ" for n in 1:N]
+#     s = siteinds("Fermion", N; conserve_qns=true)
+#     M = randomMPS(s, state; linkdims=20)
 
-    for b in 1:N
-        @show b
-        RDM(M, b)
-    end
+#     for b in 1:N
+#         @show b
+#         RDM(M, b)
+#     end
     
 
-end
+# end
+
+
