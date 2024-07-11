@@ -365,6 +365,54 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=set_DPT_mixed(), kwargs...)
 
 end 
 
+function dyna_SDcurrent(; ψ=nothing, sys=set_SD(), kwargs...)
+    @error "Not completed"
+    @assert typeof(sys) == SD_array "sys type wrong!"
+    function work(ψ, sys)
+        
+        if  sys.type == "Fermion" 
+            op1, op2 = "Cdag", "C"
+        else
+            op1, op2 = "Cdagup", "Cup"
+        end 
+        
+        corr = correlation_matrix(ψ, op1, op2; sites=sys.source.contact:sys.s_contact)
+        return 2 * imag(corr[1, end])
+    end 
+
+    workdir = getworkdir()
+
+    if isnothing(ψ)
+        T = []
+        currentLR = []
+
+        for file in get_dyna_files()
+
+            ψ = load_ψ(file)
+            t = get_time(file)
+            append!(T, t)
+
+            println("Calculating DPT current, $t")
+
+            current = work(ψ, sys)
+            @show append!(currentLR, current)
+
+        end 
+
+        writedlm(workdir* "times", T)
+        writedlm(workdir* "currentLR", currentLR)
+    else
+
+        current = work(ψ, sys)
+        open( workdir * "currentLR", "a") do io
+            writedlm(io, current)
+        end 
+
+    end 
+
+
+end 
+
 
 function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
 
@@ -423,6 +471,9 @@ function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
 
 
 end 
+
+
+
 
 function dyna_LSRcurrent()
 

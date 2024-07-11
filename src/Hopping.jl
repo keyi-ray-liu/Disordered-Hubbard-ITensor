@@ -1,18 +1,18 @@
-HoppingNeighbor(sys::systems, j::Int) = []
+HoppingNeighbor(sys::systems, j::Int; offset=0) = []
 
 
 # for a flat chain, return next NN until end
-HoppingNeighbor(sys::Chain_only, j::Int) = j < L(sys) ? [[t(sys), j + 1] ] : []
+HoppingNeighbor(sys::Chain_only, j::Int, offset=0) = (j - offset) < L(sys) ? [[t(sys), j + 1] ] : []
 
 HoppingNeighbor(sys::GQS, j ::Int) = HoppingNeighbor(sys.chain_only, j)
 """
 Here, we have either the offset hopping in the QE, or the chain hopping
 """
-function HoppingNeighbor(sys::QE_two, j::Int)
+function HoppingNeighbor(sys::QE_two, j::Int; offset=0)
 
-
+    adj_j = j - offset
     # we only hop onwards, no hop in QE and last site
-    if j <3 || j > get_systotal(sys) - 3
+    if adj_j  <3 || adj_j > get_systotal(sys) - 3
         hop = []
     else
         hop = [[t(sys), j + 1]]
@@ -22,28 +22,53 @@ function HoppingNeighbor(sys::QE_two, j::Int)
 
 end 
 
-function HoppingNeighbor(sys::QE_parallel, j::Int)
+# function HoppingNeighbor(sys::QE_parallel, j::Int)
 
-    uppertotal = get_uppertotal(sys)
-    systotal = get_systotal(sys)
+#     uppertotal = get_uppertotal(sys)
+#     systotal = get_systotal(sys)
 
-    center_lower = systotal - 1
+#     center_lower = systotal - 1
 
-    if j <= uppertotal
-        hop = HoppingNeighbor(sys.upper, j)
+#     if j <= uppertotal
+#         hop = HoppingNeighbor(sys.upper, j)
 
-    elseif j < center_lower
-        hop = [ [t, site + uppertotal] for (t, site) in HoppingNeighbor(sys.lower, j - uppertotal)]
+#     elseif j < center_lower
+#         hop = [ [t, site + uppertotal] for (t, site) in HoppingNeighbor(sys.lower, j - uppertotal)]
 
-    elseif j == center_lower
-        hop = [ [center_internal_t(sys), systotal]]
+#     elseif j == center_lower
+#         hop = [ [center_internal_t(sys), systotal]]
 
-    else
-        hop = []
-    end 
+#     else
+#         hop = []
+#     end 
 
-    return hop
-end 
+#     return hop
+# end 
+
+# """Flattened X QE, each 'arm' is staggered, as QE + chain, ... , center, chain, QE, ...."""
+# function HoppingNeighbor(sys::QE_flat_SIAM, j::Int)
+
+#     hop = []
+#     # determine the total number of sites in left
+#     @show qe_loc, chain_begin, chain_end = get_sys_loc(sys, j)
+
+#     # hop to next
+#     if chain_begin <= j < chain_end
+#         append!(hop, [[t(sys), j + 1]])
+#     end 
+
+#     # left end, to center
+#     # right begin, to center
+#     if (j == chain_end && j > qe_loc)  ||  (j == chain_begin && j < qe_loc)
+#         append!(hop, [[center_t(sys), left(sys) + 1]])
+#     end 
+
+#     return hop
+
+
+# end 
+
+# HoppingNeighbor(sys::QE_G_SIAM, j::Int) = HoppingNeighbor(sys.system, j::Int)
 
 function HoppingNeighbor(sys::QE_HOM, j::Int)
 
@@ -55,7 +80,7 @@ function HoppingNeighbor(sys::QE_HOM, j::Int)
         hop = HoppingNeighbor(sys.upper, j)
 
     elseif j < systotal
-        hop = [ [t, site + uppertotal] for (t, site) in HoppingNeighbor(sys.lower, j - uppertotal)]
+        hop = HoppingNeighbor(sys.lower, j; offset=uppertotal)
 
     else
         hop = []
@@ -64,30 +89,7 @@ function HoppingNeighbor(sys::QE_HOM, j::Int)
     return hop
 end 
 
-"""Flattened X QE, each 'arm' is staggered, as QE + chain, ... , center, chain, QE, ...."""
-function HoppingNeighbor(sys::QE_flat_SIAM, j::Int)
 
-    hop = []
-    # determine the total number of sites in left
-    @show qe_loc, chain_begin, chain_end = get_sys_loc(sys, j)
-
-    # hop to next
-    if chain_begin <= j < chain_end
-        append!(hop, [[t(sys), j + 1]])
-    end 
-
-    # left end, to center
-    # right begin, to center
-    if (j == chain_end && j > qe_loc)  ||  (j == chain_begin && j < qe_loc)
-        append!(hop, [[center_t(sys), left(sys) + 1]])
-    end 
-
-    return hop
-
-
-end 
-
-HoppingNeighbor(sys::QE_G_SIAM, j::Int) = HoppingNeighbor(sys.system, j::Int)
 
 function HoppingNeighbor(sys::NF_square, j::Int)
 
@@ -101,6 +103,26 @@ function HoppingNeighbor(sys::NF_square, j::Int)
     # not at end of row
     if div(j - 1, L(sys)) + 1 < L(sys)
         append!(hop, [[t(sys), j + L(sys)]])
+    end 
+
+
+    return hop
+
+end 
+
+function HoppingNeighbor(sys::Rectangular, j::Int; offset=0)
+
+    hop = []
+    adj_j = j - offset
+
+    # not at end of col
+    if adj_j % Lx(sys) != 0
+        append!(hop, [[t(sys), j + 1]])
+    end 
+
+    # not at end of row
+    if adj_j <= get_systotal(sys) - Lx(sys)
+        append!(hop, [[t(sys), j + Lx(sys) ]])
     end 
 
 
@@ -214,6 +236,48 @@ function HoppingNeighbor(sys::LSR_SIAM, j::Int)
 
     return hop
 end 
+
+
+
+function HoppingNeighbor(res::reservoir_spatial, j::Int, sys_contact::Int, sys_coupling::Number; offset=0)
+
+    hop = []
+    adj_j = j - offset
+
+    # check if hopping to sys
+    if adj_j == res.contact
+        append!(hop, [[ sys_coupling, sys_contact ]])
+    end 
+
+    # check if can hop to NN
+    if adj_j < get_systotal(res) 
+        append!(hop, [[res.t, j + 1 ]] )
+    end 
+
+    return hop
+
+end 
+
+
+function HoppingNeighbor(sys::SD_array, j::Int)
+
+    source = get_systotal(sys.source)
+    array = get_systotal(sys.array)
+
+    if j <= source
+        return HoppingNeighbor(sys.source, j, sys.s_contact, sys.s_coupling)
+
+    elseif j <= source + array
+        return HoppingNeighbor(sys.array, j; offset=source)
+
+    else
+        return HoppingNeighbor(sys.drain, j, sys.d_contact, sys.d_coupling; offset= source + array)
+
+    end 
+    
+end 
+
+
 
 """This function only concerns with the 'simple' hopping, complex terms such as QE dipole offsets are calculated elsewhere"""
 function add_hop!(sys::systems, res::OpSum)

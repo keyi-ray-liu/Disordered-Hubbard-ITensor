@@ -12,27 +12,27 @@ using HDF5
 
 #using DataGraphs: edge_data, vertex_data
 #using Dictionaries: Dictionary
-using Graphs: nv, vertices, edges, src, dst
-#using ITensors: ITensors
-#using ITensors.ITensorMPS: ITensorMPS
-using ITensorNetworks:
-  ITensorNetworks,
-  OpSum,
-  ttn,
-  apply,
-  dmrg,
-  inner,
-  linkdims,
-  mpo,
-  random_mps,
-  random_ttn,
-  siteinds
+# using Graphs: nv, vertices, edges, src, dst
+# #using ITensors: ITensors
+# #using ITensors.ITensorMPS: ITensorMPS
+# using ITensorNetworks:
+#   ITensorNetworks,
+#   OpSum,
+#   ttn,
+#   apply,
+#   dmrg,
+#   inner,
+#   linkdims,
+#   mpo,
+#   random_mps,
+#   random_ttn,
+#   siteinds
 
 #using ITensorNetworks : tdvp
 #using ITensorNetworks.ModelHamiltonians: ModelHamiltonians
 #using KrylovKit: eigsolve
-using NamedGraphs:  rem_vertex!, add_vertex!, add_edge!, NamedGraph
-using Observers: observer
+# using NamedGraphs:  rem_vertex!, add_vertex!, add_edge!, NamedGraph
+# using Observers: observer
 using Test: @test, @test_broken, @testset
 using ITensorUnicodePlots: @visualize
 using StableRNGs: StableRNG
@@ -51,11 +51,12 @@ include("QEterms.jl")
 include("utils.jl")
 include("observables.jl")
 include("DPT.jl")
-include("LSR_SIAM.jl")
+include("SD.jl")
 include("QErun.jl")
 include("NF.jl")
 include("Chain.jl")
 include("specific.jl")
+include("basis.jl")
 
 const DISABLE_BLAS = true
 
@@ -75,7 +76,9 @@ if test
     rm(getworkdir(), force=true, recursive=true)
     #dyna_pϕ()
     #GQS_wrapper()
-    DPT_wrapper()
+    #set_SD()
+    #DPT_wrapper()
+    SD_wrapper()
     #DPT_corr()
     #benchmark()
     #dyna_dptcurrent_mix()

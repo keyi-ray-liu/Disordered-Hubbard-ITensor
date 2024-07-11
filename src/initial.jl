@@ -59,22 +59,49 @@ function gen_state_str(sys::DPT_avg)
 
 end 
 
+gen_state_str(sys::reservoir_spatial) = reverse!([ get_type_dict(sys.type)[i] for i=1:4 for _ in 1:sys.N[i]])
+
+gen_state_str(sys::SD_array) = vcat( gen_state_str(sys.source), gen_state_str(sys.array), gen_state_str(sys.drain))
+
 
 gen_state_str(sys::DPT_mixed) = gen_state_str(sys.dpt)
 
 gen_state_str(sys::LSR_SIAM) = vcat([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
-gen_state_str(sys::QE_flat_SIAM) = vcat(
-    reduce(vcat, [vcat(QE_str(sys)[j], shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])) for j in 1:legleft(sys)]), 
-    ["Emp"], 
-    reduce(vcat, [vcat(shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ]), QE_str(sys)[j]) for j in 1 + legleft(sys) : legright(sys) + legleft(sys)])
-    )
+# gen_state_str(sys::QE_flat_SIAM) = vcat(
+#     reduce(vcat, [vcat(QE_str(sys)[j], shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])) for j in 1:legleft(sys)]), 
+#     ["Emp"], 
+#     reduce(vcat, [vcat(shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ]), QE_str(sys)[j]) for j in 1 + legleft(sys) : legright(sys) + legleft(sys)])
+#     )
 
-gen_state_str(sys::QE_parallel) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower), ["Emp", "Occ"])
+# gen_state_str(sys::QE_parallel) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower), ["Emp", "Occ"])
+
+# gen_state_map(sys::QE_G_SIAM, sites) = Dict( s => gen_state_str(sys.system)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
+
+# function QE_str(sys::QE_flat_SIAM)
+
+#     ex = ["Occ", "Emp"]
+#     gs = ["Emp", "Occ"]
+
+#     if init(sys) == "1"
+#         return ex, gs, gs, gs
+
+#     elseif init(sys) == "2"
+#         return ex, ex, gs, gs
+
+#     elseif init(sys) == "3"
+#         return ex, ex, ex, gs
+
+#     elseif init(sys) == "4"
+#         return ex, ex, ex, ex
+
+#     else
+#         error("Unrecognized QE init")
+#     end 
+
+# end 
 
 gen_state_str(sys::QE_HOM) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower))
-
-gen_state_map(sys::QE_G_SIAM, sites) = Dict( s => gen_state_str(sys.system)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
 
 gen_state_map(sys::DPT_graph, sites) = Dict( s => gen_state_str(sys.dpt)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
 
@@ -125,28 +152,7 @@ function QE_str(sys::Union{QE_two})
 
 end 
 
-function QE_str(sys::QE_flat_SIAM)
 
-    ex = ["Occ", "Emp"]
-    gs = ["Emp", "Occ"]
-
-    if init(sys) == "1"
-        return ex, gs, gs, gs
-
-    elseif init(sys) == "2"
-        return ex, ex, gs, gs
-
-    elseif init(sys) == "3"
-        return ex, ex, ex, gs
-
-    elseif init(sys) == "4"
-        return ex, ex, ex, ex
-
-    else
-        error("Unrecognized QE init")
-    end 
-
-end 
 
 
 function gen_state(sys::Union{QE_G_SIAM, DPT_graph}; QN=true, kwargs...)

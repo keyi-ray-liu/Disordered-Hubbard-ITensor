@@ -1,52 +1,88 @@
-
+ifexch(j::Int, k::Int, sys, range, exch::Float64) = ( 1 - (dis(j, k, sys; range=range) == 1) * exch )
 
 """ A general principle is that we always use native indexing in the subsystem"""
 DenDenNeighbor(sys::systems, j) = []
 
-function DenDenNeighbor(sys::QE_flat_SIAM, j)
+# function DenDenNeighbor(sys::QE_flat_SIAM, j)
 
 
-    _, chain_begin, chain_end = get_sys_loc(sys, j)
-    λ_ee, _, exch, _, range, _, ζ = CoulombParameters(sys)
+#     _, chain_begin, chain_end = get_sys_loc(sys, j)
+#     λ_ee, _, exch, _, range, _, ζ = CoulombParameters(sys)
 
-    ifexch(j, k, sys) = ( 1 - (dis(j, k, sys) == 1) * exch )
+#     ifexch(j, k, sys) = ( 1 - (dis(j, k, sys) == 1) * exch )
 
-    if chain_begin <= j <= chain_end
+#     if chain_begin <= j <= chain_end
 
-        return [ [λ_ee * ifexch(j, k, sys) / ( dis(j, k, sys) + ζ), k] for k in max(chain_begin, j - range) : j - 1]
+#         return [ [λ_ee * ifexch(j, k, sys) / ( dis(j, k, sys) + ζ), k] for k in max(chain_begin, j - range) : j - 1]
 
 
-    # center site interacting, since the sys is completely symmetric, the sites are the only thing thats being changed
-    elseif j == left(sys) + 1
+#     # center site interacting, since the sys is completely symmetric, the sites are the only thing thats being changed
+#     elseif j == left(sys) + 1
 
-        denden = []
+#         denden = []
 
-        for k in 1:min(range, siteseach(sys))
+#         for k in 1:min(range, siteseach(sys))
 
-            # we calculate interact ONCE, as if we are at site 0
-            strength = center_ee(sys) * ifexch(0, k, sys) / (dis(0, k, sys) + ζ)
-            #left
-            for l in 1:legleft(sys)
-                append!(denden, [[strength, j - k - (l -1) * (siteseach(sys) + QESITES)]])
-            end 
+#             # we calculate interact ONCE, as if we are at site 0
+#             strength = center_ee(sys) * ifexch(0, k, sys) / (dis(0, k, sys) + ζ)
+#             #left
+#             for l in 1:legleft(sys)
+#                 append!(denden, [[strength, j - k - (l -1) * (siteseach(sys) + QESITES)]])
+#             end 
 
-            #right
-            for r in 1:legright(sys)
-                append!(denden, [[strength, j + k + (r -1) * (siteseach(sys) + QESITES)]])
-            end 
+#             #right
+#             for r in 1:legright(sys)
+#                 append!(denden, [[strength, j + k + (r -1) * (siteseach(sys) + QESITES)]])
+#             end 
 
-        end 
+#         end 
 
-        @show denden
-        return denden
-    else
+#         @show denden
+#         return denden
+#     else
 
-        return []
-    end 
+#         return []
+#     end 
 
-end 
+# end 
 
-DenDenNeighbor(sys::QE_G_SIAM, j) = DenDenNeighbor(sys.system, j)
+# DenDenNeighbor(sys::QE_G_SIAM, j) = DenDenNeighbor(sys.system, j)
+
+# function DenDenNeighbor(sys::QE_parallel, j)
+
+#     uppertotal = get_uppertotal(sys)
+#     systotal = get_systotal(sys)
+#     center_lower = systotal - 1
+
+#     if j <= uppertotal
+#         den =  DenDenNeighbor(sys.upper, j)
+
+#     elseif j < center_lower
+#         den =  [ [U, k + uppertotal] for (U, k) in DenDenNeighbor(sys.lower, j - uppertotal)]
+
+#     # the contact site, physically sits in the middle of two chains. We move to the native chain coordinates
+#     elseif j == center_lower
+#         upperchain = get_upperchain(sys)
+#         lowerchain = get_lowerchain(sys)
+
+#         uppercenter = div(upperchain, 2) + 0.5
+#         lowercenter = div(lowerchain, 2) + 0.5
+        
+#         upperoffset = QESITES
+#         loweroffset = uppertotal + QESITES
+
+#         den = vcat(
+#             [ [ center_ee(sys) / (dis(i, uppercenter, sys) + center_dis(sys)), i + upperoffset] for i in  max( 1, uppercenter - center_range(sys) ) : min( upperchain, uppercenter + center_range(sys))],
+#             [ [ center_ee(sys) / (dis(i, lowercenter, sys) + center_dis(sys)), i + loweroffset] for i in  max( 1, lowercenter - center_range(sys) ) : min( lowerchain, lowercenter + center_range(sys))]
+#         )
+
+#     else
+
+#         den = []
+#     end 
+
+#     return den
+# end 
 
 function DenDenNeighbor(sys::QE_two, j)
 
@@ -66,41 +102,6 @@ function DenDenNeighbor(sys::QE_two, j)
     return den
 end 
 
-function DenDenNeighbor(sys::QE_parallel, j)
-
-    uppertotal = get_uppertotal(sys)
-    systotal = get_systotal(sys)
-    center_lower = systotal - 1
-
-    if j <= uppertotal
-        den =  DenDenNeighbor(sys.upper, j)
-
-    elseif j < center_lower
-        den =  [ [U, k + uppertotal] for (U, k) in DenDenNeighbor(sys.lower, j - uppertotal)]
-
-    # the contact site, physically sits in the middle of two chains. We move to the native chain coordinates
-    elseif j == center_lower
-        upperchain = get_upperchain(sys)
-        lowerchain = get_lowerchain(sys)
-
-        uppercenter = div(upperchain, 2) + 0.5
-        lowercenter = div(lowerchain, 2) + 0.5
-        
-        upperoffset = QESITES
-        loweroffset = uppertotal + QESITES
-
-        den = vcat(
-            [ [ center_ee(sys) / (dis(i, uppercenter, sys) + center_dis(sys)), i + upperoffset] for i in  max( 1, uppercenter - center_range(sys) ) : min( upperchain, uppercenter + center_range(sys))],
-            [ [ center_ee(sys) / (dis(i, lowercenter, sys) + center_dis(sys)), i + loweroffset] for i in  max( 1, lowercenter - center_range(sys) ) : min( lowerchain, lowercenter + center_range(sys))]
-        )
-
-    else
-
-        den = []
-    end 
-
-    return den
-end 
 
 function DenDenNeighbor(sys::QE_HOM, j)
 
@@ -129,12 +130,13 @@ function DenDenNeighbor(sys::QE_HOM, j)
     return den
 end 
 
-function DenDenNeighbor(sys::Chain_only, j::Int)
+function DenDenNeighbor(sys::Union{Chain_only, Rectangular}, j::Int; offset=0)
 
     λ_ee, _, exch, _, range, _, ζ = CoulombParameters(sys)
-    ifexch(j, k, sys) = ( 1 - (dis(j, k, sys) == 1) * exch )
-    
-    return [ [λ_ee * ifexch(j, k, sys) / ( dis(j, k, sys) + ζ), k] for k in max(1, j - range) : j - 1]
+
+    adj_j = j - offset
+
+    return [ [λ_ee * ifexch(adj_j, k, sys, range, exch) / ( dis(adj_j, k, sys; range=range) + ζ), k + offset] for k in 1:adj_j- 1]
     
 end 
 
@@ -167,6 +169,26 @@ function DenDenNeighbor(sys::DPT_mixed, j::Int)
     end 
 
     return den
+end 
+
+DenDenNeighbor(res::reservoir, j::Int; offset=0) = []
+
+function DenDenNeighbor(sys::SD_array, j::Int)
+
+    source = get_systotal(sys.source)
+    array = get_systotal(sys.array)
+
+    if j <= source
+        return DenDenNeighbor(sys.source, j)
+
+    elseif j <= source + array
+        return DenDenNeighbor(sys.array, j; offset=source)
+
+    else
+        return DenDenNeighbor(sys.drain, j; offset= source + array)
+
+    end 
+
 end 
 
 

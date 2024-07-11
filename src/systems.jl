@@ -10,6 +10,7 @@ const LASTSTSTR = "tTDVPlaststate"
 
 abstract type systems end 
 abstract type simulations end
+abstract type reservoir end
 
 # """ Defines a Hubbard system """
 # struct Hubbard <: systems
@@ -200,7 +201,7 @@ struct Rectangular <: systems
 
 end 
 
-Lx(sys::Rectangular) = sys.L
+Lx(sys::Rectangular) = sys.Lx
 type(sys::Rectangular) = sys.type
 N(sys::Rectangular) = sys.N
 t(sys::Rectangular) = sys.t
@@ -216,6 +217,7 @@ function set_Rectangular(;
     )
 
     coulomb = set_Coulombic(;kwargs...)
+    L = Lx * Ly
 
     if typeof(N) == Int
         N = [L - N, N, 0, 0]
@@ -248,7 +250,7 @@ t(sys::NF_square) = sys.t
 U(sys::NF_square) = sys.U
 bias(sys::NF_square) = sys.bias
 N(sys::NF_square) = sys.N
-type(sys::NF_square) = "Electron"
+type(sys::NF_square) = sys.type
 
 function set_NF_square(;
     L = 3,
@@ -275,8 +277,6 @@ function set_NF_square(;
 
 
 end 
-
-
 
 
 struct DPT <: systems
@@ -570,6 +570,112 @@ end
 
 
 
+struct reservoir_spatial <: reservoir
+
+    L :: Int
+    type :: String
+    t :: Float64
+    N :: Vector{Int}
+    contact :: Int
+    bias :: Float64
+
+end 
+
+struct reservoir_mixed <: reservoir
+
+    energies :: Vector
+    type :: String
+    ks :: Vector
+    LR :: Vector
+    bias :: Float64
+    N :: Vector{Int}
+
+end 
+
+
+get_systotal(res::reservoir_spatial) = res.L
+get_systotal(res::reservoir_mixed) = length(res.energies)
+
+
+struct SD_array{T, U} <: systems where {T <: reservoir, U <: systems}
+
+    source :: T 
+    drain :: T 
+    array :: U
+    type :: String
+    s_contact :: Int
+    s_coupling :: Number
+    d_contact :: Int
+    d_coupling :: Number
+
+end 
+
+get_systotal(sys::SD_array) = sum( [get_systotal(subsys) for subsys in [sys.source, sys.array, sys.drain]])
+
+for func ∈ [:type
+    ]
+    @eval $func(sys::SD_array) = sys.$func
+end 
+
+function set_reservoir(;
+    L = 12,
+    t = -1.0,
+    type = "Fermion",
+    N = 6,
+    contact = L,
+    bias = 0.0,
+    kwargs...)
+
+    if typeof(N) == Int
+        N = [L - N, N, 0, 0]
+    end 
+
+    reservoir = reservoir_spatial(L, type, t, N, contact, bias)
+    return reservoir
+
+end 
+
+
+function set_SD(
+    ;
+    L = 12,
+    Ns = [0, 0, 0, 1],
+    Na = 0,
+    Nd = 0,
+    s_coupling = -0.01,
+    d_coupling = -0.01,
+    s_contact = 1,
+    d_contact = 9,
+    type = "Fermion",
+    kwargs...
+)
+
+    s_contact = s_contact + L
+    d_contact = d_contact + L
+
+    source = set_reservoir(; L=L, N=Ns, contact = L, type=type,  kwargs...)
+    drain = set_reservoir(; L=L, N=Nd, contact = 1, type=type, kwargs...)
+    array = set_Rectangular(; N=Na, kwargs...)
+
+    SD = SD_array(
+        source, 
+        drain, 
+        array, 
+        type, 
+        s_contact , 
+        s_coupling, 
+        d_contact, 
+        d_coupling
+    )
+
+
+    return SD
+
+end 
+
+
+
+
 struct LSR_SIAM <: systems
 
     t_reservoir :: Float64
@@ -620,12 +726,26 @@ get_systotal(sys::LSR_SIAM) = 1 + L(sys) + R(sys)
 N(sys::LSR_SIAM) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
 
+dis(i::Int, j::Int, sys::systems; range=Inf64) = abs(i- j) <= range ? abs(i - j) : Inf64
 
 
-dis(i, j, sys::systems) = abs(i- j)
+function dis(i::Int, j::Int, sys::Rectangular; range=Inf64)
+
+    xi = (i - 1) % Lx(sys) + 1
+    yi = (i - 1) ÷ Lx(sys) + 1
+
+    xj = (j - 1) % Lx(sys) + 1
+    yj = (j - 1) ÷ Lx(sys) + 1
+
+    vec = norm([xi - xj, yi - yj])
+    vec = vec <= range ? vec : Inf64
+    
+    return vec
+
+end 
 
 
-CoulombParameters(sys::Chain_only) = CoulombParameters(sys.coulomb::Coulombic)
+CoulombParameters(sys::Union{Chain_only, Rectangular}) = CoulombParameters(sys.coulomb::Coulombic)
 
 
 CoulombParameters(sys::Coulombic) = sys.λ_ee, sys.λ_ne, sys.exch, sys.scr, sys.range, sys.CN, sys.ζ

@@ -1,68 +1,21 @@
 """get mixed basis reservoir parameters, the energies returned are at 0 bias, however the order is done at finite bias"""
 
-gen_mixed(mixed, args...; kwargs...) =  mixed ? gen_mixed(args...;kwargs...) : ([], [], [])
+
 gen_obs(mixed, includeU) = [dyna_EE, dyna_occ, (mixed && includeU) ? dyna_dptcurrent_mix : dyna_dptcurrent, dyna_corr, dyna_SRDM]
 
-function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, couple_range=2)
-    @info "Set mixed basis, $ordering"
-    unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 
-    if !includeU
-        L -= couple_range
-        R -= couple_range
-    end 
+function continue_from_last()
 
-    # HACK 
-    # we test individual version
-
-
-    L_val = [ (2 *  cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
-    R_val = [ (2 *  cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
-
-
-    if ordering == "RNG"
-
-        seed = abs(rand(Int))
-        open(getworkdir * "randommixseed", "w") do io
-            writedlm(io, seed)
-        end 
-        result = shuffle( StableRNG(seed), vcat(L_val, R_val))
-        
-    elseif ordering == "SORTED"
-        result = sort( vcat(L_val, R_val), rev=true)
-
-    elseif ordering == "LRSORTED"
-        result = vcat(sort(L_val, by= e -> abs(e[1]), rev=true), sort(R_val, by= e -> abs(e[1])))
-
-    elseif ordering == "KMATCHED"
-        result = sort( vcat(L_val, R_val), by= e-> e[2])
-
-    elseif ordering == "ABSSORTED"
-        result = sort( vcat(L_val, R_val), by = e-> abs(e[1]), rev=true)
-
+    if !isempty(Glob.glob( "$LASTSTSTR.h5", getworkdir()))
+        @show "non empty"
     else
-        error("Unknown ordering")
-    end
-
-    energies, ks, LR= unzip(result)
-    writedlm(getworkdir() * "BIASEDenergies", energies)
-    writedlm(getworkdir() * "BIASEDenergies" * ordering, energies)
-
-    energies -= LR * bias_L
-
-    writedlm(getworkdir() * "ks", ks)
-    writedlm(getworkdir() * "ks" * ordering, ks)
-    writedlm(getworkdir() * "LR", LR)
-    writedlm(getworkdir() * "LR" * ordering, LR)
-
-    return energies, ks, LR
-
+        @show "empty"
+    end 
 end 
 
 
-
 """worker function that runs DPT calculations"""
-function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, save_every=false,  ddposition="R", graph=false, avg=false, switchinterval ::Int=1, kwargs...)
+function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bias_LR/2, τ=0.125, mixed=false, save_every=false,  ddposition="R", graph=false, avg=false, switchinterval ::Int=1,  kwargs...)
 
 
     eqinit_str = "EqInit"
@@ -164,7 +117,7 @@ function DPT_wrapper()
     switchinterval = get(dpt_in, "switchinterval", 20)
     sweepcnt = get(dpt_in, "sweepcnt", 60)
 
-    if DISABLE_BLAS && L > 256
+    if DISABLE_BLAS && TEdim > 256
         @show ITensors.enable_threaded_blocksparse()
         @show ITensors.enable_threaded_blocksparse()
     else
