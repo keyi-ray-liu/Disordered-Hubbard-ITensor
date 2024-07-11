@@ -141,7 +141,7 @@ struct Chain_only <: systems
     L :: Int
     N :: Vector{Int}
     type :: String
-    t :: Float64
+    t :: Vector{Number}
     coulomb :: Coulombic
 end 
 
@@ -160,6 +160,7 @@ function set_Chain(;
     kwargs...
     )
 
+    t = FermionCondition(type, t)
     coulomb = set_Coulombic(;kwargs...)
 
     if typeof(N) == Int
@@ -190,13 +191,13 @@ type(sys::GQS) = type(sys.chain_only)
 get_systotal(sys::GQS) = get_systotal(sys.chain_only)
 
 
-struct Rectangular <: systems
+struct Rectangular{T} <: systems where T <: Number
 
     Lx :: Int
     Ly :: Int
     N :: Vector{Int}
     type :: String
-    t :: Float64
+    t :: Vector{T}
     coulomb :: Coulombic
 
 end 
@@ -216,6 +217,7 @@ function set_Rectangular(;
     kwargs...
     )
 
+    t = FermionCondition(type, t)
     coulomb = set_Coulombic(;kwargs...)
     L = Lx * Ly
 
@@ -234,12 +236,12 @@ function set_Rectangular(;
 
 end 
 
-struct NF_square <: systems
+struct NF_square{T} <: systems where T<: Number
 
     L :: Int
     N :: Vector{Int}
     U :: Float64
-    t :: Float64
+    t :: Vector{T}
     bias :: Float64
 
 end 
@@ -250,7 +252,7 @@ t(sys::NF_square) = sys.t
 U(sys::NF_square) = sys.U
 bias(sys::NF_square) = sys.bias
 N(sys::NF_square) = sys.N
-type(sys::NF_square) = sys.type
+type(sys::NF_square) = "Electron"
 
 function set_NF_square(;
     L = 3,
@@ -262,7 +264,7 @@ function set_NF_square(;
     kwargs...
     )
 
-
+    t = FermionCondition("Electron", t)
     if L^2 - Nup - Ndn != 1
         @warn "NF electron (hole) number !=1, is this expected behavior?"
     end 
@@ -574,7 +576,7 @@ struct reservoir_spatial <: reservoir
 
     L :: Int
     type :: String
-    t :: Float64
+    t :: Vector{Number}
     N :: Vector{Int}
     contact :: Int
     bias :: Float64
@@ -597,16 +599,16 @@ get_systotal(res::reservoir_spatial) = res.L
 get_systotal(res::reservoir_mixed) = length(res.energies)
 
 
-struct SD_array{T, U} <: systems where {T <: reservoir, U <: systems}
+struct SD_array{T, U, V} <: systems where {T <: reservoir, U <: systems, V <: Number}
 
     source :: T 
     drain :: T 
     array :: U
     type :: String
     s_contact :: Int
-    s_coupling :: Number
+    s_coupling :: Vector{V}
     d_contact :: Int
-    d_coupling :: Number
+    d_coupling :: Vector{V}
 
 end 
 
@@ -625,6 +627,8 @@ function set_reservoir(;
     contact = L,
     bias = 0.0,
     kwargs...)
+
+    t = FermionCondition(type, t)
 
     if typeof(N) == Int
         N = [L - N, N, 0, 0]
@@ -650,12 +654,15 @@ function set_SD(
     kwargs...
 )
 
+    s_coupling = FermionCondition(type, s_coupling)
+    d_coupling = FermionCondition(type, d_coupling)
+
     s_contact = s_contact + L
     d_contact = d_contact + L
 
     source = set_reservoir(; L=L, N=Ns, contact = L, type=type,  kwargs...)
     drain = set_reservoir(; L=L, N=Nd, contact = 1, type=type, kwargs...)
-    array = set_Rectangular(; N=Na, kwargs...)
+    array = set_Rectangular(; N=Na, type=type, kwargs...)
 
     SD = SD_array(
         source, 

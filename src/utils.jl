@@ -1,3 +1,19 @@
+FermionCondition(type::String) = type == "Fermion" ? 1 : 2
+
+function FermionCondition(type::String, t::Union{Number, Vector{T}}) where T <: Number
+
+  if typeof(t) <: Number
+    t = [ t for _ in 1:FermionCondition(type)]
+  end 
+
+  @assert length(t) == FermionCondition(type) "t length does not match F/E type"
+
+  return t
+
+end 
+
+
+
 function get_type_dict(type)
 
     op_str = Dict(

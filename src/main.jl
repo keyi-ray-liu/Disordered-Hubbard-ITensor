@@ -128,6 +128,9 @@ else
     elseif ARG == "TEST"
         DPT_graph_test()
 
+    elseif ARG == "SD"
+        SD_wrapper()
+
     else
         error("Unrecognized option")
     end 

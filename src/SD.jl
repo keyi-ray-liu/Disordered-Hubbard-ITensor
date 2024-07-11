@@ -44,8 +44,8 @@ end
 """worker function that runs DPT calculations"""
 function run_SD(L, R, fin; τ=0.125, bias_L=0.0, bias_R=0.0, kwargs...)
  
-    obs= [dyna_EE, dyna_occ, dyna_corr, dyna_SRDM,
-    #dyna_SDcurrent
+    obs= [dyna_EE, dyna_occ,  dyna_SRDM,
+    #dyna_SDcurrent, dyna_corr,
     ]
 
     # we first run a calculation with no bias on the LR, 
@@ -58,7 +58,7 @@ function run_SD(L, R, fin; τ=0.125, bias_L=0.0, bias_R=0.0, kwargs...)
     # run_static_simulation(sys, Static, ψ)
 
     # now we switch on the bias in L/R
-    dyna = set_SD(;L=L, R=R, bias_L=bias_L, bias_R=bias_R, kwargs...)
+    @show dyna = set_SD(;L=L, R=R, bias_L=bias_L, bias_R=bias_R, kwargs...)
 
     ψ = gen_state(dyna)
     Stage1 = set_Dynamic(;τ=τ, start=τ, fin=fin)
@@ -85,11 +85,13 @@ function SD_wrapper()
     Ns = get(sd_in, "Ns", 1)
     Nd = get(sd_in, "Nd", 0)
     Na = get(sd_in, "Na", 0)
-    fin = get(sd_in, "fin", 40.0)
     s_contact = get(sd_in, "scontact", 1)
     d_contact = get(sd_in, "dcontact", 9)
+    type = get(sd_in, "type", "Electron")
+    fin = get(sd_in, "fin", 10.0)
+    τ = get(sd_in, "timestep", 0.1)
 
-    run_SD(L, R, fin; τ=0.1/sqrt(abs(s_coupling)), Ns=Ns, Nd=Nd, Na=Na, s_coupling=s_coupling, d_coupling=d_coupling, 
-    λ_ne = λ_ne, λ_ee = λ_ee, s_contact=s_contact, d_contact=d_contact)
+    run_SD(L, R, fin; τ=τ, Ns=Ns, Nd=Nd, Na=Na, s_coupling=s_coupling, d_coupling=d_coupling, 
+    λ_ne = λ_ne, λ_ee = λ_ee, s_contact=s_contact, d_contact=d_contact, type=type)
 
 end 

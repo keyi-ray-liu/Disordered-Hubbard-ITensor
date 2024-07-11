@@ -2,7 +2,7 @@ HoppingNeighbor(sys::systems, j::Int; offset=0) = []
 
 
 # for a flat chain, return next NN until end
-HoppingNeighbor(sys::Chain_only, j::Int, offset=0) = (j - offset) < L(sys) ? [[t(sys), j + 1] ] : []
+HoppingNeighbor(sys::Chain_only, j::Int, offset=0) = (j - offset) < L(sys) ? [[t(sys)..., j + 1] ] : []
 
 HoppingNeighbor(sys::GQS, j ::Int) = HoppingNeighbor(sys.chain_only, j)
 """
@@ -15,7 +15,7 @@ function HoppingNeighbor(sys::QE_two, j::Int; offset=0)
     if adj_j  <3 || adj_j > get_systotal(sys) - 3
         hop = []
     else
-        hop = [[t(sys), j + 1]]
+        hop = [[t(sys)..., j + 1]]
     end 
 
     return hop
@@ -97,12 +97,12 @@ function HoppingNeighbor(sys::NF_square, j::Int)
 
     # not at end of col
     if j % L(sys) != 0
-        append!(hop, [[t(sys), j + 1]])
+        append!(hop, [[t(sys)..., j + 1]])
     end 
 
     # not at end of row
     if div(j - 1, L(sys)) + 1 < L(sys)
-        append!(hop, [[t(sys), j + L(sys)]])
+        append!(hop, [[t(sys)..., j + L(sys)]])
     end 
 
 
@@ -117,12 +117,12 @@ function HoppingNeighbor(sys::Rectangular, j::Int; offset=0)
 
     # not at end of col
     if adj_j % Lx(sys) != 0
-        append!(hop, [[t(sys), j + 1]])
+        append!(hop, [[t(sys)..., j + 1]])
     end 
 
     # not at end of row
     if adj_j <= get_systotal(sys) - Lx(sys)
-        append!(hop, [[t(sys), j + Lx(sys) ]])
+        append!(hop, [[t(sys)..., j + Lx(sys) ]])
     end 
 
 
@@ -239,19 +239,19 @@ end
 
 
 
-function HoppingNeighbor(res::reservoir_spatial, j::Int, sys_contact::Int, sys_coupling::Number; offset=0)
+function HoppingNeighbor(res::reservoir_spatial, j::Int, sys_contact::Int, sys_coupling::Vector{T}; offset=0) where T<:Number
 
     hop = []
     adj_j = j - offset
 
     # check if hopping to sys
     if adj_j == res.contact
-        append!(hop, [[ sys_coupling, sys_contact ]])
+        append!(hop, [[ sys_coupling..., sys_contact ]])
     end 
 
     # check if can hop to NN
     if adj_j < get_systotal(res) 
-        append!(hop, [[res.t, j + 1 ]] )
+        append!(hop, [[res.t..., j + 1 ]] )
     end 
 
     return hop
