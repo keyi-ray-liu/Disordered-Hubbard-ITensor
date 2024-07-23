@@ -68,6 +68,18 @@ gen_state_str(sys::DPT_mixed) = gen_state_str(sys.dpt)
 
 gen_state_str(sys::LSR_SIAM) = vcat([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
+
+function gen_state_str(sys::biased_chain) 
+
+    chain_arr = gen_state_str(sys.chain)
+
+    arr = ["Emp" for _ in 1:sys.full_size]
+    arr[ sys.chain_start : sys.chain_start + L(sys.chain) - 1] = chain_arr
+
+    return arr
+
+end 
+
 # gen_state_str(sys::QE_flat_SIAM) = vcat(
 #     reduce(vcat, [vcat(QE_str(sys)[j], shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])) for j in 1:legleft(sys)]), 
 #     ["Emp"], 

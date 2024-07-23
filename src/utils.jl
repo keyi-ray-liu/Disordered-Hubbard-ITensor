@@ -13,6 +13,9 @@ function FermionCondition(type::String, t::Union{Number, Vector{T}}) where T <: 
 end 
 
 
+set_SD_contacts(s_coupling, d_coupling, contact_scaling, L) = [ [s_coupling..., L + 1], [contact_scaling .* s_coupling..., L + 4], [ s_coupling..., L + 7]], [ [d_coupling..., L + 3], [contact_scaling .* d_coupling..., L + 6], [d_coupling..., L + 9]]
+
+
 
 function get_type_dict(type)
 

@@ -139,7 +139,7 @@ function DPT_wrapper()
 end 
 
 
-function DPT_graph_test()
+function plot_mix()
 
     #sys = set_DPT_mixed(; L =8, R=8, graph=true )
     # sys = set_DPT(; L =6, R=6, graph=true )

@@ -2,7 +2,9 @@ HoppingNeighbor(sys::systems, j::Int; offset=0) = []
 
 
 # for a flat chain, return next NN until end
-HoppingNeighbor(sys::Chain_only, j::Int, offset=0) = (j - offset) < L(sys) ? [[t(sys)..., j + 1] ] : []
+HoppingNeighbor(sys::Chain_only, j::Int; offset=0) = (j - offset) < L(sys) ? [[t(sys)..., j + 1] ] : []
+
+HoppingNeighbor(sys::biased_chain, j::Int; offset=0) = sys.chain_start <= j - offset < sys.chain_start + L(sys.chain) ? HoppingNeighbor(sys.chain, j, offset=offset - (sys.chain_start - 1)) : []
 
 HoppingNeighbor(sys::GQS, j ::Int) = HoppingNeighbor(sys.chain_only, j)
 """
@@ -239,14 +241,14 @@ end
 
 
 
-function HoppingNeighbor(res::reservoir_spatial, j::Int, sys_contact::Int, sys_coupling::Vector{T}; offset=0) where T<:Number
+function HoppingNeighbor(res::reservoir_spatial, j::Int, contacts::Array; offset=0)
 
     hop = []
     adj_j = j - offset
 
     # check if hopping to sys
     if adj_j == res.contact
-        append!(hop, [[ sys_coupling..., sys_contact ]])
+        append!(hop, contacts)
     end 
 
     # check if can hop to NN
@@ -265,13 +267,13 @@ function HoppingNeighbor(sys::SD_array, j::Int)
     array = get_systotal(sys.array)
 
     if j <= source
-        return HoppingNeighbor(sys.source, j, sys.s_contact, sys.s_coupling)
+        return HoppingNeighbor(sys.source, j, sys.s_contacts)
 
     elseif j <= source + array
         return HoppingNeighbor(sys.array, j; offset=source)
 
     else
-        return HoppingNeighbor(sys.drain, j, sys.d_contact, sys.d_coupling; offset= source + array)
+        return HoppingNeighbor(sys.drain, j, sys.d_contacts; offset= source + array)
 
     end 
     

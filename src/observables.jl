@@ -1,10 +1,57 @@
 get_time(raw::String) = parse(Float64, SubString(raw, 1 + length(DYNA_STR), length(raw) - length(".h5")))
 
+get_ex(raw::String) = parse(Int, SubString(raw, 1 + length(STA_STR), length(raw) - length(".h5")))
 
 get_dyna_files() = sort( 
     filter(x-> !occursin("lasttime", x),
     filter(x->occursin(DYNA_STR,x), readdir(getworkdir())))
     , by=get_time)
+
+get_static_files() = sort( filter(x->occursin(STA_STR,x), readdir(getworkdir())), by=get_ex)
+
+
+
+"""Calculates transition charge density between two wf"""
+function TCD(ψ1, ψ2; 
+    #temp=true
+    )
+
+  # ψ1 is left, ψ2 is right
+
+  #L = length(ψ1)
+  # type? fix if necessary
+  #tcd = zeros( ComplexF64, (L) )
+  # get site indices
+
+  #s1 = siteinds(ψ1)
+  s2 = siteinds(ψ2)
+
+  # for j = 1:L
+  #   replaceind!(ψ1[j], s1[j], s2[j])
+  # end 
+
+  operator = "N"
+  W = MPO( s2,  operator)
+
+  tcd = inner(ψ1', W, ψ2)
+
+  # explicitly calculate inner product of post-operated states
+
+#   for i in 1:L
+#     #tcd[ i] = inner( ψ1', op( operator, s2, i), ψ2)
+
+#     Op = op( operator, s2, i)
+#     Nψ2 = apply( Op, ψ2)
+
+#     #tcd[i] = (lefts[i] * ψdag[i] * cur * rights[i])[]
+#     tcd[i] = inner( ψ1', Nψ2)
+
+#   end 
+
+  #print(tcd)
+
+  return tcd
+end 
 
 
 """calculate reduced density matrix of one site"""
@@ -194,6 +241,45 @@ function dyna_EE(; max_order=3, ψ=nothing, kwargs...)
             writedlm(io, [bond])
         end 
 
+    end 
+
+end 
+
+function static_occ()
+
+    occ = []
+
+
+    for file in get_static_files()
+
+        ψ = load_ψ(file, tag= "psi")
+        append!(occ, [expect(ψ, "N")])
+
+    end 
+
+    open(getworkdir() * "staticocc", "w") do io
+        writedlm( io, occ)
+    end 
+
+end 
+
+function static_tcd()
+
+    tcd = []
+
+    gs = load_ψ(get_static_files()[1], tag="psi")
+
+    for file in get_static_files()
+
+        ψ = load_ψ(file, tag= "psi")
+
+        res = TCD(ψ, gs)
+        append!(tcd, [res])
+
+    end 
+
+    open(getworkdir() * "TCD", "w") do io
+        writedlm( io, tcd)
     end 
 
 end 

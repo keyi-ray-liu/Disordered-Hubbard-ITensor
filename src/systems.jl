@@ -6,6 +6,7 @@ const DYNA_STR = "tTDVP"
 const DPT_INIT_BIAS = [-100.0, 100.0]
 const BIAS_LR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
+const STA_STR = "temp_cur_ex"
 
 
 abstract type systems end 
@@ -136,12 +137,12 @@ function set_Coulombic(;
 
 end 
 
-struct Chain_only <: systems
+struct Chain_only{T} <: systems where T <: Number
 
     L :: Int
     N :: Vector{Int}
     type :: String
-    t :: Vector{Number}
+    t :: Vector{T}
     coulomb :: Coulombic
 end 
 
@@ -176,6 +177,19 @@ function set_Chain(;
     )
 
 end 
+
+struct biased_chain <: systems
+
+    chain:: Chain_only
+    full_size :: Int
+    chain_start :: Int
+
+end 
+
+type(sys::biased_chain) = type(sys.chain)
+get_systotal(sys::biased_chain) = sys.full_size
+
+set_biased_chain(; chain_start=1, full_size=100, kwargs...) = biased_chain( set_Chain(;kwargs...), full_size, chain_start)
 
 struct GQS <: systems
     chain_only :: Chain_only
@@ -599,16 +613,14 @@ get_systotal(res::reservoir_spatial) = res.L
 get_systotal(res::reservoir_mixed) = length(res.energies)
 
 
-struct SD_array{T, U, V} <: systems where {T <: reservoir, U <: systems, V <: Number}
+struct SD_array{T, U, V} <: systems where {T <: reservoir, U <: systems, V <: Any}
 
     source :: T 
     drain :: T 
     array :: U
     type :: String
-    s_contact :: Int
-    s_coupling :: Vector{V}
-    d_contact :: Int
-    d_coupling :: Vector{V}
+    s_contacts :: Array{V}
+    d_contacts :: Array{V}
 
 end 
 
@@ -646,10 +658,9 @@ function set_SD(
     Ns = [0, 0, 0, 1],
     Na = 0,
     Nd = 0,
+    contact_scaling = 2.0,
     s_coupling = -0.01,
     d_coupling = -0.01,
-    s_contact = 1,
-    d_contact = 9,
     type = "Fermion",
     kwargs...
 )
@@ -657,8 +668,8 @@ function set_SD(
     s_coupling = FermionCondition(type, s_coupling)
     d_coupling = FermionCondition(type, d_coupling)
 
-    s_contact = s_contact + L
-    d_contact = d_contact + L
+    s_contacts, d_contacts = set_SD_contacts(s_coupling, d_coupling, contact_scaling, L)
+
 
     source = set_reservoir(; L=L, N=Ns, contact = L, type=type,  kwargs...)
     drain = set_reservoir(; L=L, N=Nd, contact = 1, type=type, kwargs...)
@@ -669,10 +680,8 @@ function set_SD(
         drain, 
         array, 
         type, 
-        s_contact , 
-        s_coupling, 
-        d_contact, 
-        d_coupling
+        s_contacts,
+        d_contacts
     )
 
 

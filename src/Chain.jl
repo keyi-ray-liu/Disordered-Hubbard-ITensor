@@ -11,6 +11,34 @@ function run_GQS(L, N; τ=1.0, fin=1000.0, kwargs...)
 end 
 
 
+function run_chain( L, N, ex; dim=64, kwargs...)
+
+    sys = set_Chain(;  L=L, N=N, kwargs...)
+
+    @show sys
+    static = set_Static(; ex=ex, sweepdim=dim)
+    ψ = gen_state(sys)
+    _ = run_static_simulation(sys, static, ψ)
+
+    return nothing
+
+end 
+
+
+function run_biased_chain(full_size, L, N, ex; dim=64, sweepcnt=sweepcnt, kwargs...)
+
+    sys = set_biased_chain(; full_size=full_size, L=L, N=N, kwargs...)
+
+    @show sys
+    static = set_Static(; ex=ex, sweepdim=dim, sweepcnt=sweepcnt)
+    ψ = gen_state(sys)
+    _ = run_static_simulation(sys, static, ψ)
+
+    return nothing
+
+end 
+
+
 function GQS_wrapper()
 
     chain_in = load_JSON(pwd() * "/GQS.json")

@@ -140,6 +140,8 @@ function DenDenNeighbor(sys::Union{Chain_only, Rectangular}, j::Int; offset=0)
     
 end 
 
+DenDenNeighbor(sys::biased_chain, j::Int, offset=0) = sys.chain_start <= j - offset < sys.chain_start + L(sys.chain) ? DenDenNeighbor(sys.chain, j, offset=offset - (sys.chain_start - 1)) : []
+
 DenDenNeighbor(sys::GQS, j::Int) = DenDenNeighbor(sys.chain_only, j)
 
 function DenDenNeighbor(sys::DPT, j::Int)

@@ -116,14 +116,19 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
     writedlm( workdir * out * "allenergy", allenergy)
   
     # write wf
-  
-    wf = h5open( workdir * out * ".h5", "w")
-  
-    for (i, psi) in enumerate(prev_state)
-      write(wf, "psi" * string(i), psi)
+    
+    h5open(workdir * out * ".h5", "w") do io
+        for (i, psi) in enumerate(prev_state)
+            write(io, "psi" * string(i), psi)
+        end
+    end 
+
+    open(workdir * "staticocc", "w") do io
+        for psi in prev_state
+            writedlm(io, expect(psi, "N"))
+        end
     end
-  
-    close(wf)
+
 
     return prev_state
     #return prev_energy, prev_state, allenergy, allvars, prev_var

@@ -145,6 +145,9 @@ function Onsite(sys::Union{Rectangular, Chain_only}, j::Int; offset=0) :: Float6
 
 end 
 
+# we biase everywhere else on the chain with a large positive potential
+Onsite(sys::biased_chain, j::Int, offset=0) = sys.chain_start <= j - offset < sys.chain_start + L(sys.chain) ? Onsite(sys.chain, j, offset=offset - (sys.chain_start - 1)) : 500.0
+
 Onsite(sys::GQS, j::Int) = Onsite(sys.chain_only, j)
 
 """For NF NxN, we add to the inner square, that is from row 2 to row N - 1, from col 2 to col N - 1"""

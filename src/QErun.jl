@@ -149,6 +149,24 @@ function QE_wrapper(key)
 end 
 
 
+function solve_QE()
+
+    chain_in = load_JSON( pwd() * "/biasedchainpara.json")
+
+    full_size = get(chain_in, "fullsize", 100)
+    L = get(chain_in, "L", 20)
+    N = get(chain_in, "N", div(L, 2))
+
+    #τ = get(qe_two_in, "timestep", 0.125)
+    dim = get(chain_in, "dim", 64)
+    ex = get(chain_in, "ex", 10)
+    sweepcnt = get(chain_in, "sweepcnt", 10)
+
+    #run_chain(L, N, ex; dim=dim)
+    run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt)
+end 
+
+
 # function QE_SIAM_wrapper()
 
     

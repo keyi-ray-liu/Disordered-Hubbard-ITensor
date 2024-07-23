@@ -57,6 +57,7 @@ include("NF.jl")
 include("Chain.jl")
 include("specific.jl")
 include("basis.jl")
+include("test.jl")
 
 const DISABLE_BLAS = true
 
@@ -74,11 +75,13 @@ end
 if test
     
     rm(getworkdir(), force=true, recursive=true)
+    static_tcd()
     #dyna_pϕ()
     #GQS_wrapper()
     #set_SD()
     #DPT_wrapper()
-    SD_wrapper()
+    #SD_wrapper()
+    #solve_QE()
     #DPT_corr()
     #benchmark()
     #dyna_dptcurrent_mix()
@@ -88,6 +91,8 @@ if test
     #QE_wrapper("QE_two")
     #QE_HOM_wrapper()
     #DPT_graph_test()
+    #runtest()
+    #solve_QE()
 
 
 else
@@ -115,8 +120,8 @@ else
     elseif ARG == "NF_square"
         NF_wrapper()
 
-    elseif ARG == "QE_SIAM"
-        QE_SIAM_wrapper()
+    # elseif ARG == "QE_SIAM"
+    #     QE_SIAM_wrapper()
 
 
     elseif ARG == "QE_two"
@@ -125,8 +130,15 @@ else
     elseif ARG == "QE_parallel"
         QE_wrapper("QE_HOM")
 
-    elseif ARG == "TEST"
-        DPT_graph_test()
+
+    elseif ARG == "Solve_QE"
+        solve_QE()
+
+    elseif ARG == "plot_mix"
+        plot_mix()
+
+    elseif ARG == "TCD"
+        static_tcd()
 
     elseif ARG == "SD"
         SD_wrapper()
