@@ -1,3 +1,8 @@
+
+
+
+
+
 function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
 
     try
@@ -122,7 +127,6 @@ function QE_wrapper(key)
 
     product = false
     qe_in = load_JSON( pwd() * "/qepara.json")
-
     QEen = get(qe_in, "QEen", 0.0)
     L = get(qe_in, "L", 20)
     N = get(qe_in, "N", div(L, 2))
@@ -141,6 +145,8 @@ function QE_wrapper(key)
     #adiabatic = get(qe_in, "adiabatic", 0.0)
 
     inits = get(qe_in, "inits", "1")
+
+    
     #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
     # QE_dyna_regular("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, dp=dp, inits=inits, adiabatic=adiabatic)
     QE_confine(key, QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, confine_parameters=confine_parameters, dp=dp, inits=inits, tswitch=tswitch)
@@ -149,10 +155,60 @@ function QE_wrapper(key)
 end 
 
 
-function solve_QE()
+function wave_coeff(TCD; L=12, center=6.5, sigma=2)
 
-    chain_in = load_JSON( pwd() * "/biasedchainpara.json")
+    #@show size(TCD[:, 1:12])
+    g = map( x-> exp( -((x - center)/sigma) ^ 2), 1:L)
+    
+    F = transpose(TCD[:, 1:L])
+    C = F \ g
+    @show g
+    @show F * C
 
+
+    return C
+end 
+
+function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, padding=false)
+
+    if !isfile( getworkdir() * "initwavepacket.h5")
+
+
+        if isfile( getworkdir() * "TCD")
+            TCD = readdlm( getworkdir() * "TCD")
+        else
+            TCD = static_tcd(; includegs=includegs, padding=padding)
+        end 
+
+        coeff = wave_coeff(TCD; center=center, sigma=sigma, L=L)
+        wf = [ load_ψ(f; tag="psi") for f in get_static_files()]
+
+        wf_to_sum = coeff .* wf[2 - Int(includegs):end]
+        ψ = add(wf_to_sum...; maxdim=128)
+
+        normalize!(ψ)
+
+        @show cal_TCD(ψ, wf[1])
+
+        h5open( getworkdir() * "initwavepacket.h5", "w") do io
+            write(io, "psi", ψ)
+        end 
+
+    end 
+
+    ψ = load_ψ("initwavepacket"; tag="psi")
+    return ψ
+
+end 
+
+
+function solve_QE(; chain_in = nothing, kwargs...)
+
+
+    if !(typeof(chain_in) <: Dict)
+        chain_in = load_JSON( pwd() * "/biasedchainpara.json")
+    end 
+    
     full_size = get(chain_in, "fullsize", 100)
     L = get(chain_in, "L", 20)
     N = get(chain_in, "N", div(L, 2))
@@ -163,9 +219,62 @@ function solve_QE()
     sweepcnt = get(chain_in, "sweepcnt", 10)
 
     #run_chain(L, N, ex; dim=dim)
-    run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt)
+    run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt, kwargs...)
 end 
 
+function solve_QE_scan()
+
+    chain_in = load_JSON( pwd() * "/biasedchainpara.json")
+    full_size = get(chain_in, "full_size", 100)
+    L = get(chain_in, "L", 12)
+
+
+    for start ∈ 1: full_size - L + 1
+        chain_in[ "chain_start" ] = start
+        chain_in[ "ex" ] = 2
+        output = "start" * string(start)
+
+        @show chain_in
+
+        solve_QE(; chain_in = chain_in, output=output )
+    end 
+
+
+
+
+end 
+
+
+function QE_gaussian_wrapper()
+
+    qe_gaussian_in = load_JSON( pwd() * "/qegaussian.json")
+
+    full_size = get(qe_gaussian_in, "fullsize", 100)
+    full_N = get(qe_gaussian_in, "fullN", div(full_size, 2))
+    τ = get(qe_gaussian_in, "timestep", 0.25)
+    fin = get(qe_gaussian_in, "fin", 200)
+    TEdim = get(qe_gaussian_in, "TEdim", 128)
+    center = get(qe_gaussian_in, "center", 6.5)
+    sigma = get(qe_gaussian_in, "sigma", 4)
+    includegs = get(qe_gaussian_in, "includegs", false)
+    padding = get(qe_gaussian_in, "padding", true)
+    L = get(qe_gaussian_in, "L", 12)
+    save_every=true
+    obs = [dyna_EE, dyna_occ, dyna_corr]
+
+    # empty static wf, solve for QE
+    if isempty(get_static_files())
+        solve_QE(; chain_in = qe_gaussian_in)
+    end 
+    
+    ψ = prepare_wavepacket(; includegs=includegs, center=center, sigma=sigma, L=L, padding=padding)
+
+    chain= set_Chain(; L=full_size, N = full_N )
+    dynamic = set_Dynamic(; τ=τ, TEdim=TEdim, start=τ, fin=fin)
+    run_dynamic_simulation(chain, dynamic, ψ; message="QE_gaussian_chain_only", save_every=save_every, obs=obs)
+
+
+end 
 
 # function QE_SIAM_wrapper()
 

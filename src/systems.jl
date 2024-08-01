@@ -1,5 +1,3 @@
-
-
 const GLOBAL_CNT = 60
 const TOL = 1e-8
 const DYNA_STR = "tTDVP"

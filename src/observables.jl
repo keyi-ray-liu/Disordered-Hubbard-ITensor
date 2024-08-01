@@ -12,7 +12,7 @@ get_static_files() = sort( filter(x->occursin(STA_STR,x), readdir(getworkdir()))
 
 
 """Calculates transition charge density between two wf"""
-function TCD(ψ1, ψ2; 
+function cal_TCD(ψ1, ψ2; 
     #temp=true
     )
 
@@ -24,17 +24,16 @@ function TCD(ψ1, ψ2;
   # get site indices
 
   #s1 = siteinds(ψ1)
-  s2 = siteinds(ψ2)
 
   # for j = 1:L
   #   replaceind!(ψ1[j], s1[j], s2[j])
   # end 
+    operator = "N"
+#   W = MPO( s2,  operator)
 
-  operator = "N"
-  W = MPO( s2,  operator)
-
-  tcd = inner(ψ1', W, ψ2)
-
+#   tcd = inner(ψ1', W, ψ2
+    tcd = inner_product(ψ1, ψ2, operator)
+    #@show tcd
   # explicitly calculate inner product of post-operated states
 
 #   for i in 1:L
@@ -263,24 +262,35 @@ function static_occ()
 
 end 
 
-function static_tcd()
+function static_tcd(;includegs=false, padding=false)
 
     tcd = []
 
-    gs = load_ψ(get_static_files()[1], tag="psi")
+    files = get_static_files()
 
-    for file in get_static_files()
+    gs = load_ψ(files[1], tag="psi")
+
+    for file in files[2 - Int(includegs):end]
 
         ψ = load_ψ(file, tag= "psi")
 
-        res = TCD(ψ, gs)
+        res = cal_TCD(ψ, gs)
+
+        if padding
+            res = vcat([0], res, [0])
+            res = (res[1:end-1] + res[2:end])/2
+        end 
+
         append!(tcd, [res])
 
     end 
 
+    tcd = vectomat(tcd)
     open(getworkdir() * "TCD", "w") do io
         writedlm( io, tcd)
     end 
+
+    return tcd
 
 end 
 

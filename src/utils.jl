@@ -1,5 +1,8 @@
 FermionCondition(type::String) = type == "Fermion" ? 1 : 2
 
+
+norm2(A,d=2) = sum(abs2,A,dims=d)
+
 function FermionCondition(type::String, t::Union{Number, Vector{T}}) where T <: Number
 
   if typeof(t) <: Number
@@ -11,6 +14,32 @@ function FermionCondition(type::String, t::Union{Number, Vector{T}}) where T <: 
   return t
 
 end 
+
+
+"""rewrite the function analogous to the original expect() function"""
+function inner_product(L::MPS, R::MPS, opname::String; sites=1:length(L))
+
+  @assert length(L) == length(R)
+  s = siteinds(R)
+
+  site_range = (sites isa AbstractRange) ? sites : collect(sites)
+  Ns = length(site_range)
+
+
+  ex = zeros(Ns)
+  for (entry, j) in enumerate(site_range)
+    
+    Op =  op(opname, s[j])
+    val = inner(L, apply(Op, R)) 
+    ex[entry] = val
+
+  end
+
+  if sites isa Number
+    return map(arr -> arr[1], ex)
+  end
+  return ex
+end
 
 
 set_SD_contacts(s_coupling, d_coupling, contact_scaling, L) = [ [s_coupling..., L + 1], [contact_scaling .* s_coupling..., L + 4], [ s_coupling..., L + 7]], [ [d_coupling..., L + 3], [contact_scaling .* d_coupling..., L + 6], [d_coupling..., L + 9]]
@@ -82,7 +111,7 @@ function load_ψ(t::Float64; tag ="psi1")
   return ψ
 end 
 
-load_ψ(t::Int; tag ="psi1") = load_psi( float(t); tag = tag)
+load_ψ(t::Int; tag ="psi1") = load_ψ( float(t); tag = tag)
 
 function load_plsmon(output)
   ex = readdlm( getworkdir() * output * "ex")

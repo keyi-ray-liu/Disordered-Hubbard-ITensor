@@ -59,6 +59,7 @@ include("specific.jl")
 include("basis.jl")
 include("test.jl")
 
+
 const DISABLE_BLAS = true
 
 if DISABLE_BLAS
@@ -75,7 +76,11 @@ end
 if test
     
     rm(getworkdir(), force=true, recursive=true)
-    static_tcd()
+    #static_tcd()
+    #chain_wrapper()
+    #prepare_wavepacket()
+    #QE_gaussian_wrapper()
+    solve_QE_scan()
     #dyna_pϕ()
     #GQS_wrapper()
     #set_SD()
@@ -93,6 +98,8 @@ if test
     #DPT_graph_test()
     #runtest()
     #solve_QE()
+
+    return nothing
 
 
 else
@@ -130,6 +137,8 @@ else
     elseif ARG == "QE_parallel"
         QE_wrapper("QE_HOM")
 
+    elseif ARG == "QE_gaussian"
+        QE_gaussian_wrapper()
 
     elseif ARG == "Solve_QE"
         solve_QE()
@@ -142,6 +151,12 @@ else
 
     elseif ARG == "SD"
         SD_wrapper()
+
+    elseif ARG == "WAVE"
+        prepare_wavepacket()
+
+    elseif ARG == "chain"
+        chain_wrapper()
 
     else
         error("Unrecognized option")

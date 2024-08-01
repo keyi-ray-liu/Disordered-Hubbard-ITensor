@@ -163,12 +163,12 @@ function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=
 
             open(getworkdir() * "tTDVPlasttime", "w") do io
                 writedlm(io, dt)
-            end 
+            end
 
-            open(getworkdir() * "times", "a" ) do io
-                writedlm(io, dt)
-            end 
+        end 
 
+        open(getworkdir() * "times", "a" ) do io
+            writedlm(io, dt)
         end 
 
         write(wf, "psi1", ψ)
