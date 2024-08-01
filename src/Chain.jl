@@ -18,9 +18,9 @@ function run_chain( L, N, ex; dim=64, kwargs...)
     @show sys
     static = set_Static(; ex=ex, sweepdim=dim)
     ψ = gen_state(sys)
-    _ = run_static_simulation(sys, static, ψ)
+    ψ = run_static_simulation(sys, static, ψ)
 
-    return nothing
+    return ψ
 
 end 
 
@@ -31,10 +31,10 @@ function run_biased_chain(full_size, L, N, ex; dim=64, sweepcnt=sweepcnt, kwargs
 
     @show sys
     static = set_Static(; ex=ex, sweepdim=dim, sweepcnt=sweepcnt, kwargs...)
-    ψ = gen_state(sys)
-    _ = run_static_simulation(sys, static, ψ)
+    ψ = gen_state(sys; sites=get(kwargs, :sites, nothing))
+    ψ = run_static_simulation(sys, static, ψ)
 
-    return nothing
+    return ψ
 
 end 
 
@@ -70,4 +70,6 @@ function chain_wrapper()
     
 
     run_chain(L, N, ex; sweepcnt=sweepcnt, dim=dim)
+
+    return nothing
 end 

@@ -1,18 +1,18 @@
-HoppingNeighbor(sys::systems, j::Int; offset=0) = []
+HoppingNeighbor(sys::systems, j::Int; left_offset=0) = []
 
 
 # for a flat chain, return next NN until end
-HoppingNeighbor(sys::Chain_only, j::Int; offset=0) = (j - offset) < L(sys) ? [[t(sys)..., j + 1] ] : []
+HoppingNeighbor(sys::Chain_only, j::Int; left_offset=0) = 0 < (j - left_offset) < L(sys) ? [[t(sys)..., j + 1] ] : []
 
-HoppingNeighbor(sys::biased_chain, j::Int; offset=0) = sys.chain_start <= j - offset < sys.chain_start + L(sys.chain) ? HoppingNeighbor(sys.chain, j, offset=offset - (sys.chain_start - 1)) : []
+HoppingNeighbor(sys::biased_chain, j::Int; left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? HoppingNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
 
 HoppingNeighbor(sys::GQS, j ::Int) = HoppingNeighbor(sys.chain_only, j)
 """
-Here, we have either the offset hopping in the QE, or the chain hopping
+Here, we have either the left_offset hopping in the QE, or the chain hopping
 """
-function HoppingNeighbor(sys::QE_two, j::Int; offset=0)
+function HoppingNeighbor(sys::QE_two, j::Int; left_offset=0)
 
-    adj_j = j - offset
+    adj_j = j - left_offset
     # we only hop onwards, no hop in QE and last site
     if adj_j  <3 || adj_j > get_systotal(sys) - 3
         hop = []
@@ -82,7 +82,7 @@ function HoppingNeighbor(sys::QE_HOM, j::Int)
         hop = HoppingNeighbor(sys.upper, j)
 
     elseif j < systotal
-        hop = HoppingNeighbor(sys.lower, j; offset=uppertotal)
+        hop = HoppingNeighbor(sys.lower, j; left_offset=uppertotal)
 
     else
         hop = []
@@ -112,10 +112,10 @@ function HoppingNeighbor(sys::NF_square, j::Int)
 
 end 
 
-function HoppingNeighbor(sys::Rectangular, j::Int; offset=0)
+function HoppingNeighbor(sys::Rectangular, j::Int; left_offset=0)
 
     hop = []
-    adj_j = j - offset
+    adj_j = j - left_offset
 
     # not at end of col
     if adj_j % Lx(sys) != 0
@@ -241,10 +241,10 @@ end
 
 
 
-function HoppingNeighbor(res::reservoir_spatial, j::Int, contacts::Array; offset=0)
+function HoppingNeighbor(res::reservoir_spatial, j::Int, contacts::Array; left_offset=0)
 
     hop = []
-    adj_j = j - offset
+    adj_j = j - left_offset
 
     # check if hopping to sys
     if adj_j == res.contact
@@ -270,10 +270,10 @@ function HoppingNeighbor(sys::SD_array, j::Int)
         return HoppingNeighbor(sys.source, j, sys.s_contacts)
 
     elseif j <= source + array
-        return HoppingNeighbor(sys.array, j; offset=source)
+        return HoppingNeighbor(sys.array, j; left_offset=source)
 
     else
-        return HoppingNeighbor(sys.drain, j, sys.d_contacts; offset= source + array)
+        return HoppingNeighbor(sys.drain, j, sys.d_contacts; left_offset= source + array)
 
     end 
     

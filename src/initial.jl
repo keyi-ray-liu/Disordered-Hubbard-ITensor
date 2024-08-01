@@ -189,10 +189,14 @@ end
 
 
 
-function gen_state(sys::systems; QN=true, kwargs...)
+function gen_state(sys::systems; QN=true, sites=nothing, kwargs...)
 
+    if isnothing(sites)
+        sites = siteinds(type(sys), get_systotal(sys); conserve_qns=QN)
 
-    sites = siteinds(type(sys), get_systotal(sys); conserve_qns=QN)
+    else
+        @info "using predefined sites"
+    end 
 
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
     @show gen_state_str(sys)

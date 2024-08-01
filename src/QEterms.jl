@@ -96,7 +96,7 @@ QECoupling(sys::QE_G_SIAM, j) = QECoupling(sys.system, j)
 
 
 """
-All logic are wrapped in respective functions. The QE diagonal Energies are wrapped in onsite function, where the offset QE hopping should be included in the hopping part of the Hamiltoian
+All logic are wrapped in respective functions. The QE diagonal Energies are wrapped in onsite function, where the left_offset QE hopping should be included in the hopping part of the Hamiltoian
 """
 function add_qe!(sys::systems, res::OpSum)
 

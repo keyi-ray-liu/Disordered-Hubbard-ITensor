@@ -1,3 +1,7 @@
+
+""" DMRG routine that solves for the states given H and initial guess.
+
+Returns: array of MPS's"""
 function solve(H::MPO, ϕ::MPS, simulation::Static) 
 
     ex, prev_state, prev_energy, prev_var, sweepcnt, sweepdim, noise, TEcutoff, krylovdim, weight = SimulationParameters(simulation)

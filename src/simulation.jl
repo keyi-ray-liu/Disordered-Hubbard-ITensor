@@ -1,4 +1,6 @@
-"""we completely decoupled the code logic of static simulations, it is required that one provides an initial state"""
+"""we completely decoupled the code logic of static simulations, it is required that one provides an initial state
+Returns: return of solve function. Array of MPS's
+"""
 function run_static_simulation(sys::systems, simulation::Static, ψ::MPS; message = "Static")
 
     @info message

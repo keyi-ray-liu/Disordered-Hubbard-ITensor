@@ -130,17 +130,17 @@ function DenDenNeighbor(sys::QE_HOM, j)
     return den
 end 
 
-function DenDenNeighbor(sys::Union{Chain_only, Rectangular}, j::Int; offset=0)
+function DenDenNeighbor(sys::Union{Chain_only, Rectangular}, j::Int; left_offset=0)
 
     λ_ee, _, exch, _, range, _, ζ = CoulombParameters(sys)
 
-    adj_j = j - offset
+    adj_j = j - left_offset
 
-    return [ [λ_ee * ifexch(adj_j, k, sys, range, exch) / ( dis(adj_j, k, sys; range=range) + ζ), k + offset] for k in 1:adj_j- 1]
+    return [ [λ_ee * ifexch(adj_j, k, sys, range, exch) / ( dis(adj_j, k, sys; range=range) + ζ), k + left_offset] for k in 1:adj_j- 1]
     
 end 
 
-DenDenNeighbor(sys::biased_chain, j::Int, offset=0) = sys.chain_start <= j - offset < sys.chain_start + L(sys.chain) ? DenDenNeighbor(sys.chain, j, offset=offset - (sys.chain_start - 1)) : []
+DenDenNeighbor(sys::biased_chain, j::Int, left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? DenDenNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
 
 DenDenNeighbor(sys::GQS, j::Int) = DenDenNeighbor(sys.chain_only, j)
 
@@ -173,7 +173,7 @@ function DenDenNeighbor(sys::DPT_mixed, j::Int)
     return den
 end 
 
-DenDenNeighbor(res::reservoir, j::Int; offset=0) = []
+DenDenNeighbor(res::reservoir, j::Int; left_offset=0) = []
 
 function DenDenNeighbor(sys::SD_array, j::Int)
 
@@ -184,10 +184,10 @@ function DenDenNeighbor(sys::SD_array, j::Int)
         return DenDenNeighbor(sys.source, j)
 
     elseif j <= source + array
-        return DenDenNeighbor(sys.array, j; offset=source)
+        return DenDenNeighbor(sys.array, j; left_offset=source)
 
     else
-        return DenDenNeighbor(sys.drain, j; offset= source + array)
+        return DenDenNeighbor(sys.drain, j; left_offset= source + array)
 
     end 
 

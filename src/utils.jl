@@ -26,11 +26,11 @@ function inner_product(L::MPS, R::MPS, opname::String; sites=1:length(L))
   Ns = length(site_range)
 
 
-  ex = zeros(Ns)
+  ex = zeros(Complex, Ns)
   for (entry, j) in enumerate(site_range)
     
     Op =  op(opname, s[j])
-    val = inner(L, apply(Op, R)) 
+    val = inner(L', apply(Op, R)) 
     ex[entry] = val
 
   end
@@ -391,6 +391,38 @@ function saveham(file, s)
   open( getworkdir() * "H" * file ,"w") do io
     write(io, string(s))
   end
+
+end 
+
+
+function get_tcd_gs()
+
+  if !isfile( getworkdir() * "tcdgs.h5")
+
+    if isempty(get_QE_ref_files())
+        @warn "no gs raw files!"
+        solve_QE_scan()
+    end 
+
+    @info "Calculating TCD gs"
+
+    gss = [ load_ψ(f) for f in get_QE_ref_files()]
+    gs = add( gss..., maxdim = 128)
+
+    normalize!(gs)
+
+    h5open( getworkdir() * "tcdgs.h5", "w") do io
+      write(io, "psi", gs)
+    end 
+
+  else
+
+    @info "loading TCD gs"
+    gs = load_ψ("tcdgs"; tag="psi")
+
+  end 
+
+  return gs
 
 end 
 

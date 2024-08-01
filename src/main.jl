@@ -75,12 +75,12 @@ end
 
 if test
     
-    rm(getworkdir(), force=true, recursive=true)
+    #rm(getworkdir(), force=true, recursive=true)
     #static_tcd()
     #chain_wrapper()
     #prepare_wavepacket()
     #QE_gaussian_wrapper()
-    solve_QE_scan()
+    #solve_QE_scan()
     #dyna_pϕ()
     #GQS_wrapper()
     #set_SD()
@@ -98,6 +98,7 @@ if test
     #DPT_graph_test()
     #runtest()
     #solve_QE()
+    dyna_tcd()
 
     return nothing
 
@@ -117,6 +118,9 @@ else
 
     elseif ARG == "DPT_corr"
         DPT_corr()
+
+    elseif ARG == "dyna_TCD"
+        dyna_tcd()
 
     elseif ARG == "mixcurrent"
         dyna_dptcurrent_mix()
@@ -151,9 +155,6 @@ else
 
     elseif ARG == "SD"
         SD_wrapper()
-
-    elseif ARG == "WAVE"
-        prepare_wavepacket()
 
     elseif ARG == "chain"
         chain_wrapper()

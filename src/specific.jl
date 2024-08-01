@@ -70,7 +70,7 @@ function add_specific_int!(sys:: Union{DPT_mixed, DPT_graph}, res)
         #UL, UR = Uk(couple_range(sys), sys)
         UL, UR = Uk(1, sys)
 
-        # we separate the cases as L, R true indices can be offset due to the presence of the middle section
+        # we separate the cases as L, R true indices can be left_offset due to the presence of the middle section
         for (k_mix, k_actual) in enumerate(union(L_begin(sys): L_contact(sys) - 1 , R_contact(sys) + 1 : R_end(sys)))
             
             if UL[k_mix] != 0
@@ -106,7 +106,7 @@ function add_specific_int!(sys:: DPT_avg, res)
         #UL, UR = Uk(couple_range(sys), sys)
         UL, UR = Uk(1, sys)
 
-        # we separate the cases as L, R true indices can be offset due to the presence of the middle section
+        # we separate the cases as L, R true indices can be left_offset due to the presence of the middle section
         for (k_mix, k_actual) in enumerate(union(L_begin(sys): L_contact(sys) - 1 , R_contact(sys) + 1 : R_end(sys)))
             
             if UL[k_mix] != 0

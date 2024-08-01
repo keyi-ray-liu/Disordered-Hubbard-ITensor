@@ -2,6 +2,8 @@ get_time(raw::String) = parse(Float64, SubString(raw, 1 + length(DYNA_STR), leng
 
 get_ex(raw::String) = parse(Int, SubString(raw, 1 + length(STA_STR), length(raw) - length(".h5")))
 
+get_start(raw::String) = parse(Int, SubString(raw, 1 + length("start"), length(raw) - length(".h5")))
+
 get_dyna_files() = sort( 
     filter(x-> !occursin("lasttime", x),
     filter(x->occursin(DYNA_STR,x), readdir(getworkdir())))
@@ -9,6 +11,7 @@ get_dyna_files() = sort(
 
 get_static_files() = sort( filter(x->occursin(STA_STR,x), readdir(getworkdir())), by=get_ex)
 
+get_QE_ref_files() = sort( filter(x->occursin(r"start.*h5",x), readdir(getworkdir())), by=get_start)
 
 
 """Calculates transition charge density between two wf"""
@@ -32,7 +35,7 @@ function cal_TCD(ψ1, ψ2;
 #   W = MPO( s2,  operator)
 
 #   tcd = inner(ψ1', W, ψ2
-    tcd = inner_product(ψ1, ψ2, operator)
+    tcd = abs.(inner_product(ψ1, ψ2, operator))
     #@show tcd
   # explicitly calculate inner product of post-operated states
 
@@ -293,6 +296,43 @@ function static_tcd(;includegs=false, padding=false)
     return tcd
 
 end 
+
+
+function dyna_tcd(; gs=get_tcd_gs(), ψ=nothing,  kwargs...)
+
+    workdir = getworkdir()
+
+    if isnothing(ψ)
+        T = []
+        TCD = []
+
+        for file in get_dyna_files()
+
+            ψ = load_ψ(file)
+            t = get_time(file)
+            append!(T, t)
+
+            println("Calculating TCD, $t")
+
+            tcd = cal_TCD(ψ, gs)
+            @show append!(TCD, [tcd])
+
+        end 
+
+        writedlm(workdir* "times", T)
+        writedlm(workdir* "TCDdyna", TCD)
+    else
+
+        tcd = cal_TCD(ψ, gs)
+        open( workdir * "TCDdyna", "a") do io
+            writedlm(io, [tcd])
+        end 
+
+    end 
+
+
+end 
+
 
 
 

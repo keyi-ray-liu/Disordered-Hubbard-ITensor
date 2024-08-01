@@ -1,9 +1,9 @@
-Onsite(sys::systems, j; offset=0) = 0.0
+Onsite(sys::systems, j; left_offset=0) = 0.0
 
 
-function Onsite(sys::QE_two, j; offset=0) :: Float64
+function Onsite(sys::QE_two, j; left_offset=0) :: Float64
 
-    adj_j = j - offset
+    adj_j = j - left_offset
     systotal = get_systotal(sys)
 
     if adj_j == 2 || adj_j == systotal
@@ -14,7 +14,7 @@ function Onsite(sys::QE_two, j; offset=0) :: Float64
 
     else
         # adjust position of j
-        onsite = Onsite(sys.chain_only, j; offset=2)
+        onsite = Onsite(sys.chain_only, j; left_offset=2)
         
         # see if we have confining potential
         start = confine_start(sys)
@@ -118,7 +118,7 @@ function Onsite(sys::QE_HOM, j)
         end 
 
     else
-        onsite = Onsite(sys.lower,j; offset=uppertotal)
+        onsite = Onsite(sys.lower,j; left_offset=uppertotal)
 
         if minrange <= j - uppertotal <= maxrange
             onsite -= sum([  center_ne(sys) / parallel_dis(i, j - uppertotal, sys) for i in  minrange:maxrange])
@@ -131,14 +131,14 @@ end
 
 
 
-function Onsite(sys::Union{Rectangular, Chain_only}, j::Int; offset=0) :: Float64
+function Onsite(sys::Union{Rectangular, Chain_only}, j::Int; left_offset=0) :: Float64
 
     _, λ_ne, _, _, range, CN, ζ = CoulombParameters(sys)
 
     λ_ne *= CN
     systotal = get_systotal(sys)
     
-    adj_j = j - offset
+    adj_j = j - left_offset
     onsite = - λ_ne * ( sum([ 1/(dis(adj_j, k, sys; range=range) + ζ) for k in 1:systotal])   - 1/ζ)
 
     return onsite
@@ -146,7 +146,7 @@ function Onsite(sys::Union{Rectangular, Chain_only}, j::Int; offset=0) :: Float6
 end 
 
 # we biase everywhere else on the chain with a large positive potential
-Onsite(sys::biased_chain, j::Int, offset=0) = sys.chain_start <= j - offset < sys.chain_start + L(sys.chain) ? Onsite(sys.chain, j, offset=offset - (sys.chain_start - 1)) : 500.0
+Onsite(sys::biased_chain, j::Int, left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? Onsite(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : 500.0
 
 Onsite(sys::GQS, j::Int) = Onsite(sys.chain_only, j)
 
@@ -178,7 +178,7 @@ function Onsite(sys::DPT, j ::Int) :: Float64
         #lower
     if j == dd_lower(sys)
         onsite = bias_doubledot(sys)[1]
-        # offset from int term
+        # left_offset from int term
         onsite -= U(sys) *  couple_range(sys)
 
     #upper
@@ -189,7 +189,7 @@ function Onsite(sys::DPT, j ::Int) :: Float64
     elseif j <= L_end(sys)
         onsite = bias_L(sys)
 
-        # offset from int
+        # left_offset from int
         if j >= L_contact(sys)
             onsite -= 1/2 * U(sys)
         end 
@@ -197,7 +197,7 @@ function Onsite(sys::DPT, j ::Int) :: Float64
     else
         onsite = bias_R(sys)
 
-        # offset from int
+        # left_offset from int
         if j <= R_contact(sys)
             onsite -= 1/2 * U(sys) 
         end 
@@ -218,7 +218,7 @@ function Onsite(sys::DPT_mixed, j::Int)
     # we do these two first in case we move the dd sites around
     if j == dd_lower(sys) 
         onsite = bias_doubledot(sys)[1]
-        # offset from int term
+        # left_offset from int term
         onsite -= U(sys) *  couple_range(sys)
 
     #upper
@@ -310,7 +310,7 @@ function Onsite(sys::LSR_SIAM, j::Int)
 end 
 
 
-Onsite(sys::reservoir_spatial, j::Int; offset=0.0) = sys.bias
+Onsite(sys::reservoir_spatial, j::Int; left_offset=0.0) = sys.bias
 
 
 function Onsite(sys::SD_array, j::Int)
@@ -322,10 +322,10 @@ function Onsite(sys::SD_array, j::Int)
         return Onsite(sys.source, j)
 
     elseif j <= source + array
-        return Onsite(sys.array, j; offset=source)
+        return Onsite(sys.array, j; left_offset=source)
 
     else
-        return Onsite(sys.drain, j; offset= source + array)
+        return Onsite(sys.drain, j; left_offset= source + array)
 
     end 
 

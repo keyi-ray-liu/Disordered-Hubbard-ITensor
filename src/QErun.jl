@@ -218,8 +218,12 @@ function solve_QE(; chain_in = nothing, kwargs...)
     ex = get(chain_in, "ex", 10)
     sweepcnt = get(chain_in, "sweepcnt", 10)
 
+    chain_start = get(chain_in, "chain_start", 1)
+
     #run_chain(L, N, ex; dim=dim)
-    run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt, kwargs...)
+    _ = run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt, chain_start = chain_start, kwargs...)
+
+    return nothing
 end 
 
 function solve_QE_scan()
@@ -228,20 +232,23 @@ function solve_QE_scan()
     full_size = get(chain_in, "full_size", 100)
     L = get(chain_in, "L", 12)
 
+    # we need to define a singular site so that the later addition could proceed
+    sites = siteinds("Fermion", full_size; conserve_qns=true)
+
 
     for start ∈ 1: full_size - L + 1
         chain_in[ "chain_start" ] = start
-        chain_in[ "ex" ] = 2
+        chain_in[ "ex" ] = 1
         output = "start" * string(start)
 
         @show chain_in
 
-        solve_QE(; chain_in = chain_in, output=output )
+        solve_QE(; chain_in = chain_in, output=output, sites=sites)
     end 
 
 
 
-
+    return nothing
 end 
 
 
@@ -273,6 +280,7 @@ function QE_gaussian_wrapper()
     dynamic = set_Dynamic(; τ=τ, TEdim=TEdim, start=τ, fin=fin)
     run_dynamic_simulation(chain, dynamic, ψ; message="QE_gaussian_chain_only", save_every=save_every, obs=obs)
 
+    return nothing
 
 end 
 
