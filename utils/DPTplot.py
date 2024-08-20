@@ -23,17 +23,20 @@ from matplotlib.backends.backend_pdf import PdfPages
 from functools import partial
 from itertools import product
 
+
 sys.path.append(os.path.abspath("/Users/knl20/Desktop/Code/TN"))
 from dataloader import *
 
 import h5py
 
 
-def str_generator(files, linestylegroup, markergroup):
+def str_generator(files, colorgroup, linestylegroup, markergroup, exclude_tag={}):
 
-    tags = sorted([ get_tag(file) for file in files])
-    cval = np.linspace(0.1, 0.9, len(tags))
+    #tags = sorted([ get_tag(file) for file in files])
 
+    tags = [ get_tag(file, exclude_tag=exclude_tag) for file in files]
+
+    cval_ref = np.linspace(0.1, 0.9, len(tags))
     linestyle_str = [
      'solid',      # Same as (0, ()) or '-'
      'solid',    # Same as (0, (1, 1)) or ':'
@@ -44,6 +47,22 @@ def str_generator(files, linestylegroup, markergroup):
 
     comb = product(linestyle_str, marker_str)
 
+    if colorgroup == {}:
+        cvals = cval_ref
+
+    else:
+
+        cvals = []
+
+        for file in files:
+            
+            cval = cval_ref[0]
+            for key in colorgroup:
+                if key in file:
+                    cval = colorgroup[key]
+
+            cvals += [cval]
+
 
     if linestylegroup == {}:
         linestyles = [ val[0] for val in comb]
@@ -53,9 +72,13 @@ def str_generator(files, linestylegroup, markergroup):
         linestyles = []
 
         for file in files:
+            
+            linestyle = 'solid'
             for key in linestylegroup:
                 if key in file:
-                    linestyles += [ linestylegroup[key]]
+                    linestyle = linestylegroup[key]
+
+            linestyles += [linestyle]
 
 
     if markergroup == {}:
@@ -66,59 +89,74 @@ def str_generator(files, linestylegroup, markergroup):
         markers = []
 
         for file in files:
+
+            marker = ''
             for key in markergroup:
                 if key in file:
-                    markers += [ markergroup[key]]
+                    marker = markergroup[key]
+
+            markers += [marker]
 
 
-    return tags, cval, linestyles, markers
+    return tags, cvals, linestyles, markers
 
 
-def get_tag(file):
+def get_tag(file, exclude_tag={'ddposition', 'avg'}):
 
     tag = {}
 
-    if 'mix' not in file or 'mixedFalse' in file:
-        tag['basis'] = 'spatial'
-        tag['includeQPC'] = 'T'
-        
+    if 'basis' not in exclude_tag:
+        if 'mix' not in file or 'mixedFalse' in file:
+            tag['basis'] = 'spatial'
+            #tag['includeQPC'] = 'T'
+            
 
-    else: 
-        if 'random' in file:
-            tag['basis'] = 'mixed random'
+        else: 
 
-        elif 'orderingABSSORTED' in file:
-            tag['basis'] = 'mixed abs ordered'
+            if 'random' in file:
+                tag['basis'] = 'mixed random'
 
-        #elif 'orderingSORTED' in file:
+            elif 'orderingABSSORTED' in file:
+                tag['basis'] = 'mixed abs ordered'
+
+            #elif 'orderingSORTED' in file:
+            else:
+                tag['basis'] = 'mixed ordered'
+
+            if 'includeUFalse' in file:
+                tag['includeQPC'] = 'excludeQPC'
+
+            else:
+                tag['includeQPC'] = 'includeQPC'
+
+    if 'ddposition' not in exclude_tag:
+        if 'ddpositionL' in file:
+            tag['DDpos'] = 'L'
+
+        elif 'ddpositionR' in file:
+            tag['DDpos'] = 'R'
+
+        elif 'ddpositionM' in file:
+            tag['DDpos'] = 'M'
+
+    if 'avg' not in exclude_tag:
+        if 'avgTrue' in file:
+            tag['avg'] = 'no DD'
+
         else:
-            tag['basis'] = 'mixed ordered'
+            tag['avg'] = 'DD'
 
-        if 'includeUFalse' in file:
-            tag['includeQPC'] = 'F'
+    if 'dim' not in exclude_tag:
+        tag['dim'] = '$\dim = {}$'.format(searchkey( 'TEdim', file))
 
-        else:
-            tag['includeQPC'] = 'T'
+    if 'L' not in exclude_tag:
+        tag['L'] = '$L = {}$'.format(searchkey('L', file))
+    #tag['class'] = 'best'
+    #tag['L'] = 'dim ' + searchkey('dim', file)
+    #res = ', '.join([ key + '=' + tag[key] for key in tag])
+    res = ', '.join( tag.values())
 
-    if 'ddpositionL' in file:
-        tag['DDpos'] = 'L'
-
-    elif 'ddpositionR' in file:
-        tag['DDpos'] = 'R'
-
-    elif 'ddpositionM' in file:
-        tag['DDpos'] = 'M'
-
-    if 'avgTrue' in file:
-        tag['avg'] = 'T'
-
-    else:
-        tag['avg'] = 'F'
-
-
-
-    tag['L'] = searchkey('L', file)
-    res = ', '.join([ key + '=' + tag[key] for key in tag])
+    
     return res
 
 
@@ -333,6 +371,13 @@ def corr_direct(override='', get_animate=False, twoD=True, inputoverride=[]):
 
 def current_diff(inputoverride=[]):
 
+    def set_color(cur_dim):
+
+        alldim = sorted(list(set([ int(searchkey('TEdim', f)) for f in files])))
+        idx = alldim.index( int(cur_dim))
+
+        return idx/len(alldim)
+        
     if inputoverride:
         files = inputoverride
 
@@ -355,25 +400,22 @@ def current_diff(inputoverride=[]):
     cmap = mpl.cm.hot
 
     for i, file in enumerate(files):
-        tag, linestyle = get_tag(file)
+        tag = get_tag(file)
 
         U = searchkey('U', file)
 
         tag = tag +  'bd = ' + ''.join([ searchkey('TEdim', f) for f in file.split('_')])
-        
-        
+    
         curdim = searchkey('TEdim', file)
-
-        
         replaced = file.replace(curdim, maxdim)
         ref = np.loadtxt( replaced + '/currentLR')
 
-        if 'abs' not in tag and '32' not in file:
-            ref = np.concatenate( ([0.0 for _ in range(12)], ref))
+        # if 'abs' not in tag and '32' not in file:
+        #     ref = np.concatenate( ([0.0 for _ in range(12)], ref))
 
         time = times[i][:ref.shape[0]]
 
-        cval = set_color(files, curdim, 'TEdim')
+        cval = set_color(curdim)
         
 
         if replaced != file:
@@ -383,14 +425,12 @@ def current_diff(inputoverride=[]):
 
             div = np.where( ref > 1e-6, ref, 1)
             diff = (current[:ref.shape[0]] - ref)/div
-            ax.plot( time, diff, label=tag, c=cmap(cval), linestyle=linestyle)
+            ax.plot( time, diff, label=tag, c=cmap(cval), linestyle='dotted')
 
             ax: plt.Axes = axes[axdict[U]][1]
 
             diff = np.abs(diff)
-            ax.plot( time, diff, label=tag, c=cmap(cval), linestyle=linestyle)
-
-
+            ax.plot( time, diff, label=tag, c=cmap(cval), linestyle='dotted')
 
     tswitch = searchkey('tswitch', files[0])
 
@@ -413,7 +453,9 @@ def current_diff(inputoverride=[]):
         ax.set_yscale('log')
         ax.legend()
     #plt.show()
-    return fig
+
+    fig.savefig('plots/currentcomptest.pdf')
+    #return fig
 
 
 
@@ -579,7 +621,7 @@ def current_diff(inputoverride=[]):
 
 
 
-def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
+def time_bond_ee( inputfiles : dict = {},  filetag = 'multi', fit=False, save_individual=False, extend_left=False, shadeoff=0, MF=False ):
 
 
     def plotcurrent():
@@ -589,9 +631,13 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
         ax : plt.Axes =axes[ r + cnt][c]
         color = currentcmap(cval)
 
-        if time[0] > -tswitch:
-            ctime = np.concatenate(( [-tswitch], time))
-            current = np.concatenate( ([0], current))
+        if extend_left:
+            if time[0] > -tswitch:
+                ctime = np.concatenate(( [-tswitch], time))
+                current = np.concatenate( ([0], current))
+
+        else:
+            ctime = time
         
         if not current_occ_separate:
             axiscolor = color
@@ -600,23 +646,38 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
         else:
             axiscolor='black'
 
-        ax.plot(ctime, current, label=r'$I_{L\rightarrow R}$ , MPS ' + tag, color=color, 
+        ax.plot(ctime, current, label=tag, color=color, 
             linestyle=linestyle,
-            marker=marker, markersize=markersize
+            marker=marker, markersize=markersize, linewidth=linewidth,
             )
         
-        ax.vlines([0, tswitch], np.zeros(2), 1.1 * np.amax(current) * np.ones(2), linestyles='dotted')
-        ax.set_xlabel('time $(1/\omega_0)$',  fontsize=fontsize)
-        ax.set_ylabel('Current (all)', color=axiscolor,  fontsize=fontsize)
+        if len(yscale_current):
+            ax.vlines([0, tswitch],  yscale_current[0] * np.ones(2), yscale_current[1] * np.ones(2), linestyles='dotted')
 
-        handles, labels = ax.get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
-        by_label = { key : by_label[key] for key in sorted(by_label.keys())}
-        ax.legend(by_label.values(), by_label.keys(), loc='center left', bbox_to_anchor=(1.05, 0.6), fontsize=fontsize)
+        else:
+            ax.vlines([0, tswitch],  np.amin(current) * np.ones(2), np.amax(current) * 1.1 * np.ones(2), linestyles='dotted')
 
-        ax.set_title('Current vs. t. {}'.format(group_id),  fontsize=fontsize)
 
-    def plot_reference_current(L, U):
+
+        if cnt == len(cat) - 1:
+
+            ax.set_xticks([-tswitch, 0, tswitch, 2* tswitch])
+            ax.set_xlabel(r'$t \ (1/\omega_0)$',  fontsize=fontsize)
+        
+        else:
+            ax.set_xticklabels([])
+
+        if extend_left:
+            ax.set_xlim( -tswitch, tswitch*2)
+
+        if not len(yscale_current):
+            ax.annotate('* $\sim 1/50$ uniform scale for $U=2.0, 3.0$', xy = (0.02, 0.9), xycoords='axes fraction', fontsize=fontsize/2)
+
+
+        ax.set_ylabel('Current' + ('*' if not len(yscale_current) else '' ) + ' $(\omega_0)$', color=axiscolor,  fontsize=fontsize)
+        ax.set_title(r'$I_{{L\rightarrow R}}$ vs. t {}'.format(group_id), x=xtitle, y=ytitle, fontsize=fontsize)
+
+    def plot_reference_current(L, U, linestyle, marker):
 
         
         ax : plt.Axes =axes[ r + cat.index('current')][c]
@@ -624,21 +685,22 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
         ref = np.loadtxt('/Users/knl20/Desktop/Code/TN/non-interacting/{}currentCC{}'.format(L, U))
 
         reftime = np.arange(0, tswitch, 0.25)
-        ax.plot( reftime, ref[:reftime.shape[0]], label=r'$I_{L\rightarrow R}$, Stage 2, non-interacting exact, '+ '$L={}$'.format(L), color=refcolor,
-                linestyle=linestyle, markersize=markersize, marker=marker
+        ax.plot( reftime, ref[:reftime.shape[0]], label=r'$I_{L\rightarrow R}$, Stage 2, exact, '+ '$L={}$'.format(L), color=refcolor,
+                linestyle=linestyle, markersize=markersize, marker='x', linewidth=linewidth
                 )
 
-        refcolor='violet'
-        refraw = np.loadtxt('/Users/knl20/Desktop/Code/TN/LT/meanfield/Current_dpt_mf_N{}_mu0.5_U{}_tswitch{}'.format(L, U, tswitch))
+        if MF:
+            refcolor='violet'
+            refraw = np.loadtxt('/Users/knl20/Desktop/Code/TN/LT/meanfield/Current_dpt_mf_N{}_mu0.5_U{}_tswitch{}'.format(L, U, tswitch))
 
-        reftime = refraw[:, 0]
-        ref = refraw[:, 3]
+            reftime = refraw[:, 0]
+            ref = refraw[:, 3]
 
-        ax.plot( reftime, ref[:reftime.shape[0]], label=r'$I_{L\rightarrow R}$, MF, ' + '$L={}$'.format(L), color=refcolor,
-                linestyle=linestyle, marker=marker, markersize=markersize
-                )
+            ax.plot( reftime, ref[:reftime.shape[0]], label=r'$I_{L\rightarrow R}$, MF, ' + '$L={}$'.format(L), color=refcolor,
+                    linestyle=linestyle, marker=marker, markersize=markersize, linewidth=linewidth,
+                    )
 
-    def plot_reference_occ(L, U):
+    def plot_reference_occ(L, U, linestyle, marker):
 
         if not current_occ_separate:
             ax2 : plt.Axes = axes[ r + cat.index('current')][c].twinx()
@@ -646,25 +708,30 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
         else:
             ax2 : plt.Axes = axes[r+ cat.index('occ')][c]
 
-        refcolor='violet'
-        refraw = np.loadtxt('/Users/knl20/Desktop/Code/TN/LT/meanfield/Current_dpt_mf_N{}_mu0.5_U{}_tswitch{}'.format(L, U, tswitch))
+        if MF:
+            refcolor='violet'
+            refraw = np.loadtxt('/Users/knl20/Desktop/Code/TN/LT/meanfield/Current_dpt_mf_N{}_mu0.5_U{}_tswitch{}'.format(L, U, tswitch))
 
-        reftime = refraw[:, 0]
-        ref = refraw[:, 5]
+            reftime = refraw[:, 0]
+            ref = refraw[:, 5]
 
-        ax2.plot( reftime, ref[:reftime.shape[0]], label='lower dot density, MF, L={}'.format(L), color=refcolor,
-                linestyle=linestyle, marker=marker, markersize=markersize
-                )
+            ax2.plot( reftime, ref[:reftime.shape[0]], label='lower dot density, MF, $L={}$'.format(L), color=refcolor,
+                    linestyle=linestyle, marker=marker, markersize=markersize, linewidth=linewidth,
+                    )
+
+
 
     def plotocc():
         occ = occs[j]
         color = occcmap(cval)
 
         if not current_occ_separate:
-            ax2 : plt.Axes = axes[ r + cat.index('current')][c].twinx()
+            cnt = cat.index('current')
+            ax2 : plt.Axes = axes[ r + cnt ][c].twinx()
 
         else:
-            ax2 : plt.Axes = axes[r+ cat.index('occ')][c]
+            cnt = cat.index('occ')
+            ax2 : plt.Axes = axes[r+ cnt][c]
         
 
         if 'ddpositionL' in file:
@@ -677,8 +744,17 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
             ddlow = -2
 
         LT1 = occ[:, ddlow]
-        obj,  = ax2.plot(time, LT1, label='lower dot density, ' + tag, color=color,
-        linestyle=linestyle, marker=marker, markersize=markersize
+
+        if extend_left:
+            if time[0] > -tswitch:
+                ctime = np.concatenate(( [-tswitch], time))
+                LT1 = np.concatenate( ([1], LT1))
+
+        else:
+            ctime = time
+            
+        obj,  = ax2.plot(ctime, LT1, label=tag, color=color,
+        linestyle=linestyle, marker=marker, markersize=markersize, linewidth=linewidth,
         )
 
         if not current_occ_separate:
@@ -689,20 +765,19 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
             axiscolor='black'
 
         
-        ax2.set_ylabel(r'$\langle n_S\rangle$', color=axiscolor,  fontsize=fontsize)
-        ax2.set_xlabel('time $(1/\omega_0)$',  fontsize=fontsize)
-        box = ax2.get_position()
-        ax2.set_position([box.x0, box.y0, box.width * 1, box.height])
+        ax2.set_ylabel(r'$\langle n_1\rangle$', color=axiscolor,  fontsize=fontsize)
 
-        # Put a legend to the right of the current axis
+        if cnt == len(cat) - 1:
+            ax2.set_xlabel('t $(1/\omega_0)$',  fontsize=fontsize)
 
-        handles, labels = ax2.get_legend_handles_labels()
-        by_label = dict(zip(labels, handles))
-        by_label = { key : by_label[key] for key in sorted(by_label.keys())}
-        ax2.legend(by_label.values(), by_label.keys(), loc='center left', bbox_to_anchor=(1.05, 0.6), fontsize=fontsize)
+        else:
+            ax2.set_xticklabels([])
+
+        if extend_left:
+            ax2.set_xlim( -tswitch, tswitch*2)
 
         ax2.vlines([0, tswitch], np.zeros(2), 1.1 * np.ones(2), linestyles='dotted')
-        ax2.set_title('Lower Dot Occupation vs. t. {}'.format(group_id), fontsize=fontsize)
+        ax2.set_title(r'$\langle n_1\rangle$ vs. t {}'.format(group_id), fontsize=fontsize, x=xtitle, y=ytitle)
 
     def plotee():
         ee = ees[j]
@@ -752,27 +827,241 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
         ax : plt.Axes =axes[ r + cnt][c]
         color = currentcmap(cval)
 
-        if time[0] > -tswitch:
-            ctime = np.concatenate(( [-tswitch], time))
-            seff = np.concatenate( ([seff[0]], seff))
+        if extend_left:
+            if time[0] > -tswitch:
+                ctime = np.concatenate(( [-tswitch], time))
+                seff = np.concatenate( ([seff[0]], seff))
+
+        else:
+            ctime = time
 
 
-        ax.plot(ctime, seff, label='Seff, MPS' + tag, color=color, 
+        ax.plot(ctime, seff, label=tag, color=color, 
             linestyle=linestyle,
-            marker=marker, markersize=markersize
+            marker=marker, markersize=markersize, linewidth=linewidth,
             #marker='x', s=5
             )
         
         ax.vlines([0, tswitch], np.zeros(2), 1.1 * np.amax(seff) * np.ones(2), linestyles='dotted')
-        ax.set_xlabel('time $(1/\omega_0)$',  fontsize=fontsize)
-        ax.set_ylabel('$S_{eff}$',  fontsize=fontsize)
-        ax.legend(loc='center left', bbox_to_anchor=(1.05, 0.6), fontsize=fontsize)
-        ax.set_title('Effectly Entropy vs. t, {}'.format(group_id), fontsize=fontsize)
+
+        if cnt == len(cat) - 1:
+            ax.set_xticks([-tswitch, 0, tswitch, 2* tswitch])
+            ax.set_xlabel(r'$t \ (1/\omega_0)$',  fontsize=fontsize)
+
+        else:
+            ax.set_xticklabels([])
+
+        if extend_left:
+            ax.set_xlim( -tswitch, tswitch*2)
+
+        ax.set_ylabel('Effective Entropy',  fontsize=fontsize)
+        ax.set_title(r'$\ln \sqrt{ \frac{ \sum_i^L e^{S_i} }{L} } $' + ' vs. t {}'.format(group_id), fontsize=fontsize, x=xtitle, y=ytitle)
 
     # input files are grouped by dicts, 
     # each dict: 
     # input = { "page1 title": {"group 1 on page1" : [], "group 2 on page1 : []", etc.}
     #
+
+    def fitocc():
+
+        #def f(x, A, B, w, p, N):
+            #return (A + B * np.cos( w * (x - tswitch)) )/ (x - tswitch) ** p + N
+            #return n*+[A+B*cos(w*t)]/t^p
+
+        def f(x, A, p, N):
+            #return N + A/ (x - tswitch ) **p
+            return N + A * np.exp( -p * (x-tswitch))
+        
+        occ = occs[0]
+        LT = occ[:, -2]
+        time = times[0]
+
+        if searchkey('U', group[0]) == '3.0':
+            #toff = int(searchkey('L', group[0]))/5
+            toff = int(searchkey('L', group[0]))/10
+        else:
+            toff = 0
+
+        idx = np.argwhere( time > (tswitch + toff )).flatten()
+        to_fit = LT[idx]
+        t_sec = time[idx]
+
+        
+        #p0 = (0.1, 1, 1, 2, 0.5)
+
+        if searchkey('U', group[0]) == '5.0':
+            p0 = (0.98)
+
+            coeff, pcov = curve_fit( lambda x, a: a, t_sec, to_fit, p0=p0)
+            cov = np.sqrt(np.diag(pcov))
+
+        else:
+
+            if searchkey('U', group[0]) == '3.0':
+                p0 = (1.8, 0.7, 0.3)
+
+            else:
+                p0 = (0.5, 0.1, 0.4)
+
+            coeff, pcov = curve_fit(f, t_sec, to_fit, p0=p0)
+            cov = np.sqrt(np.diag(pcov))
+
+        if not current_occ_separate:
+            ax2 : plt.Axes = axes[ r + cat.index('current')][c].twinx()
+
+        else:
+            ax2 : plt.Axes = axes[r+ cat.index('occ')][c]
+
+
+        #ax2.plot( t_sec, f(t_sec, *coeff), label=r"FIT STAGE 3 DD : $  \frac{{ {:2f} +  {:2f} * \cos( {:2f} t) }}{{ t^{{{:2f}}} }} + {:2f} $".format(*coeff), linewidth=linewidth, c='black')
+        ax2.scatter( tswitch * 2, coeff[-1], label = r'$\langle n_1\rangle^{{\infty}}={:.3g} \pm {:.3g}$'.format(coeff[-1], cov[-1]), s=fitmarkersize, marker='x', c='black')
+
+        if searchkey('U', group[0]) != '5.0':
+            ax2.plot( t_sec, f(t_sec, *coeff), label=r"$ \langle n_1(t)\rangle = A e^{-kt} + \langle n_1\rangle ^{\infty} $" + '\n' + r'$A = {:.3g}, k = {:.3g}$'.format(*coeff), linewidth=fitlinewidth, c='black')
+
+    def fitcurrent2():
+
+        def f(x, B, w, phi, A):
+            return B * np.cos(w * (x + phi)) + A
+        
+        current = currents[0]
+        time = times[0]
+        sec1 = np.argwhere( time >= min(8, tswitch/2))
+        sec2 = np.argwhere( time <= tswitch)
+
+        idx = np.intersect1d(sec1, sec2)
+        to_fit = current[idx]
+        t_sec = time[idx]
+
+        p0 = (0.01, 0.4, 6, 0.055)
+
+        coeff, pcov = curve_fit(f, t_sec, to_fit, p0=p0)
+        cov = np.sqrt(np.diag(pcov))
+
+        print(cov)
+
+        ax : plt.Axes =axes[ r + cat.index('current')][c]
+
+        ax.scatter( tswitch , coeff[-1], label = r'$I_2^{{\infty}}={:.3g} \pm {:.3g}$'.format(coeff[-1], cov[-1]), s=fitmarkersize, marker='x', c='cyan')
+        ax.plot( t_sec, f(t_sec, *coeff), label=r'$I_2(t) = \alpha  \cos [ \omega (t + \phi)] + I_2^{{\infty}}$' + '\n' + r'$\alpha = {:.3g}, \omega = {:.3g}, \phi = {:.3g}$'.format(*coeff[:-1]), linewidth=fitlinewidth, c= 'cyan')
+        #ax.annotate( 'FIT STAGE 2 CURRENT : $  {:2f} * \cos ( {:2f} (t + {:2f})) + {:2f} $'.format(*coeff), (0.5, 0.2), color='black')
+
+    def fitcurrent3():
+
+        def f(x, B, w, phase, A):
+            return B * np.cos(w * (x - CUTOFF + phase)) + A
+        
+
+        lens = [ len(c) if '34' in group[i] else 0 for i, c in enumerate(currents)]
+        which = np.argsort(lens)[-1]
+
+        p0 = (0.1, 0.5, 6, 0.06)
+
+        if searchkey('U', group[0]) == '5.0':
+            CUTOFF = tswitch * 1.5
+        else:
+            CUTOFF = tswitch * 1.1
+
+        current = currents[which]
+        time = times[which]
+        idx = np.argwhere( time >= CUTOFF).flatten()
+
+        to_fit = current[idx]
+        t_sec = time[idx]
+        
+
+        coeff, pcov = curve_fit(f, t_sec, to_fit, p0=p0)
+        cov = np.sqrt(np.diag(pcov))
+
+
+        ax : plt.Axes =axes[ r + cat.index('current')][c]
+
+        ax.scatter( tswitch , coeff[-1], label = r'$I_3^{{\infty}}={:.3g} \pm {:.3g}$'.format(coeff[-1], cov[-1]), s=fitmarkersize, marker='x', c='black')
+        ax.plot( t_sec, f(t_sec, *coeff), label=r'$I_3(t) = \beta  \cos [ w (t + \delta)] + I_3^{{\infty}}$' + '\n' + r'$\beta = {:.3g}, w = {:.3g}, \delta = {:.3g}$'.format(*coeff[:-1]), c = 'black', linewidth=fitlinewidth)
+
+
+    def plot_reference():
+        Ls = set([searchkey('L', f) for f in group])
+        Us = set([searchkey('U', f) for f in group])
+        cnt = 0
+
+        refgroup = [ 'L' + l + 'U' + u for l in Ls for u in Us]
+        _, _, linestyles, markers= str_generator(refgroup, colorgroup, linestylegroup, markergroup, exclude_tag=exclude_tag)
+
+        for L in Ls:
+            for U in Us:
+                
+                linestyle = linestyles[cnt]
+                marker = markers[cnt]
+
+                if 'current' in cat:
+                    plot_reference_current( L, U, linestyle, marker)
+
+                if 'occ' in cat:
+                    plot_reference_occ(L, U, linestyle, marker)
+
+                cnt += 1
+
+    def set_legend():
+
+        shadecolor = 'grey'
+        if 'current' in cat:
+            cnt = cat.index('current')
+            ax : plt.Axes =axes[ r + cnt][c]
+            handles, labels = ax.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            
+            #xprint(sorted(by_label.keys()))
+            
+            by_label = { key : by_label[key] for key in sorted(by_label.keys())}
+
+            if fit:
+                #ax.legend(by_label.values(), by_label.keys(), loc='lower center', bbox_to_anchor=(0.5, -0.2), fontsize=fontsize)
+                ax.legend(by_label.values(), by_label.keys(), loc='center left', bbox_to_anchor=(1.05, 0.6), fontsize=fontsize)
+            else:
+                ax.legend(by_label.values(), by_label.keys(), loc='center left', bbox_to_anchor=(1.05, 0.6), fontsize=fontsize)
+
+            if len(yscale_current):
+                ax.set_ylim(yscale_current)
+            ax.axvspan(tswitch  * 2- shadeoff, tswitch * 2, color=shadecolor, alpha=0.5)
+            ax.tick_params(axis='both', labelsize=tickfontsize)
+
+        if 'occ' in cat:
+
+            if not current_occ_separate:
+                cnt = cat.index('current')
+                ax2 : plt.Axes = axes[ r + cnt ][c].twinx()
+
+            else:
+                cnt = cat.index('occ')
+                ax2 : plt.Axes = axes[r+ cnt][c]
+
+            box = ax2.get_position()
+            ax2.set_position([box.x0, box.y0, box.width * 1, box.height])
+
+            # Put a legend to the right of the current axis
+
+            handles, labels = ax2.get_legend_handles_labels()
+            by_label = dict(zip(labels, handles))
+            by_label = { key : by_label[key] for key in sorted(by_label.keys())}
+            if fit:
+                #ax2.legend(by_label.values(), by_label.keys(), loc='lower center', bbox_to_anchor=(0.5, -0.2), fontsize=fontsize)
+                ax2.legend(by_label.values(), by_label.keys(), loc='center left', bbox_to_anchor=(1.05, 0.6), fontsize=fontsize)
+            else:
+                ax2.legend(by_label.values(), by_label.keys(), loc='center left', bbox_to_anchor=(1.05, 0.6), fontsize=fontsize)
+
+            ax2.axvspan(tswitch  * 2- shadeoff, tswitch * 2, color=shadecolor, alpha=0.5)
+            ax2.tick_params(axis='both', labelsize=tickfontsize)
+
+        
+        if 'effE' in cat:
+            cnt = cat.index('effE')
+            ax : plt.Axes =axes[ r + cnt][c]
+
+            ax.legend(loc='center left', bbox_to_anchor=(1.05, 0.6), fontsize=fontsize)
+
+            ax.axvspan(tswitch  * 2- shadeoff, tswitch * 2, color=shadecolor, alpha=0.5)
+            ax.tick_params(axis='both', labelsize=tickfontsize)
 
 
     with PdfPages('plots/{}multi.pdf'.format(filetag)) as pdf:
@@ -780,14 +1069,19 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
         for page in inputfiles:
 
             cur_dict = inputfiles[page]
-
+            yscale_current = cur_dict['yscale']
             cat :list = cur_dict['cat']
+
+            if fit and 'effE' in cat:
+                cat.remove('effE')
             groups : list[list[str]] = cur_dict['groups']
             group_ids = cur_dict['group_ids']
+            exclude_tag : set = cur_dict['exclude_tag']
 
             # this defaults to none
             linestylegroup = cur_dict['linestylegroup']
             markergroup = cur_dict['markergroup']
+            colorgroup = cur_dict['colorgroup']
 
             if len(groups) != len(group_ids):
                 raise(ValueError('group length and ids dont match'))
@@ -797,11 +1091,18 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
             multiplier = len(cat) - (current_occ_separate == False and ('occ' in cat and 'current' in cat) )
 
             row = ((len(groups) - 1) // col + 1) * multiplier
-            
-            if 'EE' in cat or 'bond' in cat and max([ len(val) for val in groups]) > 1:
+
+            if ('EE' in cat or 'bond' in cat) and max([ len(val) for val in groups]) > 1:
                 raise(ValueError('more than 1 obj in each cat for EE'))
             
-            fig, axes = plt.subplots( row, col, figsize = (30 * col, 7 * row))
+            if fit:
+                width = 20
+            else:
+                width= 25 
+
+            fig, axes = plt.subplots( row, col, figsize = (width * col, 4.5 * row))
+
+            axes = [axes] if row == 1 else axes
 
             axes = [ [ax] for ax in axes] if  col == 1 else axes
 
@@ -812,22 +1113,55 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
                 currentcmap = mpl.cm.cool
 
             occcmap = mpl.cm.coolwarm
-            markersize = 5
-            fontsize=20
+            markersize =15
+            fitlinewidth = 10
+            fitmarkersize = 300
+            linewidth =5
+            fontsize=35
+            tickfontsize = 20
+
+            # title location
+            xtitle = 0.18
+            ytitle = 0.5
+
 
             # we plot everything in the same group on one plot, plus multiplicity
             for i, group in enumerate(groups):
+                
+                
 
                 group_id = group_ids[i]
 
                 r =  (i // col) * multiplier
                 c = i % col
-
-                ees, times, bonds, seffs, occs, currents, ee_lo, ee_hi, bd_lo, bd_hi, s_lo, s_hi, tmin, tmax = dataloader(cat, group)
-                tags, cvals, linestyles, markers= str_generator(group, linestylegroup, markergroup)
-
                 tswitch = float(searchkey('tswitch', group[0]))
+
                 
+
+                # we would change the context of all tags and labels, so we plot reference before
+                ees, times, bonds, seffs, occs, currents, ee_lo, ee_hi, bd_lo, bd_hi, s_lo, s_hi, tmin, tmax = dataloader(cat, group)
+                tags, cvals, linestyles, markers= str_generator(group, colorgroup, linestylegroup, markergroup, exclude_tag=exclude_tag)
+                
+
+                if fit:
+
+                    for func in (
+                        fitocc,
+                        fitcurrent2,
+                        fitcurrent3
+                    ):
+                        
+                        try:
+                            func()
+                        except RuntimeError:
+                            print("what")
+
+                    set_legend()
+
+                if not fit:
+                    plot_reference()
+                
+
 
                 for j, file in enumerate(group):
                     
@@ -848,17 +1182,33 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
                         plotseff()
 
                     if 'current' in cat:
-                        plot_reference_current( searchkey('L', file), searchkey('U', file))
                         plotcurrent()
                         
                     if 'occ' in cat:
-                        plot_reference_occ( searchkey('L', file), searchkey('U', file))
                         plotocc()
 
+
+                if not fit:
+                    set_legend()
                 
 
-            fig.suptitle(page)
+                
+            # for axr in axes:
+            #     for a in axr:
+            #         a.set_xticklabels([])
+            #         a.set_yticklabels([])
+            #         #a.set_aspect('equal')
+                    
+            #fig.suptitle(page)
+
             fig.tight_layout()
+            fig.subplots_adjust(wspace=0, hspace=0)
+
+
+            if save_individual:
+                fig.savefig('plots/' + page + '.pdf')
+
+
             pdf.savefig(fig)
 
 
@@ -866,55 +1216,421 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi' ):
 
     return 0
 
+def plotdensity(files):
 
 
-def comp_mf():
+    ees, times, bonds, seffs, occs, currents, ee_lo, ee_hi, bd_lo, bd_hi, s_lo, s_hi, tmin, tmax = dataloader(['occ'], files)
+    ts = [0.25]
+    fig, axes = plt.subplots(len(files), len(ts), figsize=(30 * len(ts), 8 * len(files)))
+
+    xtitle = 0.18
+    ytitle = 0.5
+    markersize = 300
+    fontsize = 20
+    for j, file in enumerate(files):
+        occ = occs[j]
+
+        tag = get_tag(file, exclude_tag={'ddposition', 'avg', 'L'})
+        t = ts[0]
+        ax2 : plt.Axes = axes[j]
+
+        idx = np.argwhere( times[j] == t).flatten()[0]
+
+        den = occ[idx, :-2]
+        div = den.shape[0] // 2
+        L = div - 2
+        R = div + 2
+        
+        
+        print(den)
+        ax2.scatter(np.arange(1, L + 1 ), den[:L], label='Left', color='blue',
+            marker='o', s=markersize
+        )
+
+        ax2.scatter(np.arange(L + 1, div + 1 ), den[L:div], label='LeftQPC', color='violet',
+        marker='o', s=markersize
+        )
+
+        ax2.scatter(np.arange(div + 1, R + 1 ), den[div:R], label='RightQPC', color='orange',
+            marker='o', s=markersize
+        )
+
+        ax2.scatter(np.arange(R + 1, div * 2 + 1 ), den[R:], label='Right', color='red',
+        marker='o', s=markersize
+        )
+
+        ax2.set_ylabel(r'$\langle n_1\rangle$',  fontsize=fontsize)
+        ax2.set_xlabel('Site number',  fontsize=fontsize)
+
+        ax2.legend( fontsize=fontsize)
+        ax2.tick_params(axis='both', labelsize=fontsize)
+        ax2.set_title(r'$\langle n_k\rangle ({}),$'.format(t) + tag, fontsize=fontsize, x=xtitle, y=ytitle)
+
+    fig.savefig('plots/compden.pdf')
+# def comp_mf():
 
 
-    files = sorted(glob.glob("U*128*256*32"))
+#     files = sorted(glob.glob("U*128*256*32"))
 
-    fig, ax = plt.subplots()
+#     fig, ax = plt.subplots()
 
-    #refcur= np.loadtxt('meanfield/current')
-    #refocc = np.loadtxt('meanfield/occ')
+#     #refcur= np.loadtxt('meanfield/current')
+#     #refocc = np.loadtxt('meanfield/occ')
 
-    ax : plt.Axes = ax
+#     ax : plt.Axes = ax
     
-    color = 'blue'
-    # ax.errorbar( refcur[:, 0], refcur[:, 1], yerr= [refcur[:, 2], refcur[:,3]], fmt='-o', color=color, label='Mean field current')
+#     color = 'blue'
+#     # ax.errorbar( refcur[:, 0], refcur[:, 1], yerr= [refcur[:, 2], refcur[:,3]], fmt='-o', color=color, label='Mean field current')
 
-    ax.set_xlabel('U')
-    ax.set_ylabel('Current (all)', color=color)
-    ax.tick_params(axis='y', labelcolor=color)
+#     ax.set_xlabel('U')
+#     ax.set_ylabel('Current (all)', color=color)
+#     ax.tick_params(axis='y', labelcolor=color)
 
-    ax2 :plt.Axes = ax.twinx()
+#     ax2 :plt.Axes = ax.twinx()
 
-    color = 'red'
-    # ax2.errorbar( refocc[:, 0], refocc[:, 1], yerr= [refocc[:, 2], refocc[:,3]], fmt='-x', color=color, label ='Mean field occ')
+#     color = 'red'
+#     # ax2.errorbar( refocc[:, 0], refocc[:, 1], yerr= [refocc[:, 2], refocc[:,3]], fmt='-x', color=color, label ='Mean field occ')
 
-    ax2.set_ylabel(r'$\langle n_S\rangle$', color=color)
-    ax2.set_title('Avg. current and lower dot occupation vs. U, Meanfield vs. MPS')
-    ax2.tick_params(axis='y', labelcolor=color)
+#     ax2.set_ylabel(r'$\langle n_1\rangle$', color=color)
+#     ax2.set_title('Avg. current and lower dot occupation vs. U, Meanfield vs. MPS')
+#     ax2.tick_params(axis='y', labelcolor=color)
 
-    cutoff = int(16/0.25)
-    rawcurrents = [   np.loadtxt(file + '/currentLR')[-cutoff:] for file in files]
-    currents = np.array([ [np.average(current), np.average(current) -np.amin(current), np.amax(current) - np.average(current)] for current in rawcurrents])
-    U = [float(file.split('_')[0][len('U'):]) for file in files]
+#     cutoff = int(16/0.25)
+#     rawcurrents = [   np.loadtxt(file + '/currentLR')[-cutoff:] for file in files]
+#     currents = np.array([ [np.average(current), np.average(current) -np.amin(current), np.amax(current) - np.average(current)] for current in rawcurrents])
+#     U = [float(file.split('_')[0][len('U'):]) for file in files]
 
-    rawocc = [   np.loadtxt(file + '/occ')[-cutoff:, -2] for file in files]
-    LT = np.array([ [np.average(occ), np.average(occ) -np.amin(occ), np.amax(occ) - np.average(occ)] for occ in rawocc])
+#     rawocc = [   np.loadtxt(file + '/occ')[-cutoff:, -2] for file in files]
+#     LT = np.array([ [np.average(occ), np.average(occ) -np.amin(occ), np.amax(occ) - np.average(occ)] for occ in rawocc])
 
         
-    ax.errorbar( U, currents[:, 0], yerr= [currents[:, 1], currents[:,2]], fmt='-o', color='purple', label='MPS current')
-    ax2.errorbar( U, LT[:, 0], yerr= [LT[:, 1], LT[:,2]], fmt='-x', color='orange', label='MPS occ')
+#     ax.errorbar( U, currents[:, 0], yerr= [currents[:, 1], currents[:,2]], fmt='-o', color='purple', label='MPS current')
+#     ax2.errorbar( U, LT[:, 0], yerr= [LT[:, 1], LT[:,2]], fmt='-x', color='orange', label='MPS occ')
 
 
 
-    ax.legend(loc ='lower left')
-    ax2.legend(loc='center right')
+#     ax.legend(loc ='lower left')
+#     ax2.legend(loc='center right')
 
-    ax2.set_ylim(0, 1.1)
-    fig.savefig('plots/MF.pdf')
+#     ax2.set_ylim(0, 1.1)
+#     fig.savefig('plots/MF.pdf')
+
+
+
+
+def Best_Fit32():
+
+    save_individual = True
+    extend_left = True
+    shadeoff = 3
+    yscale = np.array([-0.005, 0.15])
+
+    exclude_tag = {'ddposition', 'avg', 'basis', 'dim'}
+
+    ref = { 'linestylegroup' : { 'includeUFalse' : 'solid'},
+                'colorgroup' : { 'mixedFalse': 0.2,
+                                'includeUTrue' : 0.7,
+                                'includeUFalse' : 0.95},
+                'markergroup' : {'L64' : '',
+                                'L34': ''}
+    }
+
+    search_dict = {
+
+        'Fit' + 'Best32U2.0' : {'cat': ['occ', 'current'],
+                                           'groups': [strsort('U2.0*L34*1024*includeUFalse*avgFalse*')], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'Fit' +'Best32U3.0' : {'cat': ['occ', 'current'],
+                                           'groups': [strsort('U3.0*L34*1024*includeUFalse*avgFalse*') ], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'Fit' + 'Best32U5.0' : {'cat': ['occ', 'current'],
+                                           'groups': [strsort('U5.0*L32*1024*includeUFalse*avgFalse*') ], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : [],
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           }
+    
+
+    }
+
+    time_bond_ee(inputfiles=search_dict, filetag=filetag, fit=True, save_individual=save_individual, extend_left=extend_left, shadeoff=shadeoff, MF=False)
+
+def Best_Fit64():
+
+    save_individual = True
+    extend_left = True
+    shadeoff = 5
+    yscale = np.array([-0.005, 0.15])
+
+    ref = { 'linestylegroup' : { 
+                                'includeUFalse' : 'solid'},
+                'colorgroup' : { 'mixedFalse': 0.2,
+                                'includeUTrue' : 0.7,
+                                'includeUFalse' : 0.95},
+                'markergroup' : {'L64' : '',
+                                'L34': ''}
+    }
+    exclude_tag  = {'ddposition', 'avg', 'basis', 'dim'}
+
+    search_dict = {
+
+        'Fit' + 'Best64U2.0' : {'cat': ['occ', 'current'],
+                                           'groups': [strsort('U2.0*L64*512*includeUFalse*avgFalse*')], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'Fit' +'Best64U3.0' : {'cat': ['occ', 'current'],
+                                           'groups': [strsort('U3.0*L64*512*includeUFalse*avgFalse*') ], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'Fit' + 'Best64U5.0' : {'cat': ['occ', 'current'],
+                                           'groups': [strsort('U5.0*L64*512*includeUFalse*avgFalse*') ], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : [],
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           }
+    
+
+    }
+
+    time_bond_ee(inputfiles=search_dict, filetag=filetag, fit=True, save_individual=save_individual, extend_left=extend_left, shadeoff=shadeoff, MF=False)
+
+
+
+def Best_32wrap(MF=False):
+
+
+    save_individual = True
+    extend_left = True
+    shadeoff = 3
+    yscale = np.array([-0.005, 0.15])
+
+    cat = ['occ', 'current'] + (['effE'] if not MF else [])
+
+    ref = { 'linestylegroup' : { 'mixedFalse': 'solid',
+                                'includeUTrue' : 'dotted',
+                                'includeUFalse' : 'dashed'},
+                'colorgroup' : { 'mixedFalse': 0.2,
+                                'includeUTrue' : 0.7,
+                                'includeUFalse' : 0.95},
+                'markergroup' : {'L32' : ''}
+    }
+
+    exclude_tag = {'ddposition', 'avg', 'L', 'dim'}
+
+    search_dict = {
+
+        'Best32U2.0' : {'cat': cat,
+                                           'groups': [strsort('U2.0*L32*1024*avgFalse*')], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'Best32U3.0' : {'cat': cat,
+                                           'groups': [strsort('U3.0*L32*1024*avgFalse*') ], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'Best32U5.0' : {'cat': cat,
+                                           'groups': [strsort('U5.0*L32*1024*avgFalse*') ], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : [],
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           }
+    
+
+    }
+
+    time_bond_ee(inputfiles=search_dict, filetag=filetag, fit=False, save_individual=save_individual, extend_left=extend_left, shadeoff=shadeoff, MF=MF)
+
+
+def Best_64wrap(MF=False):
+
+    cat = ['occ', 'current'] + (['effE'] if not MF else [])
+    save_individual = True
+    extend_left = True
+    shadeoff = 5
+    yscale = np.array([-0.005, 0.15])
+
+    ref = { 'linestylegroup' : { 'mixedFalse': 'solid',
+                                'includeUTrue' : 'dotted',
+                                'includeUFalse' : 'dashed'},
+                'colorgroup' : { 'mixedFalse': 0.2,
+                                'includeUTrue' : 0.7,
+                                'includeUFalse' : 0.95},
+                'markergroup' : {'L32' : ''}
+    }
+
+    exclude_tag = {'ddposition', 'avg', 'L', 'dim'}
+
+    search_dict = {
+
+        'Best64U.0' : {'cat': cat,
+                                           'groups': [strsort('U2.0*L64*512*avgFalse*')], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                            'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'Best64U3.0' : {'cat': cat,
+                                           'groups': [strsort('U3.0*L64*512*avgFalse*') ], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'Best64U5.0' : {'cat': cat,
+                                           'groups': [strsort('U5.0*L64*512*avgFalse*') ], 
+                                           'group_ids': [''], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : [],
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           }
+    
+
+    }
+
+    time_bond_ee(inputfiles=search_dict, filetag=filetag, fit=False, save_individual=save_individual, extend_left=extend_left, shadeoff=shadeoff, MF=MF)
+
+
+def Best_3234wrap(MF=True):
+
+    filetag = 'BestwMF' + str(MF)
+    fit = False
+    save_individual = True
+    extend_left = True
+    shadeoff = 3
+
+    cat = ['occ', 'current'] + (['effE'] if not MF else [])
+
+    yscale = np.array([-0.005, 0.15])
+
+    ref = { 'linestylegroup' : { 'L32': 'solid',
+                                'L34' : 'dashed',
+                                },
+                'colorgroup' : { 'L32': 0.1,
+                                'L34' : 0.9},
+                'markergroup' : {'L32' : '',
+                                'L34': ''}
+    }
+
+    exclude_tag = {'ddposition', 'avg', 'basis'}
+
+    search_dict = {
+
+
+    'BestwMF' +  str(MF) + '2.0' : {'cat': cat,
+                                        'groups': [strsort('U2.0*L3*1024*includeUFalse*avgFalse*')], 
+                                        'group_ids': [''], 
+                                        'separate' : True,
+                                        'wrap' : 1,
+                                        'yscale' : yscale,
+                                        'exclude_tag' : exclude_tag,
+                                        'linestylegroup' : ref['linestylegroup'],
+                                        'colorgroup' : ref['colorgroup'],
+                                        'markergroup' : ref['markergroup']
+                                        },
+    'BestwMF' + str(MF) + '3.0' : {'cat': cat,
+                                        'groups': [strsort('U3.0*L3*1024*includeUFalse*avgFalse*') ], 
+                                        'group_ids': [''], 
+                                        'separate' : True,
+                                        'wrap' : 1,
+                                        'yscale' : yscale,
+                                        'exclude_tag' : exclude_tag,
+                                        'linestylegroup' : ref['linestylegroup'],
+                                        'colorgroup' : ref['colorgroup'],
+                                        'markergroup' : ref['markergroup']
+                                        },
+    'BestwMF' + str(MF)+ '5.0' : {'cat': cat,
+                                        'groups': [strsort('U5.0*L3*1024*includeUFalse*avgFalse*') ], 
+                                        'group_ids': [''], 
+                                        'separate' : True,
+                                        'wrap' : 1,
+                                        'yscale' : [],
+                                        'exclude_tag' : exclude_tag,
+                                        'linestylegroup' : ref['linestylegroup'],
+                                        'colorgroup' : ref['colorgroup'],
+                                        'markergroup' : ref['markergroup']
+                                        }
+    }
+
+    time_bond_ee(inputfiles=search_dict, filetag=filetag, fit=fit, save_individual=save_individual, extend_left=extend_left, shadeoff=shadeoff, MF=MF)
+
+
+
+def test_den():
+
+
+    files = strsort('U2.0*L64*512*mixedTrue*avgFalse*')
+    plotdensity(files=files)
+
 
 
 if __name__ == '__main__':
@@ -923,34 +1639,29 @@ if __name__ == '__main__':
     rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     rc('text', usetex=True) 
 
+    #filetag = 'FIT64'
+    #filetag = 'L64dim512'
+    filetag = 'BestwMF'
+    fit = False
+    save_individual = True
+    extend_left = True
+    shade = True
+    MF = True
 
-    search_dict = {
-        'Compare L34 and L32, dim=1024, U=2.0' : {'cat': ['occ', 'current', 'effE'],
-                                           'groups': [strsort('*2.0*1024*')], 
-                                           'group_ids': ['U = 2.0'], 
-                                           'separate' : True,
-                                           'wrap' : 1,
-                                           'linestylegroup' : { '34': 'solid',
-                                                               '32' : 'dashed'},
-                                            'markergroup' : {'34': 'o',
-                                                             '32': 'x'}
-                                           },
-        'Compare L34 and L32, dim=1024, U=3.0' : {'cat': ['occ', 'current', 'effE'],
-                                           'groups': [strsort('*3.0*1024*') ], 
-                                           'group_ids': ['U = 3.0'], 
-                                           'separate' : True,
-                                           'wrap' : 1,
-                                           'linestylegroup' : { '34': 'solid',
-                                                               '32' : 'dashed'},
-                                            'markergroup' : {'34': 'o',
-                                                             '32': 'x'}
-                                           },
+    #sample : U2.0_L32_TEdim1024_tswitch16.0_includeUTrue_orderingSORTED_mixedTrue_avgFalse_ddpositionR
 
-    }
+    #test_den()
+
+    Best_32wrap()
+    Best_3234wrap(MF=False)
+    Best_Fit32()
+    Best_64wrap()
+    Best_Fit64()
+    Best_3234wrap(MF=True)
 
 
 
-
-    time_bond_ee(inputfiles=search_dict, filetag='comp1024')
+    #current_diff(inputoverride=strsort('*2.0*L64*'))
+    #time_bond_ee(inputfiles=search_dict, filetag=filetag, fit=fit, save_individual=save_individual, extend_left=extend_left, shade=shade, MF=MF)
 
 

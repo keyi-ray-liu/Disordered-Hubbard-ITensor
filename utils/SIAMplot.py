@@ -322,6 +322,9 @@ def tcd_direct():
         ax.clear()
         ax.scatter( ref, tcd[i], c='blue')
 
+        sep =  np.arange(0, ref.shape[-1], 12)
+        ax.vlines( sep, lo *np.ones(sep.shape[0]), hi *np.ones(sep.shape[0]), linestyles='dotted')
+
         # if systype == "Electron":
         #     ax.scatter( ref, -occdn[i], c ='red')
 
@@ -332,8 +335,8 @@ def tcd_direct():
         ax : plt.Axes = axes[1]
 
         ax.clear()
-        ax.scatter( ref, logtcd[i], c='blue')
-
+        ax.scatter( ref, logtcd[i], c='orange')
+        ax.vlines( sep, loglo *np.ones(sep.shape[0]), loghi *np.ones(sep.shape[0]), linestyles='dotted')
         # if systype == "Electron":
         #     ax.scatter( ref, -occdn[i], c ='red')
 
@@ -348,18 +351,18 @@ def tcd_direct():
     lo = np.amin(tcd)
     hi = np.amax(tcd)
 
-    logtcd = np.log10(tcd)
+    logtcd = np.where( tcd !=0, tcd, np.exp(1e-10))
+    logtcd = np.where( logtcd > 0, -np.log(logtcd), np.log(-logtcd))
 
-    #lo = np.amin(tcd)
-    loglo = - 10
-    loghi = np.amax(tcd)
+    loglo = np.amin(logtcd)
+    loghi = np.amax(logtcd)
 
     fig, axes= plt.subplots( 2, 1, figsize=(15, 10))
 
     outdir = os.getcwd() + '/vids/' 
 
     anim = FuncAnimation(fig, animate, frames=tcd.shape[0])
-    writervideo = animation.FFMpegWriter(fps=10)
+    writervideo = animation.FFMpegWriter(fps=2)
     anim.save( outdir + 'tcd_direct{}.mp4'.format( file.split('/')[-1]), writer=writervideo)
 
 
