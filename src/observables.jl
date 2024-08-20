@@ -11,7 +11,7 @@ get_dyna_files() = sort(
 
 get_static_files() = sort( filter(x->occursin(STA_STR,x), readdir(getworkdir())), by=get_ex)
 
-get_QE_ref_files() = sort( filter(x->occursin(r"start.*h5",x), readdir(getworkdir())), by=get_start)
+get_QE_ref_files() = sort( filter(x->(occursin(r"start.*h5",x) && !occursin("temp", x)), readdir(getworkdir())), by=get_start)
 
 
 """Calculates transition charge density between two wf"""
@@ -35,7 +35,7 @@ function cal_TCD(ψ1, ψ2;
 #   W = MPO( s2,  operator)
 
 #   tcd = inner(ψ1', W, ψ2
-    tcd = abs.(inner_product(ψ1, ψ2, operator))
+    tcd = real(inner_product(ψ1, ψ2, operator))
     #@show tcd
   # explicitly calculate inner product of post-operated states
 
@@ -265,15 +265,15 @@ function static_occ()
 
 end 
 
-function static_tcd(;includegs=false, padding=false)
+function static_tcd(;padding=false)
 
     tcd = []
 
     files = get_static_files()
 
-    gs = load_ψ(files[1], tag="psi")
+    gs = load_ψ(STA_STR * "1",  tag="psi")
 
-    for file in files[2 - Int(includegs):end]
+    for file in files
 
         ψ = load_ψ(file, tag= "psi")
 

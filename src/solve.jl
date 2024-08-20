@@ -13,6 +13,7 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
     allenergy = copy(prev_energy)
     cur_ex = 1 + length(prev_state)
     cnt = 1
+    out = output(simulation)
   
     # changed to while loop for possible retracting operation
     # global cnt to stop excessive looping
@@ -91,7 +92,7 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
         #println(expect(ψ, "N"))
             
         # save temp results
-        wf = h5open( workdir * "temp_cur_ex" * string((cur_ex - 1)) * ".h5", "w")
+        wf = h5open( workdir * "temp_" * out * string((cur_ex - 1)) * ".h5", "w")
         write(wf, "psi", ψ)
         close(wf)
 
@@ -110,7 +111,7 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
     end 
     
     # save results
-    out = output(simulation)
+    
 
     print(prev_energy)
 
@@ -143,6 +144,10 @@ end
 
 
 function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=Function[], kwargs...)
+
+    for ob in obs
+        ob(;ψ=ψ, t=0, kwargs...)
+    end 
 
     τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
 

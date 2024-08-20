@@ -75,12 +75,13 @@ end
 
 if test
     
-    #rm(getworkdir(), force=true, recursive=true)
+    rm(getworkdir(), force=true, recursive=true)
+    #plot_mix()
     #static_tcd()
     #chain_wrapper()
     #prepare_wavepacket()
-    #QE_gaussian_wrapper()
-    #solve_QE_scan()
+    QE_gaussian_wrapper()
+    #gen_GS_scan()
     #dyna_pϕ()
     #GQS_wrapper()
     #set_SD()
@@ -98,7 +99,7 @@ if test
     #DPT_graph_test()
     #runtest()
     #solve_QE()
-    dyna_tcd()
+    #dyna_tcd()
 
     return nothing
 

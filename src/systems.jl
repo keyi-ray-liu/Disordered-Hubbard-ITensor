@@ -1,10 +1,10 @@
-const GLOBAL_CNT = 60
+const GLOBAL_CNT = 300
 const TOL = 1e-8
 const DYNA_STR = "tTDVP"
 const DPT_INIT_BIAS = [-100.0, 100.0]
 const BIAS_LR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
-const STA_STR = "temp_cur_ex"
+const STA_STR = "temp_plasmon"
 
 
 abstract type systems end 

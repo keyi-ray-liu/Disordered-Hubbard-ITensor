@@ -395,16 +395,40 @@ function saveham(file, s)
 end 
 
 
+function gen_GS_scan()
+
+  chain_in = load_JSON( pwd() * "/qegaussian.json")
+  full_size = get(chain_in, "fullsize", 100)
+  L = get(chain_in, "L", 12)
+
+  # we need to define a singular site so that the later addition could proceed
+  sites = siteinds("Fermion", full_size; conserve_qns=true)
+
+
+  for start ∈ 1:L:(full_size - L + 1)
+      chain_in[ "chain_start" ] = start
+      chain_in[ "ex" ] = 1
+      output = "start" * string(start)
+
+      @show chain_in
+
+      solve_QE(; chain_in = chain_in, output=output, sites=sites)
+  end 
+
+end 
+
+
 function get_tcd_gs()
 
   if !isfile( getworkdir() * "tcdgs.h5")
 
     if isempty(get_QE_ref_files())
-        @warn "no gs raw files!"
-        solve_QE_scan()
+        @warn "no gs raw files! generating GS scan wavefunctions"
+        gen_GS_scan()
     end 
 
-    @info "Calculating TCD gs"
+    @info "Summing reference state for TCD"
+
 
     gss = [ load_ψ(f) for f in get_QE_ref_files()]
     gs = add( gss..., maxdim = 128)
@@ -422,6 +446,7 @@ function get_tcd_gs()
 
   end 
 
+  #@show expect(gs, "N")
   return gs
 
 end 

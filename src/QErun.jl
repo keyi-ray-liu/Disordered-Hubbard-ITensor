@@ -155,13 +155,21 @@ function QE_wrapper(key)
 end 
 
 
-function wave_coeff(TCD; L=12, center=6.5, sigma=2)
+function wave_coeff(TCD; L=12, center=6.5, sigma=2, conv=false, includegs=true)
 
     #@show size(TCD[:, 1:12])
     g = map( x-> exp( -((x - center)/sigma) ^ 2), 1:L)
+
+    @show start_idx = 2 - Int(includegs)
+
+    if conv
+        g = g .* TCD[2, 1:L]
+    end 
     
-    F = transpose(TCD[:, 1:L])
+    F = transpose(TCD[start_idx:end, 1:L])
     C = F \ g
+
+    @show C
     @show g
     @show F * C
 
@@ -169,22 +177,25 @@ function wave_coeff(TCD; L=12, center=6.5, sigma=2)
     return C
 end 
 
-function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, padding=false)
+function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, padding=false, conv=false)
 
     if !isfile( getworkdir() * "initwavepacket.h5")
 
-
+        @warn "no initial wavepacket, calculating"
         if isfile( getworkdir() * "TCD")
             TCD = readdlm( getworkdir() * "TCD")
         else
-            TCD = static_tcd(; includegs=includegs, padding=padding)
+            @warn "no TCD, calculating"
+            TCD = static_tcd(; padding=padding)
         end 
 
-        coeff = wave_coeff(TCD; center=center, sigma=sigma, L=L)
+        coeff = wave_coeff(TCD; center=center, sigma=sigma, L=L, conv=conv, includegs=includegs)
         wf = [ load_ψ(f; tag="psi") for f in get_static_files()]
 
-        wf_to_sum = coeff .* wf[2 - Int(includegs):end]
-        ψ = add(wf_to_sum...; maxdim=128)
+        @show start_idx = 2 - Int(includegs)
+        wf_to_sum = coeff .* wf[start_idx:end]
+
+        ψ = add(wf_to_sum...; maxdim=256)
 
         normalize!(ψ)
 
@@ -196,6 +207,7 @@ function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, paddin
 
     end 
 
+    @info "loading initial wavepacket"
     ψ = load_ψ("initwavepacket"; tag="psi")
     return ψ
 
@@ -206,8 +218,12 @@ function solve_QE(; chain_in = nothing, kwargs...)
 
 
     if !(typeof(chain_in) <: Dict)
-        chain_in = load_JSON( pwd() * "/biasedchainpara.json")
+
+        @warn "no initial chain para dict, loading biasedchain"
+        chain_in = load_JSON( pwd() * "/biasedchain.json")
     end 
+    
+    @show chain_in
     
     full_size = get(chain_in, "fullsize", 100)
     L = get(chain_in, "L", 20)
@@ -221,35 +237,10 @@ function solve_QE(; chain_in = nothing, kwargs...)
     chain_start = get(chain_in, "chain_start", 1)
 
     #run_chain(L, N, ex; dim=dim)
-    _ = run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt, chain_start = chain_start, kwargs...)
+    _ = run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt, chain_start = chain_start, output="plasmon", kwargs...)
 
-    return nothing
 end 
 
-function solve_QE_scan()
-
-    chain_in = load_JSON( pwd() * "/biasedchainpara.json")
-    full_size = get(chain_in, "full_size", 100)
-    L = get(chain_in, "L", 12)
-
-    # we need to define a singular site so that the later addition could proceed
-    sites = siteinds("Fermion", full_size; conserve_qns=true)
-
-
-    for start ∈ 1: full_size - L + 1
-        chain_in[ "chain_start" ] = start
-        chain_in[ "ex" ] = 1
-        output = "start" * string(start)
-
-        @show chain_in
-
-        solve_QE(; chain_in = chain_in, output=output, sites=sites)
-    end 
-
-
-
-    return nothing
-end 
 
 
 function QE_gaussian_wrapper()
@@ -266,15 +257,19 @@ function QE_gaussian_wrapper()
     includegs = get(qe_gaussian_in, "includegs", false)
     padding = get(qe_gaussian_in, "padding", true)
     L = get(qe_gaussian_in, "L", 12)
-    save_every=true
-    obs = [dyna_EE, dyna_occ, dyna_corr]
+    conv = get(qe_gaussian_in, "conv", true)
+
+    save_every=false
+    obs = [dyna_EE, dyna_occ, dyna_corr, dyna_tcd]
 
     # empty static wf, solve for QE
     if isempty(get_static_files())
+
+        @warn "no static files, solving for static chain eigenstates"
         solve_QE(; chain_in = qe_gaussian_in)
     end 
     
-    ψ = prepare_wavepacket(; includegs=includegs, center=center, sigma=sigma, L=L, padding=padding)
+    ψ = prepare_wavepacket(; includegs=includegs, center=center, sigma=sigma, L=L, padding=padding, conv=conv)
 
     chain= set_Chain(; L=full_size, N = full_N )
     dynamic = set_Dynamic(; τ=τ, TEdim=TEdim, start=τ, fin=fin)
