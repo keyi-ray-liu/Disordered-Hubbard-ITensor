@@ -85,12 +85,12 @@ function SD_wrapper()
     Ns = get(sd_in, "Ns", 1)
     Nd = get(sd_in, "Nd", 0)
     Na = get(sd_in, "Na", 0)
-    type = get(sd_in, "type", "Electron")
+    systype = get(sd_in, "systype", "Electron")
     fin = get(sd_in, "fin", 10.0)
     τ = get(sd_in, "timestep", 0.1)
     contact_scaling = get(sd_in, "contactscaling", 2.0)
 
     run_SD(L, R, fin; τ=τ, Ns=Ns, Nd=Nd, Na=Na, s_coupling=s_coupling, d_coupling=d_coupling, 
-    λ_ne = λ_ne, λ_ee = λ_ee, type=type, contact_scaling=contact_scaling)
+    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, contact_scaling=contact_scaling)
 
 end 

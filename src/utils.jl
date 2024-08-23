@@ -1,15 +1,15 @@
-FermionCondition(type::String) = type == "Fermion" ? 1 : 2
+FermionCondition(systype::String) = systype == "Fermion" ? 1 : 2
 
 
 norm2(A,d=2) = sum(abs2,A,dims=d)
 
-function FermionCondition(type::String, t::Union{Number, Vector{T}}) where T <: Number
+function FermionCondition(systype::String, t::Union{Number, Vector{T}}) where T <: Number
 
   if typeof(t) <: Number
-    t = [ t for _ in 1:FermionCondition(type)]
+    t = [ t for _ in 1:FermionCondition(systype)]
   end 
 
-  @assert length(t) == FermionCondition(type) "t length does not match F/E type"
+  @assert length(t) == FermionCondition(systype) "t length does not match F/E systype"
 
   return t
 
@@ -46,13 +46,13 @@ set_SD_contacts(s_coupling, d_coupling, contact_scaling, L) = [ [s_coupling..., 
 
 
 
-function get_type_dict(type)
+function get_type_dict(systype)
 
     op_str = Dict(
-      1 => type == "Boson" ? "0" : "Emp",
-      2 => type == "Boson" ? "1" : type == "Fermion" ? "Occ" : "Up",
-      3 => type == "Boson" ? "2" : "Dn",
-      4 => type == "Boson" ? "3" : "UpDn"
+      1 => systype == "Boson" ? "0" : "Emp",
+      2 => systype == "Boson" ? "1" : systype == "Fermion" ? "Occ" : "Up",
+      3 => systype == "Boson" ? "2" : "Dn",
+      4 => systype == "Boson" ? "3" : "UpDn"
     )
   
     return op_str
@@ -149,37 +149,37 @@ function get_sys_loc(sys::QE_flat_SIAM, j::Int)
 
 end 
 
-function gen_graph(sys::QE_G_SIAM)
+# function gen_graph(sys::QE_G_SIAM)
 
-  g = NamedGraph()
+#   g = NamedGraph()
 
-  for i in 1:legleft(sys) + legright(sys)
-    for j in 1:siteseach(sys) + QESITES
-      add_vertex!(g, (i, j))
-    end 
-  end 
+#   for i in 1:legleft(sys) + legright(sys)
+#     for j in 1:siteseach(sys) + QESITES
+#       add_vertex!(g, (i, j))
+#     end 
+#   end 
 
-  center = (legleft(sys) + legright(sys) + 1, 1)
-  add_vertex!(g, center)
+#   center = (legleft(sys) + legright(sys) + 1, 1)
+#   add_vertex!(g, center)
 
-  for i in 1:legright(sys) + legright(sys)
+#   for i in 1:legright(sys) + legright(sys)
 
-    add_edge!(g, (center, (i, 1)))
-    for j in 1: siteseach(sys) +QESITES - 1
-      add_edge!(g, ((i, j), (i, j + 1)))
-    end 
-  end 
+#     add_edge!(g, (center, (i, 1)))
+#     for j in 1: siteseach(sys) +QESITES - 1
+#       add_edge!(g, ((i, j), (i, j + 1)))
+#     end 
+#   end 
 
-  @show g
-  #@visualize g
+#   @show g
+#   #@visualize g
 
-  return g
+#   return g
   
 
-end 
+# end 
 
 sitemap(sys::systems, j) = j
-sitemap(sys::Union{QE_G_SIAM, DPT_graph}, j) = sitemap(sys)[j]
+# sitemap(sys::Union{QE_G_SIAM, DPT_graph}, j) = sitemap(sys)[j]
 
 
 """maps the flattened index to graph index"""

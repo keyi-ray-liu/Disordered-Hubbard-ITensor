@@ -4,7 +4,8 @@ const DYNA_STR = "tTDVP"
 const DPT_INIT_BIAS = [-100.0, 100.0]
 const BIAS_LR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
-const STA_STR = "temp_plasmon"
+
+
 
 
 abstract type systems end 
@@ -17,7 +18,7 @@ abstract type reservoir end
 # end 
 
 # U(sys::Hubbard) = sys.U
-
+systype(sys::systems) = "Fermion"
 
 struct Static <: simulations
 
@@ -139,13 +140,13 @@ struct Chain_only{T} <: systems where T <: Number
 
     L :: Int
     N :: Vector{Int}
-    type :: String
+    systype :: String
     t :: Vector{T}
     coulomb :: Coulombic
 end 
 
 L(sys::Chain_only) = sys.L
-type(sys::Chain_only) = sys.type
+systype(sys::Chain_only) = sys.systype
 N(sys::Chain_only) = sys.N
 t(sys::Chain_only) = sys.t
 ζ(sys::Chain_only) = sys.coulomb.ζ
@@ -154,12 +155,12 @@ get_systotal(sys::Chain_only) = sys.L
 function set_Chain(;
     L =2,
     N =1,
-    type="Fermion",
+    systype="Fermion",
     t=-1,
     kwargs...
     )
 
-    t = FermionCondition(type, t)
+    t = FermionCondition(systype, t)
     coulomb = set_Coulombic(;kwargs...)
 
     if typeof(N) == Int
@@ -169,7 +170,7 @@ function set_Chain(;
     return Chain_only(
         L,
         N,
-        type,
+        systype,
         t,
         coulomb
     )
@@ -184,7 +185,7 @@ struct biased_chain <: systems
 
 end 
 
-type(sys::biased_chain) = type(sys.chain)
+systype(sys::biased_chain) = systype(sys.chain)
 get_systotal(sys::biased_chain) = sys.full_size
 
 set_biased_chain(; chain_start=1, full_size=100, kwargs...) = biased_chain( set_Chain(;kwargs...), full_size, chain_start)
@@ -199,7 +200,7 @@ set_GQS(;init=1, kwargs...) = GQS( set_Chain(;kwargs...), init)
 init(sys::GQS) = sys.init
 N(sys::GQS) = N(sys.chain_only)
 L(sys::GQS) = L(sys.chain_only)
-type(sys::GQS) = type(sys.chain_only)
+systype(sys::GQS) = systype(sys.chain_only)
 get_systotal(sys::GQS) = get_systotal(sys.chain_only)
 
 
@@ -208,14 +209,14 @@ struct Rectangular{T} <: systems where T <: Number
     Lx :: Int
     Ly :: Int
     N :: Vector{Int}
-    type :: String
+    systype :: String
     t :: Vector{T}
     coulomb :: Coulombic
 
 end 
 
 Lx(sys::Rectangular) = sys.Lx
-type(sys::Rectangular) = sys.type
+systype(sys::Rectangular) = sys.systype
 N(sys::Rectangular) = sys.N
 t(sys::Rectangular) = sys.t
 get_systotal(sys::Rectangular) = sys.Lx * sys.Ly
@@ -224,12 +225,12 @@ function set_Rectangular(;
     Lx =3,
     Ly = 3,
     N =1,
-    type="Fermion",
+    systype="Fermion",
     t=-1,
     kwargs...
     )
 
-    t = FermionCondition(type, t)
+    t = FermionCondition(systype, t)
     coulomb = set_Coulombic(;kwargs...)
     L = Lx * Ly
 
@@ -241,7 +242,7 @@ function set_Rectangular(;
         Lx,
         Ly,
         N,
-        type,
+        systype,
         t,
         coulomb
     )
@@ -264,7 +265,7 @@ t(sys::NF_square) = sys.t
 U(sys::NF_square) = sys.U
 bias(sys::NF_square) = sys.bias
 N(sys::NF_square) = sys.N
-type(sys::NF_square) = "Electron"
+systype(sys::NF_square) = "Electron"
 
 function set_NF_square(;
     L = 3,
@@ -300,7 +301,7 @@ struct DPT <: systems
     t_doubledot :: Float64
     L :: Int
     R :: Int
-    type :: String
+    systype :: String
     contact :: Bool
     contact_t :: Float64
     couple_range :: Int
@@ -369,7 +370,7 @@ function set_DPT(;
     t_doubledot = 1.0,
     L = 6,
     R = 6,
-    type = "Fermion",
+    systype = "Fermion",
     couple_range=2,
     contact = true,
     contact_t = 1.0,
@@ -393,7 +394,7 @@ function set_DPT(;
     t_doubledot,
     L,
     R,
-    type,
+    systype,
     contact,
     contact_t,
     couple_range,
@@ -410,7 +411,7 @@ function set_DPT(;
     return sys
 end 
 
-type(sys::DPT) = sys.type
+systype(sys::DPT) = sys.systype
 U(sys::DPT) = sys.U
 L(sys::DPT) = sys.L
 R(sys::DPT) = sys.R
@@ -520,7 +521,7 @@ end
 
 set_graph(sys::Union{DPT, DPT_mixed}, graph::Bool) = graph ? set_DPT_graph(sys) : sys
 
-for func ∈ [type, 
+for func ∈ [systype, 
     U, L, R, N, couple_range, bias_doubledot, bias_L, bias_R, t_reservoir, t_doubledot, contact, contact_t, dd_lower, L_begin, L_end, R_begin, R_end, L_contact, R_contact, ddposition
     ]
     
@@ -553,7 +554,7 @@ function DPT_setter(
     avg :: Bool 
     ;
     ddposition ="R",
-    type="Fermion",
+    systype="Fermion",
     graph = false,
     includeU = false,
     kwargs...
@@ -563,15 +564,15 @@ function DPT_setter(
         ddposition = "avg"
         graph = false
         includeU= false
-        type = "Electron"
+        systype = "Electron"
     end 
 
 
     if mixed
-        sys = set_DPT_mixed(; type=type, ddposition = ddposition, graph=graph, includeU=includeU, kwargs...)
+        sys = set_DPT_mixed(; systype=systype, ddposition = ddposition, graph=graph, includeU=includeU, kwargs...)
 
     else
-        sys = set_DPT(; type=type, ddposition=ddposition, graph=graph, kwargs...)
+        sys = set_DPT(; systype=systype, ddposition=ddposition, graph=graph, kwargs...)
     end 
 
     if avg
@@ -587,7 +588,7 @@ end
 struct reservoir_spatial <: reservoir
 
     L :: Int
-    type :: String
+    systype :: String
     t :: Vector{Number}
     N :: Vector{Int}
     contact :: Int
@@ -598,7 +599,7 @@ end
 struct reservoir_mixed <: reservoir
 
     energies :: Vector
-    type :: String
+    systype :: String
     ks :: Vector
     LR :: Vector
     bias :: Float64
@@ -616,7 +617,7 @@ struct SD_array{T, U, V} <: systems where {T <: reservoir, U <: systems, V <: An
     source :: T 
     drain :: T 
     array :: U
-    type :: String
+    systype :: String
     s_contacts :: Array{V}
     d_contacts :: Array{V}
 
@@ -624,7 +625,7 @@ end
 
 get_systotal(sys::SD_array) = sum( [get_systotal(subsys) for subsys in [sys.source, sys.array, sys.drain]])
 
-for func ∈ [:type
+for func ∈ [:systype
     ]
     @eval $func(sys::SD_array) = sys.$func
 end 
@@ -632,19 +633,19 @@ end
 function set_reservoir(;
     L = 12,
     t = -1.0,
-    type = "Fermion",
+    systype = "Fermion",
     N = 6,
     contact = L,
     bias = 0.0,
     kwargs...)
 
-    t = FermionCondition(type, t)
+    t = FermionCondition(systype, t)
 
     if typeof(N) == Int
         N = [L - N, N, 0, 0]
     end 
 
-    reservoir = reservoir_spatial(L, type, t, N, contact, bias)
+    reservoir = reservoir_spatial(L, systype, t, N, contact, bias)
     return reservoir
 
 end 
@@ -659,25 +660,25 @@ function set_SD(
     contact_scaling = 2.0,
     s_coupling = -0.01,
     d_coupling = -0.01,
-    type = "Fermion",
+    systype = "Fermion",
     kwargs...
 )
 
-    s_coupling = FermionCondition(type, s_coupling)
-    d_coupling = FermionCondition(type, d_coupling)
+    s_coupling = FermionCondition(systype, s_coupling)
+    d_coupling = FermionCondition(systype, d_coupling)
 
     s_contacts, d_contacts = set_SD_contacts(s_coupling, d_coupling, contact_scaling, L)
 
 
-    source = set_reservoir(; L=L, N=Ns, contact = L, type=type,  kwargs...)
-    drain = set_reservoir(; L=L, N=Nd, contact = 1, type=type, kwargs...)
-    array = set_Rectangular(; N=Na, type=type, kwargs...)
+    source = set_reservoir(; L=L, N=Ns, contact = L, systype=systype,  kwargs...)
+    drain = set_reservoir(; L=L, N=Nd, contact = 1, systype=systype, kwargs...)
+    array = set_Rectangular(; N=Na, systype=systype, kwargs...)
 
     SD = SD_array(
         source, 
         drain, 
         array, 
-        type, 
+        systype, 
         s_contacts,
         d_contacts
     )
@@ -696,7 +697,7 @@ struct LSR_SIAM <: systems
     t_couple :: Float64
     L :: Int
     R :: Int
-    type :: String
+    systype :: String
     bias_onsite :: Float64
     bias_L :: Float64
     bias_R :: Float64
@@ -708,7 +709,7 @@ function set_LSR_SIAM(;
     t_couple = 1/sqrt(2),
     L = 32,
     R = 32,
-    type = "Fermion",
+    systype = "Fermion",
     bias_onsite = 1.0,
     bias_L = 0.0,
     bias_R = 0.0
@@ -719,7 +720,7 @@ function set_LSR_SIAM(;
     t_couple,
     L,
     R,
-    type,
+    systype,
     bias_onsite,
     bias_L,
     bias_R
@@ -727,7 +728,7 @@ function set_LSR_SIAM(;
 
 end 
 
-type(sys::LSR_SIAM) = sys.type
+systype(sys::LSR_SIAM) = sys.systype
 L(sys::LSR_SIAM) = sys.L
 R(sys::LSR_SIAM) = sys.R
 bias_onsite(sys::LSR_SIAM) = sys.bias_onsite

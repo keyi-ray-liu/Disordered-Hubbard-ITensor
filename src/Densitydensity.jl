@@ -203,7 +203,7 @@ end
 
 DenDenNeighbor(sys::DPT_graph, j::Int) = DenDenNeighbor(sys.dpt, j)
 
-ddoperators(sys::systems) = type(sys) == "Fermion" ? [["N", "N"]] : [["Ntot", "Ntot"]]
+ddoperators(sys::systems) = systype(sys) == "Fermion" ? [["N", "N"]] : [["Ntot", "Ntot"]]
 ddoperators(sys::DPT_avg) =  [["Ndn", "Nup"]]
 
 function add_DensityDensity!(sys::systems, res::OpSum)

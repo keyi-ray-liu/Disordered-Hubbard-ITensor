@@ -1,39 +1,5 @@
 
 
-
-
-
-function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
-
-    try
-        QEen = load_plsmon(output) * QEmul
-        @info "QE file found, QE energy = $QEen"
-    catch
-        @info "QE file not found, beginning next stage, QE energy = $QEen"
-    end
-
-    # if no QEen, we need to perform further calculations on the initial state
-    # the basic logic is that this is a QE calculation, QEen =0 makes no sense
-    if QEen == 0 || (!product && !check_ψ(output))
-        println("Calculating initial state")
-        ex = (QEen == 0) ? 2 : 1
-        # we set up the decoupled sys from the QE
-        decoupled = QE_determiner(key; QEen=0.0, dp=0.0, center_parameter = EMPTY_CENTER, kwargs...)
-    
-        # get plasmon energy
-        static = set_Static(; ex=ex, output=output, sweepdim=TEdim, kwargs...)
-    
-        ϕ = gen_state(decoupled)
-        run_static_simulation(decoupled, static, ϕ; message="QEinit")
-    
-        QEen = load_plsmon(output) * QEmul
-    end
-
-    return QEen
-
-
-end 
-
 function QE_static(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 1, QEmul=1.0, center_parameter = EMPTY_CENTER, kwargs...)
 
     @info "Begin. QEen = $QEen"
@@ -121,8 +87,6 @@ function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul
 end 
 
 
-
-
 function QE_wrapper(key)
 
     product = false
@@ -155,92 +119,6 @@ function QE_wrapper(key)
 end 
 
 
-function wave_coeff(TCD; L=12, center=6.5, sigma=2, conv=false, includegs=true)
-
-    #@show size(TCD[:, 1:12])
-    g = map( x-> exp( -((x - center)/sigma) ^ 2), 1:L)
-
-    @show start_idx = 2 - Int(includegs)
-
-    if conv
-        g = g .* TCD[2, 1:L]
-    end 
-    
-    F = transpose(TCD[start_idx:end, 1:L])
-    C = F \ g
-
-    @show C
-    @show g
-    @show F * C
-
-
-    return C
-end 
-
-function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, padding=false, conv=false)
-
-    if !isfile( getworkdir() * "initwavepacket.h5")
-
-        @warn "no initial wavepacket, calculating"
-        if isfile( getworkdir() * "TCD")
-            TCD = readdlm( getworkdir() * "TCD")
-        else
-            @warn "no TCD, calculating"
-            TCD = static_tcd(; padding=padding)
-        end 
-
-        coeff = wave_coeff(TCD; center=center, sigma=sigma, L=L, conv=conv, includegs=includegs)
-        wf = [ load_ψ(f; tag="psi") for f in get_static_files()]
-
-        @show start_idx = 2 - Int(includegs)
-        wf_to_sum = coeff .* wf[start_idx:end]
-
-        ψ = add(wf_to_sum...; maxdim=256)
-
-        normalize!(ψ)
-
-        @show cal_TCD(ψ, wf[1])
-
-        h5open( getworkdir() * "initwavepacket.h5", "w") do io
-            write(io, "psi", ψ)
-        end 
-
-    end 
-
-    @info "loading initial wavepacket"
-    ψ = load_ψ("initwavepacket"; tag="psi")
-    return ψ
-
-end 
-
-
-function solve_QE(; chain_in = nothing, kwargs...)
-
-
-    if !(typeof(chain_in) <: Dict)
-
-        @warn "no initial chain para dict, loading biasedchain"
-        chain_in = load_JSON( pwd() * "/biasedchain.json")
-    end 
-    
-    @show chain_in
-    
-    full_size = get(chain_in, "fullsize", 100)
-    L = get(chain_in, "L", 20)
-    N = get(chain_in, "N", div(L, 2))
-
-    #τ = get(qe_two_in, "timestep", 0.125)
-    dim = get(chain_in, "dim", 64)
-    ex = get(chain_in, "ex", 10)
-    sweepcnt = get(chain_in, "sweepcnt", 10)
-
-    chain_start = get(chain_in, "chain_start", 1)
-
-    #run_chain(L, N, ex; dim=dim)
-    _ = run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt, chain_start = chain_start, output="plasmon", kwargs...)
-
-end 
-
 
 
 function QE_gaussian_wrapper()
@@ -255,25 +133,33 @@ function QE_gaussian_wrapper()
     center = get(qe_gaussian_in, "center", 6.5)
     sigma = get(qe_gaussian_in, "sigma", 4)
     includegs = get(qe_gaussian_in, "includegs", false)
-    padding = get(qe_gaussian_in, "padding", true)
+    padding = get(qe_gaussian_in, "padding", false)
     L = get(qe_gaussian_in, "L", 12)
     conv = get(qe_gaussian_in, "conv", true)
+    mode = get(qe_gaussian_in, "mode", "biasedchain")
+
+    static_str = get_static_str(mode)
 
     save_every=false
     obs = [dyna_EE, dyna_occ, dyna_corr, dyna_tcd]
 
     # empty static wf, solve for QE
-    if isempty(get_static_files())
+    if isempty(get_static_files(static_str))
 
         @warn "no static files, solving for static chain eigenstates"
-        solve_QE(; chain_in = qe_gaussian_in)
+        solve_QE(; para_in = qe_gaussian_in, mode=mode)
     end 
     
-    ψ = prepare_wavepacket(; includegs=includegs, center=center, sigma=sigma, L=L, padding=padding, conv=conv)
+    ψ = prepare_wavepacket(; includegs=includegs, center=center, sigma=sigma, L=full_size, padding=padding, conv=conv, mode=mode)
 
-    chain= set_Chain(; L=full_size, N = full_N )
+    if mode == "biasedchain"
+        sys= set_Chain(; L=full_size, N = full_N )
+    elseif mode == "QEtwo"
+        sys = set_QE_two(; L=L, N=N)
+    end 
+
     dynamic = set_Dynamic(; τ=τ, TEdim=TEdim, start=τ, fin=fin)
-    run_dynamic_simulation(chain, dynamic, ψ; message="QE_gaussian_chain_only", save_every=save_every, obs=obs)
+    run_dynamic_simulation(sys, dynamic, ψ; message="QE_gaussian_chain_only", save_every=save_every, obs=obs)
 
     return nothing
 

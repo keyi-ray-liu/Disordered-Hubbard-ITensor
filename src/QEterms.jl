@@ -92,7 +92,7 @@ function QECoupling(sys::QE_flat_SIAM, j)
 
 end 
 
-QECoupling(sys::QE_G_SIAM, j) = QECoupling(sys.system, j)
+# QECoupling(sys::QE_G_SIAM, j) = QECoupling(sys.system, j)
 
 
 """
@@ -102,7 +102,7 @@ function add_qe!(sys::systems, res::OpSum)
 
     @info "Adding QE"
 
-    sys_type = type(sys)
+    sys_type = systype(sys)
     systotal = get_systotal(sys)
     
 

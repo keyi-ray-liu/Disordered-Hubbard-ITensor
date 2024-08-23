@@ -16,7 +16,7 @@ function run_chain( L, N, ex; dim=64, kwargs...)
     sys = set_Chain(;  L=L, N=N, kwargs...)
 
     @show sys
-    static = set_Static(; ex=ex, sweepdim=dim)
+    static = set_Static(; ex=ex, sweepdim=dim, kwargs...)
     ψ = gen_state(sys)
     ψ = run_static_simulation(sys, static, ψ)
 

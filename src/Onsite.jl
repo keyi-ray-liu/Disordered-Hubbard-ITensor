@@ -332,7 +332,7 @@ function Onsite(sys::SD_array, j::Int)
 end 
 
 
-onsiteoperators(sys::systems) = type(sys) == "Fermion" ? ["N"] : ["Ntot"]
+onsiteoperators(sys::systems) = systype(sys) == "Fermion" ? ["N"] : ["Ntot"]
 onsiteoperators(sys::DPT_avg) = ["Nup", "Ndn"]
 
 function add_onsite!(sys::systems, res::OpSum)

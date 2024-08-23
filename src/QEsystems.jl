@@ -35,7 +35,7 @@ end
 
 product(sys::QE_two) = sys.product
 get_systotal(sys::QE_two) = get_systotal(sys.chain_only) + 2 * QESITES
-type(sys::QE_two) = type(sys.chain_only)
+systype(sys::QE_two) = systype(sys.chain_only)
 t(sys::QE_two) = t(sys.chain_only)
 ζ(sys::QE_two) = ζ(sys.chain_only)
 L(sys::QE_two) = L(sys.chain_only)
@@ -94,7 +94,7 @@ QEen(sys::QE_parallel) = QEen(sys.upper)
 get_systotal(sys::QE_parallel) = get_systotal(sys.upper) + get_systotal(sys.lower) + 2
 get_uppertotal(sys::QE_parallel) = get_systotal(sys.upper)
 get_lowertotal(sys::QE_parallel) = get_systotal(sys.lower)
-type(sys::QE_parallel) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
+systype(sys::QE_parallel) = systype(sys.upper) == systype(sys.lower) ? systype(sys.upper) : error("systype up/lo mismatch!")
 offset_scale(sys::QE_parallel) = offset_scale(sys.upper)
 
 function set_QE_parallel(;
@@ -130,7 +130,7 @@ struct QE_flat_SIAM <: systems
     legright::Int
     siteseach::Int
     N::Vector{Int}
-    type::String
+    systype::String
     QE_distance :: Float64
     offset_scale::Float64
     QEen:: Float64
@@ -149,7 +149,7 @@ siteseach(sys::QE_flat_SIAM) = sys.siteseach
 N(sys::QE_flat_SIAM) = sys.N
 get_systotal(sys::QE_flat_SIAM) = 1 + (legleft(sys) + legright(sys)) * (siteseach(sys) + QESITES)
 left(sys::QE_flat_SIAM) = legleft(sys) * (siteseach(sys) + QESITES)
-type(sys::QE_flat_SIAM) = sys.type
+systype(sys::QE_flat_SIAM) = sys.systype
 
 
 QE_distance(sys::Union{QE_two, QE_flat_SIAM}) = sys.QE_distance
@@ -165,7 +165,7 @@ function set_QE_SIAM(;
     legright=2,
     siteseach=10,
     N=1,
-    type="Fermion",
+    systype="Fermion",
     QE_distance=2,
     offset_scale=0.5,
     QEen=0.0,
@@ -188,7 +188,7 @@ function set_QE_SIAM(;
         legright,
         siteseach,
         N,
-        type,
+        systype,
         QE_distance,
         offset_scale,
         QEen,
@@ -212,29 +212,29 @@ function set_QE_SIAM(;
 
 end 
 
-struct QE_G_SIAM <: systems
-    system :: QE_flat_SIAM
-    sitemap :: Dict
-end 
+# struct QE_G_SIAM <: systems
+#     system :: QE_flat_SIAM
+#     sitemap :: Dict
+# end 
 
-legleft(sys::QE_G_SIAM) = legleft(sys.system)
-legright(sys::QE_G_SIAM) = legright(sys.system)
-siteseach(sys::QE_G_SIAM) = siteseach(sys.system)
-N(sys::QE_G_SIAM) = N(sys.system)
-get_systotal(sys::QE_G_SIAM) = get_systotal(sys.system)
-left(sys::QE_G_SIAM) = left(sys.system)
-type(sys::QE_G_SIAM) = type(sys.system)
-t(sys::QE_G_SIAM) = t(sys.system)
+# legleft(sys::QE_G_SIAM) = legleft(sys.system)
+# legright(sys::QE_G_SIAM) = legright(sys.system)
+# siteseach(sys::QE_G_SIAM) = siteseach(sys.system)
+# N(sys::QE_G_SIAM) = N(sys.system)
+# get_systotal(sys::QE_G_SIAM) = get_systotal(sys.system)
+# left(sys::QE_G_SIAM) = left(sys.system)
+# systype(sys::QE_G_SIAM) = systype(sys.system)
+# t(sys::QE_G_SIAM) = t(sys.system)
 
 
-QE_distance(sys::QE_G_SIAM) = QE_distance(sys.system)
-QEen(sys::QE_G_SIAM) = QEen(sys.system)
-init(sys::QE_G_SIAM) = init(sys.system)
-dp(sys::QE_G_SIAM) = dp(sys.system)
-ζ(sys::QE_G_SIAM) = ζ(sys.system)
-offset_scale(sys::QE_G_SIAM) = offset_scale(sys.system)
+# QE_distance(sys::QE_G_SIAM) = QE_distance(sys.system)
+# QEen(sys::QE_G_SIAM) = QEen(sys.system)
+# init(sys::QE_G_SIAM) = init(sys.system)
+# dp(sys::QE_G_SIAM) = dp(sys.system)
+# ζ(sys::QE_G_SIAM) = ζ(sys.system)
+# offset_scale(sys::QE_G_SIAM) = offset_scale(sys.system)
 
-sitemap(sys::QE_G_SIAM) = sys.sitemap
+# sitemap(sys::QE_G_SIAM) = sys.sitemap
 
 
 
@@ -252,7 +252,7 @@ QEen(sys::QE_HOM) = QEen(sys.upper)
 get_systotal(sys::QE_HOM) = get_systotal(sys.upper) + get_systotal(sys.lower) 
 get_uppertotal(sys::QE_HOM) = get_systotal(sys.upper)
 get_lowertotal(sys::QE_HOM) = get_systotal(sys.lower)
-type(sys::QE_HOM) = type(sys.upper) == type(sys.lower) ? type(sys.upper) : error("type up/lo mismatch!")
+systype(sys::QE_HOM) = systype(sys.upper) == systype(sys.lower) ? systype(sys.upper) : error("systype up/lo mismatch!")
 offset_scale(sys::QE_HOM) = offset_scale(sys.upper)
 
 function set_QE_HOM(;

@@ -9,6 +9,7 @@ using Suppressor
 using ITensorTDVP
 using Random
 using HDF5
+using Logging
 
 #using DataGraphs: edge_data, vertex_data
 #using Dictionaries: Dictionary
@@ -58,6 +59,7 @@ include("Chain.jl")
 include("specific.jl")
 include("basis.jl")
 include("test.jl")
+include("QEutil.jl")
 
 
 const DISABLE_BLAS = true
@@ -75,11 +77,12 @@ end
 
 if test
     
-    rm(getworkdir(), force=true, recursive=true)
+    #rm(getworkdir(), force=true, recursive=true)
     #plot_mix()
     #static_tcd()
     #chain_wrapper()
     #prepare_wavepacket()
+    #test_embedding_wrapper()
     QE_gaussian_wrapper()
     #gen_GS_scan()
     #dyna_pϕ()

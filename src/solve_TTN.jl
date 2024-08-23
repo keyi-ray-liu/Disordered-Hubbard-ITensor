@@ -85,7 +85,7 @@ function solve(H::ITensorNetworks.TreeTensorNetwork{Any}, ϕ::ITensorNetworks.Tr
         # shift and invert block
 
 
-        println("As of end of search, type of prev_state", typeof(prev_state))
+        println("As of end of search, systype of prev_state", typeof(prev_state))
 
         append!(allenergy, energy)
         append!(prev_energy, energy)

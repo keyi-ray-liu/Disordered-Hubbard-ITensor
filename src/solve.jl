@@ -99,7 +99,7 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
         # shift and invert block
 
 
-        println("As of end of search, type of prev_state", typeof(prev_state))
+        println("As of end of search, systype of prev_state", typeof(prev_state))
         var = variance(H, ψ)
 
         append!(allenergy, energy)
@@ -145,6 +145,7 @@ end
 
 function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=Function[], kwargs...)
 
+    # get the t=0 stats
     for ob in obs
         ob(;ψ=ψ, t=0, kwargs...)
     end 

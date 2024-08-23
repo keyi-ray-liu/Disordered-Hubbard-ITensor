@@ -1,6 +1,6 @@
 get_time(raw::String) = parse(Float64, SubString(raw, 1 + length(DYNA_STR), length(raw) - length(".h5")))
 
-get_ex(raw::String) = parse(Int, SubString(raw, 1 + length(STA_STR), length(raw) - length(".h5")))
+get_ex(raw::String, static_str::String) = parse(Int, SubString(raw, 1 + length(static_str), length(raw) - length(".h5")))
 
 get_start(raw::String) = parse(Int, SubString(raw, 1 + length("start"), length(raw) - length(".h5")))
 
@@ -9,20 +9,20 @@ get_dyna_files() = sort(
     filter(x->occursin(DYNA_STR,x), readdir(getworkdir())))
     , by=get_time)
 
-get_static_files() = sort( filter(x->occursin(STA_STR,x), readdir(getworkdir())), by=get_ex)
+get_static_files(static_str::String) = sort( filter(x->occursin(static_str,x), readdir(getworkdir())), by= x -> get_ex(x, static_str ))
 
 get_QE_ref_files() = sort( filter(x->(occursin(r"start.*h5",x) && !occursin("temp", x)), readdir(getworkdir())), by=get_start)
 
 
 """Calculates transition charge density between two wf"""
-function cal_TCD(ψ1, ψ2; 
+function cal_TCD(ψ1, ψ2; start_off = 0, end_off = 0
     #temp=true
     )
 
   # ψ1 is left, ψ2 is right
 
   #L = length(ψ1)
-  # type? fix if necessary
+  # systype? fix if necessary
   #tcd = zeros( ComplexF64, (L) )
   # get site indices
 
@@ -35,7 +35,7 @@ function cal_TCD(ψ1, ψ2;
 #   W = MPO( s2,  operator)
 
 #   tcd = inner(ψ1', W, ψ2
-    tcd = real(inner_product(ψ1, ψ2, operator))
+    tcd = real(inner_product(ψ1, ψ2, operator))[ 1 + start_off : end - end_off]
     #@show tcd
   # explicitly calculate inner product of post-operated states
 
@@ -247,12 +247,13 @@ function dyna_EE(; max_order=3, ψ=nothing, kwargs...)
 
 end 
 
-function static_occ()
+function static_occ(;static_str="temp_plasmon")
 
+    @info "calculating static occ"
     occ = []
 
 
-    for file in get_static_files()
+    for file in get_static_files(static_str)
 
         ψ = load_ψ(file, tag= "psi")
         append!(occ, [expect(ψ, "N")])
@@ -265,19 +266,19 @@ function static_occ()
 
 end 
 
-function static_tcd(;padding=false)
+function static_tcd(;padding=false, start_off=0, end_off=0, static_str="temp_plasmon")
 
     tcd = []
 
-    files = get_static_files()
+    files = get_static_files(static_str)
 
-    gs = load_ψ(STA_STR * "1",  tag="psi")
+    gs = load_ψ(static_str * "1",  tag="psi")
 
     for file in files
 
         ψ = load_ψ(file, tag= "psi")
 
-        res = cal_TCD(ψ, gs)
+        res = cal_TCD(ψ, gs; start_off=start_off, end_off=end_off)
 
         if padding
             res = vcat([0], res, [0])
@@ -341,7 +342,7 @@ function dyna_occ(; sys=set_Chain(), ψ=nothing, kwargs...)
     workdir = getworkdir()
 
     if isnothing(ψ)
-        if type(sys) == "Electron"
+        if systype(sys) == "Electron"
             occup = []
             occdn = []
         else
@@ -358,7 +359,7 @@ function dyna_occ(; sys=set_Chain(), ψ=nothing, kwargs...)
 
             println("Calculating occ, $t")
 
-            if type(sys)== "Electron"
+            if systype(sys)== "Electron"
                 append!(occup, [expect(ψ, "Nup")])
                 append!(occdn, [expect(ψ, "Ndn")])
         
@@ -369,7 +370,7 @@ function dyna_occ(; sys=set_Chain(), ψ=nothing, kwargs...)
 
         end 
 
-        if type(sys) == "Electron"
+        if systype(sys) == "Electron"
             writedlm(workdir * "occup", occup)   
             writedlm(workdir * "occdn", occdn)   
     
@@ -381,7 +382,7 @@ function dyna_occ(; sys=set_Chain(), ψ=nothing, kwargs...)
 
     else
 
-        if type(sys) == "Fermion"
+        if systype(sys) == "Fermion"
             open(workdir * "occ", "a") do io
                 writedlm( io, [expect(ψ, "N")])
             end 
@@ -405,7 +406,7 @@ function dyna_dptcurrent(; ψ=nothing, sys=set_DPT(), kwargs...)
 
     function work(ψ, sys)
         
-        if type(sys) == "Fermion" 
+        if systype(sys) == "Fermion" 
             op1, op2 = "Cdag", "C"
         else
             op1, op2 = "Cdagup", "Cup"
@@ -503,10 +504,10 @@ end
 
 function dyna_SDcurrent(; ψ=nothing, sys=set_SD(), kwargs...)
     @error "Not completed"
-    @assert typeof(sys) == SD_array "sys type wrong!"
+    @assert typeof(sys) == SD_array "sys systype wrong!"
     function work(ψ, sys)
         
-        if  sys.type == "Fermion" 
+        if  sys.systype == "Fermion" 
             op1, op2 = "Cdag", "C"
         else
             op1, op2 = "Cdagup", "Cup"
@@ -566,7 +567,7 @@ function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
 
     end 
 
-    if type(sys) == "Fermion"
+    if systype(sys) == "Fermion"
         ops = [ 
             ["Cdag", "C"],
             ["N", "N"]

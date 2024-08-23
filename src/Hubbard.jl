@@ -7,7 +7,7 @@ function add_HubbardRepulsion!(sys::systems, res::OpSum)
     @info "Adding HubbardRepulsion"
     systotal = get_systotal(sys)
 
-    sys_type = type(sys)
+    sys_type = systype(sys)
 
     if sys_type == "Fermion"
         op = "I"

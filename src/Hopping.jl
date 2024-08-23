@@ -286,7 +286,7 @@ function add_hop!(sys::systems, res::OpSum)
     
 
     @info "Adding all hopping"
-    sys_type = type(sys)
+    sys_type = systype(sys)
     systotal = get_systotal(sys)
 
     if sys_type == "Fermion"

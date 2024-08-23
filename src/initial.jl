@@ -1,4 +1,4 @@
-gen_state_str(sys::systems) = shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])
+gen_state_str(sys::systems) = shuffle([ get_type_dict(systype(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])
 
 function gen_state_str(sys::QE_two) 
 
@@ -21,8 +21,8 @@ end
 
 
 function gen_state_str(sys::DPT) 
-    Lres = shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
-    Rres = shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+    Lres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+    Rres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
     L = []
     M = []
@@ -44,8 +44,8 @@ end
 
 
 function gen_state_str(sys::DPT_avg)
-    Lres = shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
-    Rres = shuffle([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+    Lres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+    Rres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
     if Lres[end] == "Up"
         Lres[end] = "UpDn"
@@ -59,14 +59,14 @@ function gen_state_str(sys::DPT_avg)
 
 end 
 
-gen_state_str(sys::reservoir_spatial) = reverse!([ get_type_dict(sys.type)[i] for i=1:4 for _ in 1:sys.N[i]])
+gen_state_str(sys::reservoir_spatial) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
 
 gen_state_str(sys::SD_array) = vcat( gen_state_str(sys.source), gen_state_str(sys.array), gen_state_str(sys.drain))
 
 
 gen_state_str(sys::DPT_mixed) = gen_state_str(sys.dpt)
 
-gen_state_str(sys::LSR_SIAM) = vcat([ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(type(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+gen_state_str(sys::LSR_SIAM) = vcat([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
 
 function gen_state_str(sys::biased_chain) 
@@ -81,9 +81,9 @@ function gen_state_str(sys::biased_chain)
 end 
 
 # gen_state_str(sys::QE_flat_SIAM) = vcat(
-#     reduce(vcat, [vcat(QE_str(sys)[j], shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])) for j in 1:legleft(sys)]), 
+#     reduce(vcat, [vcat(QE_str(sys)[j], shuffle([ get_type_dict(systype(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])) for j in 1:legleft(sys)]), 
 #     ["Emp"], 
-#     reduce(vcat, [vcat(shuffle([ get_type_dict(type(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ]), QE_str(sys)[j]) for j in 1 + legleft(sys) : legright(sys) + legleft(sys)])
+#     reduce(vcat, [vcat(shuffle([ get_type_dict(systype(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ]), QE_str(sys)[j]) for j in 1 + legleft(sys) : legright(sys) + legleft(sys)])
 #     )
 
 # gen_state_str(sys::QE_parallel) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower), ["Emp", "Occ"])
@@ -123,7 +123,7 @@ function gen_state(sys::GQS; QN=true, kwargs...)
         return gen_state(sys.chain_only; QN=QN, kwargs...)
 
     elseif init(sys) == 2
-        sites = siteinds(type(sys), get_systotal(sys); conserve_qns=QN)
+        sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=QN)
 
         @show state_str1 = vcat(["Occ" for _ in 1:N(sys)[2]], ["Emp" for _ in 1:N(sys)[1]])
 
@@ -167,24 +167,24 @@ end
 
 
 
-function gen_state(sys::Union{QE_G_SIAM, DPT_graph}; QN=true, kwargs...)
-    @info "gen state for graph"
-    g = gen_graph(sys)
-    sites = siteinds(type(sys), g; conserve_qns=QN)
+# function gen_state(sys::Union{QE_G_SIAM, DPT_graph}; QN=true, kwargs...)
+#     @info "gen state for graph"
+#     g = gen_graph(sys)
+#     sites = siteinds(systype(sys), g; conserve_qns=QN)
 
-    @show typeof(sites)
-    @show size(sites)
-    #@show length(gen_state_str(sys)), length(get_systotal(sys))
+#     @show typeof(sites)
+#     @show size(sites)
+#     #@show length(gen_state_str(sys)), length(get_systotal(sys))
 
-    #@show gen_state_map(sys, sites)
-    ψ = ttn( g -> gen_state_map(sys, sites)[g], sites)
+#     #@show gen_state_map(sys, sites)
+#     ψ = ttn( g -> gen_state_map(sys, sites)[g], sites)
 
-    #rng = StableRNG(111)
-    #ψ = normalize(random_ttn(rng, sites; link_space=20))
+#     #rng = StableRNG(111)
+#     #ψ = normalize(random_ttn(rng, sites; link_space=20))
 
-    return ψ
+#     return ψ
 
-end 
+# end 
 
 
 
@@ -192,7 +192,7 @@ end
 function gen_state(sys::systems; QN=true, sites=nothing, kwargs...)
 
     if isnothing(sites)
-        sites = siteinds(type(sys), get_systotal(sys); conserve_qns=QN)
+        sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=QN)
 
     else
         @info "using predefined sites"
@@ -201,7 +201,7 @@ function gen_state(sys::systems; QN=true, sites=nothing, kwargs...)
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
     @show gen_state_str(sys)
     ψ = randomMPS(sites, gen_state_str(sys) 
-    #; linkdims=10
+    #; linkdims=2
     )
 
     return ψ
