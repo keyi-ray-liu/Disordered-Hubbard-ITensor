@@ -23,6 +23,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
     includeU = get(kwargs, :includeU, true)
     couple_range = get(kwargs, :couple_range, 2)
     ordering = get(kwargs, :ordering, "SORTED")
+    t_doubledot = get(kwargs, :t_doubledot, 0.125 )
 
     # we first run a calculation with no bias on the LR, 
 
@@ -65,7 +66,7 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
     noneq = DPT_setter(mixed, avg; U=U, L=L, R=R, t_doubledot=0.0, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
     Stage2 = set_Dynamic(;τ=τ, start=τ, fin=t_switch , kwargs...)
-    ψ2 = run_dynamic_simulation(noneq, Stage2, ψ1; message="Stage2", save_every=save_every, obs=obs)
+    ψ2 = run_dynamic_simulation(noneq, Stage2, ψ1; message="Stage2", save_every=save_every, obs=obs, init_obs=false)
 
     # we then switch on the tunneling b/w drain_offset
 
@@ -73,23 +74,23 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = bias_LR/2, bias_R  = - bia
     τ0 = τ/switchinterval
     for t in τ0:τ0:τ
 
-        @show t_doubledot= 1.0 * t/τ 
+        @show tempt_doubledot =  t_doubledot* t/τ 
 
-        noneqtuninterval = DPT_setter(mixed, avg; U=U, L=L, R=R, t_doubledot=t_doubledot, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
+        noneqtuninterval = DPT_setter(mixed, avg; U=U, L=L, R=R, t_doubledot=tempt_doubledot, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
         Stage3interval = set_Dynamic(;τ=τ0, start=t_switch + t, fin=t_switch + t, kwargs...)
 
-        ψ2 = run_dynamic_simulation(noneqtuninterval, Stage3interval, ψ2; message="Stage3interval",  save_every=save_every, obs=obs)
+        ψ2 = run_dynamic_simulation(noneqtuninterval, Stage3interval, ψ2; message="Stage3interval",  save_every=save_every, obs=obs, init_obs=false)
 
     end 
 
-    noneqtun = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
+    noneqtun = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, t_doubledot=t_doubledot, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
     Stage3 = set_Dynamic(;τ=τ, start=t_switch + 2 * τ, fin=t_switch * 2, kwargs...)
 
     #ψ = load_ψ(t_switch)
 
-    _ = run_dynamic_simulation(noneqtun, Stage3, ψ2; message="Stage3",  save_every=save_every, obs=obs)
+    _ = run_dynamic_simulation(noneqtun, Stage3, ψ2; message="Stage3",  save_every=save_every, obs=obs, init_obs=false)
 
     return nothing
 end 
@@ -116,6 +117,7 @@ function DPT_wrapper()
     avg = get(dpt_in, "avg", false)
     switchinterval = get(dpt_in, "switchinterval", 20)
     sweepcnt = get(dpt_in, "sweepcnt", 60)
+    t_doubledot = get(dpt_in, "tdouledot", 0.125)
 
     if DISABLE_BLAS && TEdim > 256
         @show ITensors.enable_threaded_blocksparse()
@@ -125,7 +127,7 @@ function DPT_wrapper()
         @show ITensors.disable_threaded_blocksparse()
     end 
 
-    run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, ordering=ordering, includeU=includeU, ddposition=ddposition, avg=avg, switchinterval=switchinterval, sweepcnt=sweepcnt)
+    run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = bias_LR/2, bias_R  = -bias_LR/2, mixed=mixed, ordering=ordering, includeU=includeU, ddposition=ddposition, avg=avg, switchinterval=switchinterval, sweepcnt=sweepcnt, t_doubledot=t_doubledot)
 
     # dyna_occ()
     # dyna_EE()

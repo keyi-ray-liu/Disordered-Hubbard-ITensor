@@ -397,22 +397,24 @@ end
 
 function gen_GS_scan()
 
-  chain_in = load_JSON( pwd() * "/qegaussian.json")
-  full_size = get(chain_in, "fullsize", 100)
-  L = get(chain_in, "L", 12)
+  para_in = load_JSON( pwd() * "/qegaussian.json")
+  full_size = get(para_in, "fullsize", 100)
+  L = get(para_in, "L", 12)
+  mode= get(para_in, "mode", "QEtwo")
 
   # we need to define a singular site so that the later addition could proceed
   sites = siteinds("Fermion", full_size; conserve_qns=true)
 
 
   for start ∈ 1:L:(full_size - L + 1)
-      chain_in[ "chain_start" ] = start
-      chain_in[ "ex" ] = 1
+      para_in[ "chain_start" ] = start
+      para_in[ "ex" ] = 1
       output = "start" * string(start)
 
-      @show chain_in
+      @info "GS scan start=$start"
+      @show para_in
 
-      solve_QE(; chain_in = chain_in, output=output, sites=sites)
+      solve_QE(; para_in = para_in, mode=mode, output=output, sites=sites)
   end 
 
 end 

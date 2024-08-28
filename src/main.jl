@@ -77,18 +77,18 @@ end
 
 if test
     
-    #rm(getworkdir(), force=true, recursive=true)
+    rm(getworkdir(), force=true, recursive=true)
     #plot_mix()
     #static_tcd()
     #chain_wrapper()
     #prepare_wavepacket()
     #test_embedding_wrapper()
-    QE_gaussian_wrapper()
+    #QE_gaussian_wrapper()
     #gen_GS_scan()
     #dyna_pϕ()
     #GQS_wrapper()
     #set_SD()
-    #DPT_wrapper()
+    DPT_wrapper()
     #SD_wrapper()
     #solve_QE()
     #DPT_corr()

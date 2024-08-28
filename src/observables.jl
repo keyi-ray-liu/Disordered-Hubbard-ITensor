@@ -303,6 +303,14 @@ function dyna_tcd(; gs=get_tcd_gs(), ψ=nothing,  kwargs...)
 
     workdir = getworkdir()
 
+    sys = get(kwargs, :sys, set_QE_two())
+
+    if typeof(sys) == QE_two
+        start_off = end_off = 2
+    else
+        start_off = end_off = 0
+    end 
+
     if isnothing(ψ)
         T = []
         TCD = []
@@ -315,7 +323,7 @@ function dyna_tcd(; gs=get_tcd_gs(), ψ=nothing,  kwargs...)
 
             println("Calculating TCD, $t")
 
-            tcd = cal_TCD(ψ, gs)
+            tcd = cal_TCD(ψ, gs; start_off=start_off, end_off=end_off)
             @show append!(TCD, [tcd])
 
         end 
@@ -324,7 +332,7 @@ function dyna_tcd(; gs=get_tcd_gs(), ψ=nothing,  kwargs...)
         writedlm(workdir* "TCDdyna", TCD)
     else
 
-        tcd = cal_TCD(ψ, gs)
+        tcd = cal_TCD(ψ, gs; start_off=start_off, end_off=end_off)
         open( workdir * "TCDdyna", "a") do io
             writedlm(io, [tcd])
         end 

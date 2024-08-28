@@ -155,7 +155,7 @@ function QE_gaussian_wrapper()
     if mode == "biasedchain"
         sys= set_Chain(; L=full_size, N = full_N )
     elseif mode == "QEtwo"
-        sys = set_QE_two(; L=L, N=N)
+        sys = set_QE_two(; L=L, N= full_N)
     end 
 
     dynamic = set_Dynamic(; τ=τ, TEdim=TEdim, start=τ, fin=fin)

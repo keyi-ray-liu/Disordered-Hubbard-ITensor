@@ -143,11 +143,14 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
 end 
 
 
-function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=Function[], kwargs...)
+function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=Function[], init_obs = true, kwargs...)
 
     # get the t=0 stats
-    for ob in obs
-        ob(;ψ=ψ, t=0, kwargs...)
+
+    if init_obs
+        for ob in obs
+            ob(;ψ=ψ, t=0, kwargs...)
+        end 
     end 
 
     τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)

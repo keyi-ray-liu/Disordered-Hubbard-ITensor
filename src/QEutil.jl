@@ -51,6 +51,9 @@ function wave_coeff(TCD; L=12, center=6.5, sigma=2, conv=false, includegs=true)
     @show g
     @show F * C
 
+    open( getworkdir() * "TCDcoeff", "w") do io
+        writedlm(io, C)
+    end 
 
     return C
 end 
@@ -108,9 +111,10 @@ function solve_QE(; para_in = nothing, mode="biased_chain", kwargs...)
     if !(typeof(para_in) <: Dict)
 
         @warn "no initial chain para dict, loading biasedchain"
-        para_in = load_JSON( pwd() * "/biasedchain.json")
+        para_in = load_JSON( pwd() * "/qegaussian.json")
     end 
     
+    @info "QE solver"
     @show para_in
     
     L = get(para_in, "L", 20)
