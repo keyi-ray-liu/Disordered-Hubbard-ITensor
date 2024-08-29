@@ -54,9 +54,8 @@ end
 
 function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, center_parameter = EMPTY_CENTER, save_every=false, tswitch=0.0, confine_parameters = EMPTY_CONFINES, kwargs...)
 
-    @info "Begin. QEen = $QEen"
+    
     QEen = get_QEen(QEen, key, output, TEdim, QEmul, product; confine_parameters=confine_parameters, kwargs...)
-    @info "After getting QEen, QEen = $QEen"
     
 
     obs = [dyna_EE, dyna_occ, dyna_corr]
@@ -152,10 +151,13 @@ function QE_gaussian_wrapper()
     
     ψ = prepare_wavepacket(; includegs=includegs, center=center, sigma=sigma, L=full_size, padding=padding, conv=conv, mode=mode)
 
+
     if mode == "biasedchain"
         sys= set_Chain(; L=full_size, N = full_N )
-    elseif mode == "QEtwo"
-        sys = set_QE_two(; L=L, N= full_N)
+    elseif mode == "QE_two"
+
+        QEen = get_QEen(0.0, "QE_two", "genericPl", 256, 1.0, false; L=full_size, N=full_size)
+        sys = set_QE_two(; L=L, N= full_N, QEen=QEen)
     end 
 
     dynamic = set_Dynamic(; τ=τ, TEdim=TEdim, start=τ, fin=fin)

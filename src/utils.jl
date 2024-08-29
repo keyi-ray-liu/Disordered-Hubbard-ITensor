@@ -113,7 +113,7 @@ end
 
 load_ψ(t::Int; tag ="psi1") = load_ψ( float(t); tag = tag)
 
-function load_plsmon(output)
+function load_plasmon(output)
   ex = readdlm( getworkdir() * output * "ex")
 
   return ex[2] - ex[1]
@@ -400,7 +400,7 @@ function gen_GS_scan()
   para_in = load_JSON( pwd() * "/qegaussian.json")
   full_size = get(para_in, "fullsize", 100)
   L = get(para_in, "L", 12)
-  mode= get(para_in, "mode", "QEtwo")
+  mode= get(para_in, "mode", "QE_two")
 
   # we need to define a singular site so that the later addition could proceed
   sites = siteinds("Fermion", full_size; conserve_qns=true)

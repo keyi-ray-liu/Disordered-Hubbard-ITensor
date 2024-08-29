@@ -1,9 +1,10 @@
-get_static_str(mode::String) = mode == "QEtwo" ?  "temp_QEplasmon" : "temp_plasmon"
+get_static_str(mode::String) = mode == "QE_two" ?  "temp_QEplasmon" : "temp_plasmon"
 
 function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
+    @info "Begin. QEen = $QEen"
 
     try
-        QEen = load_plsmon(output) * QEmul
+        QEen = load_plasmon(output) * QEmul
         @info "QE file found, QE energy = $QEen"
     catch
         @info "QE file not found, beginning next stage, QE energy = $QEen"
@@ -12,7 +13,7 @@ function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
     # if no QEen, we need to perform further calculations on the initial state
     # the basic logic is that this is a QE calculation, QEen =0 makes no sense
     if QEen == 0 || (!product && !check_ψ(output))
-        println("Calculating initial state")
+        println("Calculating plasmon state")
         ex = (QEen == 0) ? 2 : 1
         # we set up the decoupled sys from the QE
         decoupled = QE_determiner(key; QEen=0.0, dp=0.0, center_parameter = EMPTY_CENTER, kwargs...)
@@ -23,8 +24,10 @@ function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
         ϕ = gen_state(decoupled)
         run_static_simulation(decoupled, static, ϕ; message="QEinit")
     
-        QEen = load_plsmon(output) * QEmul
+        QEen = load_plasmon(output) * QEmul
     end
+
+    @info "After getting QEen, QEen = $QEen"
 
     return QEen
 
@@ -33,32 +36,72 @@ end
 
 
 
+
+
+function get_tol_coeff(TCD, L, g, tols; write=false)
+
+    maxvals = [ maximum(abs.(f)) for f in eachrow(TCD)]
+    idxs = [findall(x -> x > tol, maxvals) for tol in tols]
+
+    idxs = filter(x->length(eachrow(x)) > 5, idxs)
+
+    Cs = zeros(length(idxs), length(maxvals))
+
+    for (i, idx) in enumerate(idxs)
+        F = transpose(TCD[idx, 1:L])
+        C = F \ g
+
+        # @show C
+        # @show g
+        # @show F * C
+
+        #append!(Cs, [C])
+        Cs[i, idx] = C
+
+    end 
+
+
+    if write
+
+        open( getworkdir() * "TCDcoeff", "w") do io
+            writedlm(io, Cs)
+        end 
+        
+        open( getworkdir() * "TCDtols", "w") do io
+            writedlm(io, tols[1:length(idxs)])
+        end 
+
+
+        open( getworkdir() * "TCDidx", "w") do io
+            writedlm(io, idxs)
+        end 
+    end 
+
+    return Cs, idxs
+
+end 
+
+
 function wave_coeff(TCD; L=12, center=6.5, sigma=2, conv=false, includegs=true)
 
     #@show size(TCD[:, 1:12])
     g = map( x-> exp( -((x - center)/sigma) ^ 2), 1:L)
 
-    @show start_idx = 2 - Int(includegs)
+    #@show start_idx = 2 - Int(includegs)
 
     if conv
         g = g .* TCD[2, 1:L]
     end 
-    
-    F = transpose(TCD[start_idx:end, 1:L])
-    C = F \ g
 
-    @show C
-    @show g
-    @show F * C
+    tols = 1e-4:2e-3:1e-1
+    _ = get_tol_coeff(TCD, L, g, tols; write=true)
 
-    open( getworkdir() * "TCDcoeff", "w") do io
-        writedlm(io, C)
-    end 
+    Cs, idxs = get_tol_coeff(TCD, L, g, [0.0181])
 
-    return C
+    return Cs[idxs[1]], idxs[1]
 end 
 
-function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, padding=false, conv=false, mode="QEtwo")
+function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, padding=false, conv=false, mode="QE_two")
 
     static_str = get_static_str(mode)
 
@@ -72,7 +115,7 @@ function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, paddin
         else
             @warn "no TCD, calculating"
 
-            if mode == "QEtwo"
+            if mode == "QE_two"
                 start_off = end_off = 2
             else
                 start_off = end_off = 0
@@ -81,17 +124,23 @@ function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, paddin
             TCD = static_tcd(; padding=padding, start_off=start_off, end_off=end_off, static_str=static_str)
         end 
 
-        coeff = wave_coeff(TCD; center=center, sigma=sigma, L=L, conv=conv, includegs=includegs)
-        wf = [ load_ψ(f; tag="psi") for f in get_static_files(static_str)]
+        coeff, idx = wave_coeff(TCD; center=center, sigma=sigma, L=L, conv=conv, includegs=includegs)
 
-        @show start_idx = 2 - Int(includegs)
-        wf_to_sum = coeff .* wf[start_idx:end]
+        @show coeff, idx
+
+        wf = [ load_ψ(f; tag="psi") for f in get_static_files(static_str)]
+        
+        
+        #@show start_idx = 2 - Int(includegs)
+        wf_to_sum = coeff .* wf[idx]
 
         ψ = add(wf_to_sum...; maxdim=256)
 
         normalize!(ψ)
 
-        @show cal_TCD(ψ, wf[1])
+        open(getworkdir() * "combTCD", "w") do io
+            writedlm(io, cal_TCD(ψ, wf[1]))
+        end 
 
         h5open( getworkdir() * "initwavepacket.h5", "w") do io
             write(io, "psi", ψ)
@@ -136,7 +185,7 @@ function solve_QE(; para_in = nothing, mode="biased_chain", kwargs...)
 
         _ = run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt, chain_start = chain_start, output=static_str, kwargs...)
 
-    elseif mode == "QEtwo"
+    elseif mode == "QE_two"
 
         sys = set_QE_two(; dp=0.0, L=L, N=N)
         static = set_Static(; ex=ex, sweepcnt=sweepcnt, sweepdim=dim, output=static_str)
