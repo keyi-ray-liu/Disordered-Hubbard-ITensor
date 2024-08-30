@@ -1,10 +1,10 @@
-const GLOBAL_CNT = 300
-const TOL = 1e-8
+const GLOBAL_CNT = 400
+const TOL = 1e-10
 const DYNA_STR = "tTDVP"
 const DPT_INIT_BIAS = [-100.0, 100.0]
 const BIAS_LR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
-
+const TEMP_tag = "temp_temp_"
 
 
 
@@ -770,3 +770,18 @@ SimulationParameters(sys::Static) = sys.ex, sys.prev_state, sys.prev_energy, sys
 SimulationParameters(sys::Dynamic) = sys.τ, sys.start, sys.fin, sys.TEcutoff, sys.TEdim, sys.nsite
 
 add_specific_int!(sys::systems, res) = res
+
+
+
+
+
+mutable struct SizeObserver <: AbstractObserver
+end
+
+function ITensors.measure!(o::SizeObserver; bond, sweep, half_sweep, psi, projected_operator, kwargs...)
+  if bond==1 && half_sweep==2
+    psi_size =  Base.format_bytes(Base.summarysize(psi))
+    PH_size =  Base.format_bytes(Base.summarysize(projected_operator))
+    println("After sweep $sweep, |psi| = $psi_size, |PH| = $PH_size")
+  end
+end

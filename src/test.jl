@@ -22,3 +22,9 @@ function runtest()
     return nothing
 
 end 
+
+
+const TEMP_tag = "temp_temp_"
+
+@show Regex(TEMP_tag * get_static_str("biasedchain") * "*.h5")
+occursin(Regex(TEMP_tag * get_static_str("biasedchain") * ".*.h5"), "temp_temp_plasmon1111111.h5")

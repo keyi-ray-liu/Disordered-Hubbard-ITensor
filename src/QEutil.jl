@@ -1,4 +1,4 @@
-get_static_str(mode::String) = mode == "QE_two" ?  "temp_QEplasmon" : "temp_plasmon"
+get_static_str(mode::String) = mode == "QE_two" ?  "QEplasmon" : "plasmon"
 
 function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
     @info "Begin. QEen = $QEen"
@@ -96,7 +96,7 @@ function wave_coeff(TCD; L=12, center=6.5, sigma=2, conv=false, includegs=true)
     tols = 1e-4:2e-3:1e-1
     _ = get_tol_coeff(TCD, L, g, tols; write=true)
 
-    Cs, idxs = get_tol_coeff(TCD, L, g, [0.0181])
+    Cs, idxs = get_tol_coeff(TCD, L, g, [0.0261])
 
     return Cs[idxs[1]], idxs[1]
 end 
@@ -194,6 +194,8 @@ function solve_QE(; para_in = nothing, mode="biased_chain", kwargs...)
         @show sys
         _ = run_static_simulation(sys, static, ψ)
 
+    else
+        error("Unknown mode!")
     end 
 
 end 

@@ -1,3 +1,20 @@
+get_time(raw::String) = parse(Float64, SubString(raw, 1 + length(DYNA_STR), length(raw) - length(".h5")))
+
+get_ex(raw::String, static_str::String) = parse(Int, SubString(raw, 1 + length(TEMP_tag) + length(static_str), length(raw) - length(".h5")))
+
+get_start(raw::String) = parse(Int, SubString(raw, 1 + length("start"), length(raw) - length(".h5")))
+
+get_dyna_files() = sort( 
+    filter(x-> !occursin("lasttime", x),
+    filter(x->occursin(DYNA_STR,x), readdir(getworkdir())))
+    , by=get_time)
+
+get_static_files(static_str::String) = sort( filter(x->occursin( Regex(TEMP_tag * get_static_str("biasedchain") * ".*.h5"),x), readdir(getworkdir())), by= x -> get_ex(x, static_str ))
+
+get_QE_ref_files() = sort( filter(x->(occursin(r"start.*h5",x) && !occursin(TEMP_tag, x)), readdir(getworkdir())), by=get_start)
+
+
+
 FermionCondition(systype::String) = systype == "Fermion" ? 1 : 2
 
 

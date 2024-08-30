@@ -58,8 +58,8 @@ include("NF.jl")
 include("Chain.jl")
 include("specific.jl")
 include("basis.jl")
-include("test.jl")
 include("QEutil.jl")
+include("test.jl")
 
 
 const DISABLE_BLAS = true
@@ -76,7 +76,7 @@ else
 end 
 
 if test
-    
+    map(rm, Glob.glob( "corr*", getworkdir()))
     #rm(getworkdir(), force=true, recursive=true)
     #plot_mix()
     #static_tcd()

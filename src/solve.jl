@@ -43,13 +43,13 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
         if cur_ex == 1
             
 
-            energy, ψ = dmrg(H, ϕ, sweeps; eigsolve_krylovdim = krylovdim)
+            energy, ψ = dmrg(H, ϕ, sweeps; eigsolve_krylovdim = krylovdim, observer=SizeObserver())
             cur_ex += 1
             
 
         else
 
-            energy, ψ = dmrg(H, prev_state, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim) 
+            energy, ψ = dmrg(H, prev_state, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim, observer=SizeObserver()) 
 
             # check if cur energy is lower than previously achieved energy, if so, return to the point with lower energy (if not, start with current state as GS)
             if abs(energy - prev_energy[end]) > TOL && energy < prev_energy[end]
@@ -92,11 +92,15 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
         #println(expect(ψ, "N"))
             
         # save temp results
-        wf = h5open( workdir * "temp_" * out * string((cur_ex - 1)) * ".h5", "w")
+        wf = h5open( workdir * TEMP_tag * out * string((cur_ex - 1)) * ".h5", "w")
         write(wf, "psi", ψ)
         close(wf)
 
         # shift and invert block
+
+        open( workdir * "tempex_" * out, "a") do io
+            writedlm(io, energy)
+        end
 
 
         println("As of end of search, systype of prev_state", typeof(prev_state))
@@ -159,7 +163,7 @@ function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=
 
         @info "TDVP time : $dt"
         #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
-        ψ1 = tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true)
+        @time ψ1 = tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true,outputlevel=1)
 
         #println( "inner", abs(inner(ψ1, ψ)))
         ψ = ψ1

@@ -1,17 +1,3 @@
-get_time(raw::String) = parse(Float64, SubString(raw, 1 + length(DYNA_STR), length(raw) - length(".h5")))
-
-get_ex(raw::String, static_str::String) = parse(Int, SubString(raw, 1 + length(static_str), length(raw) - length(".h5")))
-
-get_start(raw::String) = parse(Int, SubString(raw, 1 + length("start"), length(raw) - length(".h5")))
-
-get_dyna_files() = sort( 
-    filter(x-> !occursin("lasttime", x),
-    filter(x->occursin(DYNA_STR,x), readdir(getworkdir())))
-    , by=get_time)
-
-get_static_files(static_str::String) = sort( filter(x->occursin(static_str,x), readdir(getworkdir())), by= x -> get_ex(x, static_str ))
-
-get_QE_ref_files() = sort( filter(x->(occursin(r"start.*h5",x) && !occursin("temp", x)), readdir(getworkdir())), by=get_start)
 
 
 """Calculates transition charge density between two wf"""
@@ -272,7 +258,7 @@ function static_tcd(;padding=false, start_off=0, end_off=0, static_str="temp_pla
 
     files = get_static_files(static_str)
 
-    gs = load_ψ(static_str * "1",  tag="psi")
+    gs = load_ψ( TEMP_tag * static_str * "1",  tag="psi")
 
     for file in files
 
