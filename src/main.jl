@@ -10,6 +10,7 @@ using ITensorTDVP
 using Random
 using HDF5
 using Logging
+using Observers: observer
 
 #using DataGraphs: edge_data, vertex_data
 #using Dictionaries: Dictionary
@@ -83,12 +84,12 @@ if test
     #chain_wrapper()
     #prepare_wavepacket()
     #test_embedding_wrapper()
-    QE_gaussian_wrapper()
+    #QE_gaussian_wrapper()
     #gen_GS_scan()
     #dyna_pϕ()
     #GQS_wrapper()
     #set_SD()
-    #DPT_wrapper()
+    DPT_wrapper()
     #SD_wrapper()
     #solve_QE()
     #DPT_corr()

@@ -161,12 +161,26 @@ function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=
 
     for dt in start:τ:fin
 
+        step(; sweep) = sweep
+        state_size(;state) = Base.format_bytes(Base.summarysize(state))
+        sys_obs = observer(
+          "sizes" => state_size, "steps" => step
+        )
+
+
         @info "TDVP time : $dt"
         #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
-        @time ψ1 = tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true,outputlevel=1)
+        @time ψ = tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true,outputlevel=1, (step_observer!)=sys_obs)
+
+        println("\nResults")
+        println("=======")
+        for n in 1:length(sys_obs.steps)
+          println("step = ", sys_obs.steps[n])
+          println("After sweep |psi| =", sys_obs.sizes[n] )
+        end
 
         #println( "inner", abs(inner(ψ1, ψ)))
-        ψ = ψ1
+        #ψ = ψ1
 
         # we might need to calculate observables on the go
         for ob in obs
