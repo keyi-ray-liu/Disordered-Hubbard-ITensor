@@ -29,17 +29,17 @@ struct QE_two <: systems
     init :: String
     product :: Bool
     confine_parameter :: Dict
-    chain_only :: Chain_only
+    chain :: Union{Chain, SSH_chain}
     
 end 
 
 product(sys::QE_two) = sys.product
-get_systotal(sys::QE_two) = get_systotal(sys.chain_only) + 2 * QESITES
-systype(sys::QE_two) = systype(sys.chain_only)
-t(sys::QE_two) = t(sys.chain_only)
-ζ(sys::QE_two) = ζ(sys.chain_only)
-L(sys::QE_two) = L(sys.chain_only)
-N(sys::QE_two) = N(sys.chain_only)
+get_systotal(sys::QE_two) = get_systotal(sys.chain) + 2 * QESITES
+systype(sys::QE_two) = systype(sys.chain)
+t(sys::QE_two) = t(sys.chain)
+ζ(sys::QE_two) = ζ(sys.chain)
+L(sys::QE_two) = L(sys.chain)
+N(sys::QE_two) = N(sys.chain)
 confine_range(sys::QE_two) = sys.confine_parameter["confine_range"]
 confine_potential(sys::QE_two) = sys.confine_parameter["confine_potential"]
 confine_start(sys::QE_two) = sys.confine_parameter["confine_start"]
@@ -54,6 +54,9 @@ function set_QE_two(;
     confine_parameters=EMPTY_CONFINES,
     L=10,
     N=5,
+    mode ="regular",
+    v =0.1,
+    w= 1.0,
     kwargs...
     )
 
@@ -64,7 +67,11 @@ function set_QE_two(;
         @info "overriding N for confinement, N = $N"
     end 
 
-    chain_only = set_Chain(;L=L, N=N, kwargs...)
+    if mode == "regular"
+        chain = set_Chain(;L=L, N=N, kwargs...)
+    elseif mode == "SSH"
+        chain = set_SSH_chain(; L=L, N=N, v=v, w=w, kwargs...)
+    end 
 
     return QE_two(
         QE_distance,
@@ -74,7 +81,7 @@ function set_QE_two(;
         init,
         product,
         confine_parameter,
-        chain_only
+        chain
     )
 
 end 

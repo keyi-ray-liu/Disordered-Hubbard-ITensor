@@ -34,6 +34,29 @@ function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
 
 end 
 
+function get_QEinit(init_key, key, TEdim; kwargs...)
+    
+
+    # if no QEen, we need to perform further calculations on the initial state
+    # the basic logic is that this is a QE calculation, QEen =0 makes no sense
+    if !check_ψ(init_key)
+        @info "calculating separate init state for QE"
+        ex = 1
+        # we set up the decoupled sys from the QE
+        decoupled = QE_determiner(key; QEen=0.0, dp=0.0, center_parameter = EMPTY_CENTER, kwargs...)
+    
+        # get plasmon energy
+        static = set_Static(; ex=ex, output=init_key, sweepdim=TEdim, kwargs...)
+    
+        ϕ = gen_state(decoupled)
+        run_static_simulation(decoupled, static, ϕ; message="QEinit")
+    end
+
+    ψ = load_ψ(init_key)
+    return ψ
+
+
+end 
 
 
 
@@ -155,7 +178,7 @@ function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, paddin
 end 
 
 
-function solve_QE(; para_in = nothing, mode="biased_chain", kwargs...)
+function solve_QE(; para_in = nothing, mode="biased_chain", output=get_static_str(mode), kwargs...)
 
     if !(typeof(para_in) <: Dict)
 
@@ -174,7 +197,7 @@ function solve_QE(; para_in = nothing, mode="biased_chain", kwargs...)
     ex = get(para_in, "ex", 10)
     sweepcnt = get(para_in, "sweepcnt", 10)
 
-    static_str = get_static_str(mode)
+    #static_str = get_static_str(mode)
 
     #run_chain(L, N, ex; dim=dim)
 
@@ -183,12 +206,12 @@ function solve_QE(; para_in = nothing, mode="biased_chain", kwargs...)
         full_size = get(para_in, "fullsize", 100)
         chain_start = get(para_in, "chain_start", 1)
 
-        _ = run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt, chain_start = chain_start, output=static_str, kwargs...)
+        _ = run_biased_chain(full_size, L, N, ex; dim=dim, sweepcnt=sweepcnt, chain_start = chain_start, output=output, kwargs...)
 
     elseif mode == "QE_two"
 
         sys = set_QE_two(; dp=0.0, L=L, N=N)
-        static = set_Static(; ex=ex, sweepcnt=sweepcnt, sweepdim=dim, output=static_str)
+        static = set_Static(; ex=ex, sweepcnt=sweepcnt, sweepdim=dim, output=output)
         ψ = gen_state(sys)
 
         @show sys

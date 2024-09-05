@@ -14,7 +14,7 @@ function Onsite(sys::QE_two, j; left_offset=0) :: Float64
 
     else
         # adjust position of j
-        onsite = Onsite(sys.chain_only, j; left_offset=2)
+        onsite = Onsite(sys.chain, j; left_offset=2)
         
         # see if we have confining potential
         start = confine_start(sys)
@@ -131,7 +131,7 @@ end
 
 
 
-function Onsite(sys::Union{Rectangular, Chain_only}, j::Int; left_offset=0) :: Float64
+function Onsite(sys::Union{Rectangular, Chain}, j::Int; left_offset=0) :: Float64
 
     _, λ_ne, _, _, range, CN, ζ = CoulombParameters(sys)
 
@@ -148,7 +148,10 @@ end
 # we biase everywhere else on the chain with a large positive potential
 Onsite(sys::biased_chain, j::Int, left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? Onsite(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : 500.0
 
-Onsite(sys::GQS, j::Int) = Onsite(sys.chain_only, j)
+
+Onsite(sys::SSH_chain, j::Int; left_offset =0) = Onsite(sys.chain, j; left_offset=left_offset)
+
+Onsite(sys::GQS, j::Int) = Onsite(sys.chain, j)
 
 """For NF NxN, we add to the inner square, that is from row 2 to row N - 1, from col 2 to col N - 1"""
 function Onsite(sys::NF_square, j::Int) :: Float64

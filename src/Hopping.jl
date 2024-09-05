@@ -2,11 +2,13 @@ HoppingNeighbor(sys::systems, j::Int; left_offset=0) = []
 
 
 # for a flat chain, return next NN until end
-HoppingNeighbor(sys::Chain_only, j::Int; left_offset=0) = 0 < (j - left_offset) < L(sys) ? [[t(sys)..., j + 1] ] : []
+HoppingNeighbor(sys::Chain, j::Int; left_offset=0) = 0 < (j - left_offset) < L(sys) ? [[t(sys)..., j + 1] ] : []
+
+HoppingNeighbor(sys::SSH_chain, j::Int; left_offset=0) = 0 < (j - left_offset) < get_systotal(sys) ? [[t(sys, j)..., j + 1] ] : []
 
 HoppingNeighbor(sys::biased_chain, j::Int; left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? HoppingNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
 
-HoppingNeighbor(sys::GQS, j ::Int) = HoppingNeighbor(sys.chain_only, j)
+HoppingNeighbor(sys::GQS, j ::Int) = HoppingNeighbor(sys.chain, j)
 """
 Here, we have either the left_offset hopping in the QE, or the chain hopping
 """
@@ -14,10 +16,10 @@ function HoppingNeighbor(sys::QE_two, j::Int; left_offset=0)
 
     adj_j = j - left_offset
     # we only hop onwards, no hop in QE and last site
-    if adj_j  <3 || adj_j > get_systotal(sys) - 3
+    if adj_j  <= QESITES || adj_j > get_systotal(sys) - QESITES
         hop = []
     else
-        hop = [[t(sys)..., j + 1]]
+        hop = HoppingNeighbor(sys.chain, j; left_offset=QESITES + left_offset)
     end 
 
     return hop
@@ -93,17 +95,19 @@ end
 
 
 
-function HoppingNeighbor(sys::NF_square, j::Int)
+function HoppingNeighbor(sys::NF_square, j::Int; left_offset=0)
 
     hop = []
 
+    adj_j = j - left_offset
+
     # not at end of col
-    if j % L(sys) != 0
+    if adj_j % L(sys) != 0
         append!(hop, [[t(sys)..., j + 1]])
     end 
 
     # not at end of row
-    if div(j - 1, L(sys)) + 1 < L(sys)
+    if adj_j <= get_systotal(sys) - L(sys)
         append!(hop, [[t(sys)..., j + L(sys)]])
     end 
 

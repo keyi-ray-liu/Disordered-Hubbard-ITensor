@@ -2,10 +2,10 @@ gen_state_str(sys::systems) = shuffle([ get_type_dict(systype(sys))[i] for i= 1:
 
 function gen_state_str(sys::QE_two) 
 
-    #state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain_only), QE_str(sys)[2])
+    #state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain), QE_str(sys)[2])
 
     if confine_range(sys) >= L(sys)
-        state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain_only), QE_str(sys)[2])
+        state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain), QE_str(sys)[2])
     else
 
         empty_before = ["Emp" for i in 1:(confine_start(sys) - 1)]
@@ -120,7 +120,7 @@ gen_state_map(sys::DPT_graph, sites) = Dict( s => gen_state_str(sys.dpt)[ sitema
 
 function gen_state(sys::GQS; QN=true, kwargs...)
     if init(sys) == 1
-        return gen_state(sys.chain_only; QN=QN, kwargs...)
+        return gen_state(sys.chain; QN=QN, kwargs...)
 
     elseif init(sys) == 2
         sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=QN)

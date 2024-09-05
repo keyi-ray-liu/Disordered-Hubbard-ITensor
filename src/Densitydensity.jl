@@ -93,7 +93,7 @@ function DenDenNeighbor(sys::QE_two, j)
 
     else
         # shift the position of each j
-        den = DenDenNeighbor(sys.chain_only, j - 2)
+        den = DenDenNeighbor(sys.chain, j - 2)
 
         # shift back position of each k
         den = [ [U, k + 2] for (U, k) in den]
@@ -130,7 +130,7 @@ function DenDenNeighbor(sys::QE_HOM, j)
     return den
 end 
 
-function DenDenNeighbor(sys::Union{Chain_only, Rectangular}, j::Int; left_offset=0)
+function DenDenNeighbor(sys::Union{Chain, Rectangular}, j::Int; left_offset=0)
 
     λ_ee, _, exch, _, range, _, ζ = CoulombParameters(sys)
 
@@ -140,9 +140,11 @@ function DenDenNeighbor(sys::Union{Chain_only, Rectangular}, j::Int; left_offset
     
 end 
 
+DenDenNeighbor(sys::SSH_chain, j::Int; left_offset=0) = DenDenNeighbor(sys.chain, j; left_offset=left_offset)
+
 DenDenNeighbor(sys::biased_chain, j::Int, left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? DenDenNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
 
-DenDenNeighbor(sys::GQS, j::Int) = DenDenNeighbor(sys.chain_only, j)
+DenDenNeighbor(sys::GQS, j::Int) = DenDenNeighbor(sys.chain, j)
 
 function DenDenNeighbor(sys::DPT, j::Int)
 

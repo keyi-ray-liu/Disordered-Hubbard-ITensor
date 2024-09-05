@@ -4,7 +4,7 @@ const DYNA_STR = "tTDVP"
 const DPT_INIT_BIAS = [-100.0, 100.0]
 const BIAS_LR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
-const TEMP_tag = "temp_temp_"
+const TEMP_tag = "temp_"
 
 
 
@@ -136,7 +136,7 @@ function set_Coulombic(;
 
 end 
 
-struct Chain_only{T} <: systems where T <: Number
+struct Chain{T} <: systems where T <: Number
 
     L :: Int
     N :: Vector{Int}
@@ -145,12 +145,12 @@ struct Chain_only{T} <: systems where T <: Number
     coulomb :: Coulombic
 end 
 
-L(sys::Chain_only) = sys.L
-systype(sys::Chain_only) = sys.systype
-N(sys::Chain_only) = sys.N
-t(sys::Chain_only) = sys.t
-ζ(sys::Chain_only) = sys.coulomb.ζ
-get_systotal(sys::Chain_only) = sys.L
+L(sys::Chain) = sys.L
+systype(sys::Chain) = sys.systype
+N(sys::Chain) = sys.N
+t(sys::Chain) = sys.t
+ζ(sys::Chain) = sys.coulomb.ζ
+get_systotal(sys::Chain) = sys.L
 
 function set_Chain(;
     L =2,
@@ -167,7 +167,7 @@ function set_Chain(;
         N = [L - N, N, 0, 0]
     end 
 
-    return Chain_only(
+    return Chain(
         L,
         N,
         systype,
@@ -177,9 +177,27 @@ function set_Chain(;
 
 end 
 
+
+struct SSH_chain <: systems
+
+    chain:: Chain
+    v :: Float64
+    w :: Float64
+
+end 
+
+ζ(sys::SSH_chain) = ζ(sys.chain)
+L(sys::SSH_chain) = L(sys.chain)
+N(sys::SSH_chain) = N(sys.chain)
+systype(sys::SSH_chain) = systype(sys.chain)
+get_systotal(sys::SSH_chain) = get_systotal(sys.chain)
+t(sys::SSH_chain, j::Int) = t(sys.chain) .* (isodd(j) ? sys.v : sys.w)
+
+set_SSH_chain(; v=0.0, w=1.0, kwargs...) = SSH_chain( set_Chain(; kwargs...), v, w)
+
 struct biased_chain <: systems
 
-    chain:: Chain_only
+    chain:: Chain
     full_size :: Int
     chain_start :: Int
 
@@ -191,17 +209,17 @@ get_systotal(sys::biased_chain) = sys.full_size
 set_biased_chain(; chain_start=1, full_size=100, kwargs...) = biased_chain( set_Chain(;kwargs...), full_size, chain_start)
 
 struct GQS <: systems
-    chain_only :: Chain_only
+    chain :: Chain
     init :: Int
 end 
 
 set_GQS(;init=1, kwargs...) = GQS( set_Chain(;kwargs...), init)
 
 init(sys::GQS) = sys.init
-N(sys::GQS) = N(sys.chain_only)
-L(sys::GQS) = L(sys.chain_only)
-systype(sys::GQS) = systype(sys.chain_only)
-get_systotal(sys::GQS) = get_systotal(sys.chain_only)
+N(sys::GQS) = N(sys.chain)
+L(sys::GQS) = L(sys.chain)
+systype(sys::GQS) = systype(sys.chain)
+get_systotal(sys::GQS) = get_systotal(sys.chain)
 
 
 struct Rectangular{T} <: systems where T <: Number
@@ -760,7 +778,7 @@ function dis(i::Int, j::Int, sys::Rectangular; range=Inf64)
 end 
 
 
-CoulombParameters(sys::Union{Chain_only, Rectangular}) = CoulombParameters(sys.coulomb::Coulombic)
+CoulombParameters(sys::Union{Chain, Rectangular}) = CoulombParameters(sys.coulomb::Coulombic)
 
 
 CoulombParameters(sys::Coulombic) = sys.λ_ee, sys.λ_ne, sys.exch, sys.scr, sys.range, sys.CN, sys.ζ

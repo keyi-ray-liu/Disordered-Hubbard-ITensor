@@ -448,7 +448,7 @@ function get_tcd_gs()
 
     @info "Summing reference state for TCD"
 
-
+    @show get_QE_ref_files()
     gss = [ load_ψ(f) for f in get_QE_ref_files()]
     gs = add( gss..., maxdim = 128)
 
