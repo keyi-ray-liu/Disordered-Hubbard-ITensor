@@ -77,7 +77,7 @@ else
 end 
 
 if test
-    map(rm, Glob.glob( "corr*", getworkdir()))
+    #map(rm, Glob.glob( "corr*", getworkdir()))
     #rm(getworkdir(), force=true, recursive=true)
     #plot_mix()
     #static_tcd()

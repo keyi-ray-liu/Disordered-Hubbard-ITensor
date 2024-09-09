@@ -30,6 +30,20 @@ from dataloader import *
 import h5py
 
 
+def MFloader(L, U, tswitch):
+
+    mfstr = '/Users/knl20/Desktop/Code/TN/LT/meanfield/Current_dpt_mf_N{}_mu0.5_U{}_tswitch{}'.format(L, U, tswitch)
+    try:
+        raw = np.loadtxt(mfstr)
+    except FileNotFoundError:
+        srchstr = mfstr +'*'
+
+        print(srchstr)
+        f = glob.glob(srchstr)[0]
+        raw = np.loadtxt(f)
+
+    return raw
+
 def str_generator(files, colorgroup, linestylegroup, markergroup, exclude_tag={}):
 
     #tags = sorted([ get_tag(file) for file in files])
@@ -691,7 +705,7 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi', fit=False, save_in
 
         if MF:
             refcolor='violet'
-            refraw = np.loadtxt('/Users/knl20/Desktop/Code/TN/LT/meanfield/Current_dpt_mf_N{}_mu0.5_U{}_tswitch{}'.format(L, U, tswitch))
+            refraw = MFloader(L, U, tswitch)
 
             reftime = refraw[:, 0]
             ref = refraw[:, 3]
@@ -710,7 +724,7 @@ def time_bond_ee( inputfiles : dict = {},  filetag = 'multi', fit=False, save_in
 
         if MF:
             refcolor='violet'
-            refraw = np.loadtxt('/Users/knl20/Desktop/Code/TN/LT/meanfield/Current_dpt_mf_N{}_mu0.5_U{}_tswitch{}'.format(L, U, tswitch))
+            refraw = MFloader(L, U, tswitch)
 
             reftime = refraw[:, 0]
             ref = refraw[:, 5]
@@ -1625,6 +1639,110 @@ def Best_3234wrap(MF=True):
 
 
 
+def test_0125(MF=True):
+
+    filetag = 'test0125withEFF' 
+    save_individual = True
+    extend_left = True
+    shadeoff = 3
+    yscale = np.array([-0.005, 0.15])
+
+    cat = ['occ', 'current', 'effE'] #+ (['effE'] if not MF else [])
+
+    ref = { 'linestylegroup' : { 'mixedFalse': 'solid',
+                                'includeUTrue' : 'dotted',
+                                'includeUFalse' : 'dashed'},
+                'colorgroup' : { 'mixedFalse': 0.2,
+                                'includeUTrue' : 0.7,
+                                'includeUFalse' : 0.95},
+                'markergroup' : {'1024' : 'o',
+                                 '512' : ''}
+    }
+
+    exclude_tag = {'ddposition', 'avg'}
+
+    search_dict = {
+
+        'BestU0.5' : {'cat': cat,
+                                           #'groups': [strsort('U0.5*34*512*')], 
+                                           'groups': [strsort('U0.5*34*')], 
+                                           'group_ids': ['$U=0.5$'], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'BestU1.0' : {'cat': cat,
+                                           #'groups': [strsort('U1.0*34*512*') ], 
+                                           'groups': [strsort('U1.0*34*')], 
+                                           'group_ids': ['$U=1.0$'], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'BestU1.5' : {'cat': cat,
+                                           #'groups': [strsort('U1.5*34*512*') ], 
+                                           'groups': [strsort('U1.5*34*') ], 
+                                           'group_ids': ['$U=1.5$'], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : [],
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+
+        'BestU0.5L66' : {'cat': cat,
+                                           #'groups': [strsort('U0.5*34*512*')], 
+                                           'groups': [strsort('U0.5*66*')], 
+                                           'group_ids': ['$U=0.5$'], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'BestU1.0L66' : {'cat': cat,
+                                           #'groups': [strsort('U1.0*34*512*') ], 
+                                           'groups': [strsort('U1.0*66*')], 
+                                           'group_ids': ['$U=1.0$'], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : yscale,
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           },
+        'BestU1.5L66' : {'cat': cat,
+                                           #'groups': [strsort('U1.5*34*512*') ], 
+                                           'groups': [strsort('U1.5*66*') ], 
+                                           'group_ids': ['$U=1.5$'], 
+                                           'separate' : True,
+                                           'wrap' : 1,
+                                           'yscale' : [],
+                                           'exclude_tag' : exclude_tag,
+                                           'linestylegroup' : ref['linestylegroup'],
+                                           'colorgroup' : ref['colorgroup'],
+                                            'markergroup' : ref['markergroup']
+                                           }
+    
+
+    }
+
+    time_bond_ee(inputfiles=search_dict, filetag=filetag, fit=False, save_individual=save_individual, extend_left=extend_left, shadeoff=shadeoff, MF=MF)
+
+
 def test_den():
 
 
@@ -1652,14 +1770,14 @@ if __name__ == '__main__':
 
     #test_den()
 
-    Best_32wrap()
-    Best_3234wrap(MF=False)
-    Best_Fit32()
-    Best_64wrap()
-    Best_Fit64()
-    Best_3234wrap(MF=True)
+    # Best_32wrap()
+    # Best_3234wrap(MF=False)
+    # Best_Fit32()
+    # Best_64wrap()
+    # Best_Fit64()
+    # Best_3234wrap(MF=True)
 
-
+    test_0125()
 
     #current_diff(inputoverride=strsort('*2.0*L64*'))
     #time_bond_ee(inputfiles=search_dict, filetag=filetag, fit=fit, save_individual=save_individual, extend_left=extend_left, shade=shade, MF=MF)

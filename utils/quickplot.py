@@ -1,669 +1,547 @@
-from ntpath import realpath
-from sys import platform
 import numpy as np
 import matplotlib.pyplot as plt
-from collections import defaultdict
-from matplotlib import cm
-from scipy.optimize import curve_fit
 import sys
-import matplotlib.backends.backend_pdf
 import os
 import glob
-from matplotlib.ticker import MaxNLocator
-
-def syspre():
-    if platform == 'win32':
-        syspre = 'C:/Users/Ray/iCloudDrive'
-
-    else:
-        syspre = '/Users/rayliu'
-
-    return syspre
-
-def lengthcompplot():
-
-    ed = defaultdict()
-    mps = defaultdict()
-
-    ed[12] = -19.309357049818
-    mps[12] = -19.309357048327
-
-    ed[14] = -23.518369349887
-    mps[14] = -23.518369346716
-
-    ed[16] = -27.866218760560
-    mps[16] = -27.866218756627
-
-    ed[18] = -32.335906388135
-    mps[18] = -32.335906382640
-
-    ed[20] = -36.914153564647
-    mps[20] = -36.914153558694
-
-    ed[22] =  -41.590298379263
-    mps[22] = -41.590298372306
-
-    ed[24] = -46.35559011
-    mps[24] = -46.355590102471
-
-    ed[26] = -51.202716787557
-    mps[26] = -51.202716777823
-
-    fig, ax = plt.subplots()
-
-    ax.set_xlabel('Length of the chain')
-    ax.set_title('Comparison of MPS vs. ED GS energies at half-filling')
-    color= 'tab:red'
-    key = sorted(ed.keys())
-    abserr = [abs( ed[k] - mps[k]) for k in key]
-    relerr = [abs( ed[k] - mps[k])/ abs(ed[k]) for k in key]
-    ax.set_ylabel('Absolute Error', color=color)
-    ax.scatter( key, abserr, label='Abs. err', color=color)
-    ax.set_ylim( min(abserr) * 0.9, max(abserr) * 1.1)
-    ax.tick_params(axis= 'y', labelcolor=color)
-
-    ax2 = ax.twinx()
-    color ='tab:blue'
-    ax2.set_ylabel('Relative Error', color=color)
-    ax2.scatter( key, relerr, label= 'Rel. err', color=color)
-    ax2.set_ylim( min(relerr) * 0.9, max(relerr) * 1.1)
-    ax2.tick_params(axis= 'y', labelcolor=color)
-
-    ax.legend(loc='upper left')
-    ax2.legend(loc='upper right')
-    plt.show()
+from matplotlib import rc
+import matplotlib as mpl
+from mpl_toolkits.axes_grid1.inset_locator import inset_axes
+from matplotlib.patches import ConnectionPatch
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+sys.path.append(os.path.abspath("/Users/knl20/Desktop/Code/TN/LT"))
+from searchkey import *
+from matplotlib.gridspec import GridSpec
+from numpy.fft import rfft
+from scipy.signal import find_peaks
+from matplotlib.backends.backend_pdf import PdfPages
 
 
-    sweep = np.arange(2, 102, 2)
-    energies = [-40.889374506862275, -41.513276484797316, -41.58386147065303, -41.58919292318066, -41.58980726872991, -41.59024313968609, -41.59027647602754, -41.590289904686244, -41.59029483388616, -41.590297078841424, -41.59029768381566, -41.590298124041375, -41.59029825481698, -41.59029830719316, -41.590298352746494, -41.590298362538874, -41.59029837032205, -41.5902983715727, -41.59029837230328, -41.59029837230632, -41.59029837230635, -41.590298372306385, -41.590298372306215, -41.59029837230622, -41.59029837230629, -41.59029837230616, -41.59029837230621, -41.59029837230626, -41.59029837230625, -41.590298372306314, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628, -41.59029837230628]
+def load_data(raw, tswitch):
+    raw_data = np.loadtxt(raw)
 
-    fig, ax = plt.subplots()
-    ax.set_title('Difference in energy vs max bond dimension, L=22')
-    ax.set_ylabel('Difference between ED and DMRG energy')
-    ax.set_xlabel('Max bond dim')
-    #ax.scatter(sweep, energies, s=5, label='MPS')
-    #ax.scatter(sweep, [-41.590298379263] * len(sweep), c='r', s=5, label='ED')
+    time = raw_data[:, 0]
+    occ = raw_data[:, 5]
+    cur = raw_data[:, 3]
 
-    ax.scatter(sweep, abs( np.array(energies) - np.array([-41.590298379263] * len(sweep))))
-    plt.yscale('log')
-    plt.show()
+    idstop = np.argwhere(time <= tswitch * 2).flatten()[-1] + 1
+    time = time[:idstop]
+    occ = occ[:idstop]
+    cur = cur[:idstop]
 
-    syssize = np.arange(12, 102, 2)
-    maxsweep = [24.0, 30.0, 37.0, 43.0, 46.0, 60.0, 57.0, 71.0, 65.0, 86.0, 80.0, 78.0, 81.0, 75.0, 71.0, 71.0, 70.0, 78.0, 82.0, 90.0, 76.0, 74.0, 70.0, 79.0, 77.0, 114.0, 80.0, 84.0, 91.0, 87.0, 211.0, 88.0, 92.0, 90.0, 107.0, 171.0, 89.0, 114.0, 202.0, 118.0, 95.0, 176.0, 420.0, 217.0, 257.0]
+    return time, occ, cur
 
 
-    fig, ax = plt.subplots()
-    ax.set_title('Max bond dim for energy convergence vs. system size, 1D, extended Hubbard, half-filling')
-    ax.set_ylabel('Max bond dim')
-    ax.set_xlabel('System size')
-    ax.scatter( syssize, maxsweep)
-    plt.show()
+def sign_change(arr, avg_step=200):
 
-def weightplot():
-    errs = {}
-    #tag = ['1', '10', '100', 'dyna']
-    tag = ['1', '10', '100']
-
-    #m = ['x', 'v', '^', '+']
-    m = ['x', 'v', '^']
-    individual = 0
+    signs = np.sign(arr)
+    signs = np.roll(signs, 1) - signs
     
+    idx = np.argwhere(signs != 0).flatten()[-2:]
 
-    for lam in range(len(tag)):
-        fig, ax = plt.subplots()
-        if platform == 'darwin':
-            prefix = '/Users/rayliu/Desktop/Code/DisorderedML/RayGenerator/testnewgen/zero/'
-            mpsprefix = '/Users/rayliu/Desktop/Code/iTensor/collect/weighttest/26weight{}/'.format( tag[lam])
-
-        
-        #ed = np.loadtxt( prefix + 'energy')[0]
-        ed = np.loadtxt( prefix + '26energy')
-
-        exMPS = np.loadtxt( mpsprefix + 'ex')
-
-        
-        ax.set_xlabel('Excited states')
-        ax.set_title('Comparison of MPS vs. ED Excited states search, L=26, $\lambda$ = {}'.format(tag[lam]))
-        color= 'tab:red'
-        abserr = [abs( exMPS[i] - ed[i]) for i in range(len(exMPS))]
-        relerr = [abs( exMPS[i] - ed[i])/ abs(ed[i]) for i in range(len(exMPS))]
-
-        errs[lam] = relerr
-        ref = np.arange(1, len(exMPS) + 1, 1)
-        ax.set_ylabel('Absolute Error', color=color)
-        ax.scatter( ref, abserr, label='Abs err', color=color)
-        #ax.set_ylim( min(abserr) * 0.9, max(abserr) * 1.1)
-        ax.tick_params(axis= 'y', labelcolor=color)
-        ax.set_yscale('log')
-
-        ax2 = ax.twinx()
-        color ='tab:blue'
-        ax2.set_ylabel('Relative Error', color=color)
-        ax2.scatter( ref, relerr, label= 'Rel err', color=color)
-        ax2.set_ylim( min(relerr) * 0.9, max(relerr) * 1.1)
-        ax2.tick_params(axis= 'y', labelcolor=color)
-        ax2.set_yscale('log')
-
-        if individual:
-            plt.show()
+    if len(idx) < 2:
+        idx = [-avg_step, -1]
+    return idx
 
 
+def MF1(file):
 
-    plt.close("all")
-    fig, ax = plt.subplots()
-    for lam in errs:
+    raw = np.loadtxt(file)
 
-        ax.scatter( np.arange(1, len(errs[lam]) + 1), errs[lam], label='$\lambda$= {}'.format(tag[lam]), marker=m[lam])
+    time = np.concatenate(([0.0], raw[:,0]))
 
-    #sub = np.loadtxt('/Users/rayliu/Desktop/Code/MPS/obs/ranges/26full/exsubtract')
-    #suberr = [abs( sub[i] - ed[i])/ abs(ed[i]) for i in range(len(sub))]
-    #ax.scatter( np.arange(1, len(sub) +1), suberr, label='subtraction based, openmps' )
-    ax.set_title('Comparison of relative errors, L=26')
-    ax.set_ylabel('Relative Error')
-    ax.set_xlabel('Excited state')
-    ax.set_yscale('log')
-    plt.legend()
-    plt.show()
+    #cur1 = np.concatenate(([0.0] , raw[:,2]))
+    cur2 = np.concatenate(([0.0] , raw[:,3]))
+    #cur3 = np.concatenate(([0.0] , raw[:,4]))
+
+    occ = np.concatenate(([1.0] ,raw[:,5]))
+
+    #avg = np.mean( raw[:, 1:4], axis=1)
+
+    fig ,ax = plt.subplots(figsize=(15, 5))
+
+    #L = searchkey('N', file)
+    #U = searchkey('U', file)
 
 
-def plot2d():
+    ax : plt.Axes 
+    #ax.plot(time, cur1, label='cur1')
+    #ax.plot( time, (cur3 - cur1)/ ( 2 *np.pi), label='cur3 - cur1 ')
+    #ax.plot( time, (cur3 + cur1 + cur2)/3, label='sum ')
+    ax.plot(time, cur2, label='cur2')
+    #ax.plot(time, cur3, label='cur3')
+    #ax.plot(time, avg, label='avg')
 
-    if platform == 'darwin':
-        edprefix = '/Users/rayliu/Desktop/Code/PEPS/etED/comp/'
-        mpsprefix = '/Users/rayliu/Desktop/Code/iTensor/collect/'
+    ax2 : plt.Axes = ax.twinx()
+    ax2.scatter(time, occ, s=1, label='dd', c='orange')
 
-    fig, ax= plt.subplots()
-    ed = np.loadtxt( edprefix + 'energy' )
-    mps = np.loadtxt( mpsprefix  + '3x3weight10/ex')
+    #color = 'red'
+    #ref = np.loadtxt('/Users/knl20/Desktop/Code/TN/non-interacting/{}currentCC{}'.format(L, U))
 
-    relerr = [abs( mps[i] - ed[i])/ abs(ed[i]) for i in range(len(mps))]
+    #reftime = np.arange(0, 32, 0.25)
 
-    ax.scatter ( np.arange(1, len(mps) + 1), relerr)
-    ax.set_title( 'Comparison of difference between ED and MPS, 3x3, N=4')
-    ax.set_ylabel('Relative Error')
-    ax.set_xlabel('Eigenstate')
-    ax.set_ylim( max(min(relerr), 1e-10) , max(relerr))
+    # ax.plot( reftime, ref[:reftime.shape[0]] , label=r'$I_{L\rightarrow R}$, Stage 2, non-interacting exact', color=color,
+    #         linestyle='dotted'
+    #         )
+    ax.legend()
+    ax2.legend()
+    ax2.set_ylim(0, 1.1)
 
-    ax.set_yscale('log')
+    ax.set_ylabel('Current')
+    ax2.set_ylabel('DD ')
+
+    fig.savefig( '../plots/MFtest{}.pdf'.format(file[:-len('.txt')]))
+    return fig
+
+
+def test():
+
+    def format_axes(axs):
+        for k in axs:
+            axs[k].text(0.5, 0.5, f"ax: {k}", va="center", ha="center")
+            axs[k].tick_params(labelbottom=False, labelleft=False)
+
+
+    fig, axs = plt.subplot_mosaic([["phocc", "occ1", "cur1", "phcur"], ["phocc", "occ2", "cur2", "phcur"]], constrained_layout=True,
+                                gridspec_kw={'width_ratios':[1, 1, 1, 1],
+                                'height_ratios':[1, 1]})
     
+    print(axs)
+    fig.suptitle("subplot_mosaic")
+    format_axes(axs)
     plt.show()
 
-def longplot():
+
+
+def diff(occ):
+
+    #ori = np.linspace(0,5, 100)
+    #gap = 5/100
+
+    f = np.gradient(occ)
+    plt.plot(f)
+
+    plt.show()
+
+
+def test_fft():
+
+    t = 0.3
+    x = np.arange(500) * t
+    y = np.sin( 0.1 * 2 * np.pi * x) + 0.5 * np.sin( 0.2 * 2 * np.pi * x) 
+
+    xf = np.abs(rfft(y))
+
+    print(np.argsort(xf)[::-1][:10])
+    plt.plot(np.arange(1, xf.shape[0]), xf[1:])
+    plt.show()
+
+def get_fft(occ, sample_time):
+
+    tstep = sample_time[1] - sample_time[0]
+
+    print("tstep: {}".format(tstep))
+    y = occ
+    yf = rfft(y)
+
+    yf  = np.abs(yf)
+
+    peaks, _ = find_peaks(yf[1:], prominence=0.14 * (np.amax(yf[1:]) - np.amin(yf[1:]) ))
+    print(peaks)
+
+    #grad = np.gradient(yf[1:])
+    #diff_grad = grad[1:] - grad[:-1]
+    #idx_grad = np.argsort(diff_grad)[:2]
     
+    xf = np.arange(yf.shape[0]) / occ.shape[0] / tstep
 
-    if platform == 'darwin':
-        prefix = '/Users/rayliu/Desktop/Code/iTensor/collect/'
+    # all = occ.shape[0]
+    # occ = occ[all//2:]
+    # N = occ.shape[0]//2
+    # amp = rfft(occ)
 
-    else:
-        prefix = 'C:/Users/Ray/iCloudDrive/Desktop/Code/iTensor/collect/'
+    # xf = np.linspace(0, N//2, N//2)
+    # yf = 2.0/N * np.abs(amp[:N//2])
 
-    cmap = cm.get_cmap('coolwarm')
 
-    for L in (40, 60):
 
-        fig, ax = plt.subplots()
+    return xf[1:], yf[1:], peaks
 
-        energy = np.loadtxt( prefix + '{}weight10/ex'.format(L))
-        ref = np.arange(1, len(energy) + 1)
-        #ax.scatter(  ref, energy, label = 'Energy')
+def phase_diagram(vs =0.125, fftseparate=True, fft=True):
 
-        for i in range(len(energy)):
- 
-            val = i / (len(energy) - 1)
-            ax.scatter( energy[i], energy[i] - energy[0], label = 'Energy difference to GS', color=cmap(val))
+
+    def plot_occ():
         
-        ax.set_title('Excited state energy level, L = {} (Color indicates the order a state appears in the search)'.format(L))
-        ax.set_xlabel('Energy (eV)')
-        ax.set_ylabel('Energy difference to GS (eV)')
+        time, occ, _ = load_data(raw, tswitch)
 
-    plt.show()
+        # [left, bottom, width, height
+        axocc :plt.Axes = axes[ 'occ' + str(occ_cnt)]
+        con = ConnectionPatch(xyA=(0.05, 0.5), xyB=(float(mu), float(U)), coordsA="axes fraction", coordsB="data", axesA=axocc, axesB=axphocc, color="black")
+        con.set_in_layout(False)
+        axocc.add_artist(con)
+        
+        #ref = np.arange(occ.shape[0])/step
+        #axocc.tick_params(left=False, right=True, labelleft=False, labelright=True)
 
-def plasmonplot():
+        #vy = occ
+        #vx = ref
 
-    def line(x, a, b):
-        return a * x + b
+        axocc.plot(time, occ, color=plotted_occ[key])
+        #axocc.plot( time, grad, color=plotted_occ[key])
 
-    if platform == 'darwin':
-        prefix = '/Users/rayliu/Desktop/Code/iTensor/collect/plasmon/ee1.0/'
+        axocc.set_ylim(0, 1)
+        lo, hi = axocc.get_ylim()
+        l, r = axocc.get_xlim()
+        
+        axocc.vlines( [ t], [lo], [hi], linestyles='dotted')
+        axocc.hlines( [ vs], [l], [r], linestyles='dashed')
+    
+        axocc.set_title(r'$\langle n_1 \rangle: \mu$' + ' = {}, U = {}'.format(mu, U), fontsize=fontsize)
+        #axocc.legend()
 
-    else:
-        prefix = 'C:/Users/Ray/iCloudDrive/Desktop/Code/iTensor/collect/plasmon/ee1.0/'
+        axocc.set_xlabel('t $(1/\omega_0)$', fontsize=fontsize)
+        axocc.set_ylabel(r'$\langle n_1\rangle$', fontsize=fontsize)
+        axphocc.scatter([float(mu)], [float(U)], c='black', s=s)
 
-    begin = 10
-    end = 80
+        axocc.tick_params(axis='both', labelsize=tickfontsize)
 
+    def fft_occ():
 
-    plasmon = np.loadtxt(prefix + 'plasmonenergy')
+        time, occ, _ = load_data(raw, tswitch)
 
-    ref = np.arange(begin, end + 1, 2)
+        idswitch = np.argwhere( time <= tswitch ).flatten()[-1] + 1
 
-    logref, logplsm = np.log10(ref), np.log10(plasmon)
-    fit, cov = curve_fit(line, logref[-5:], logplsm[-5:])
-    print(fit)
-    fig, ax = plt.subplots(3, figsize=(5, 8))
+        # [left, bottom, width, height
 
-    ax[0].set_title('Plasmon plots, $\lambda_{ee} = \lambda_{ne} = 1.0$')
-
-    ax[0].scatter(ref, plasmon)
-    ax[0].set_xlabel('L')
-    ax[0].set_ylabel('Plasmon energy')
-
-    ax[1].scatter(1/ref, plasmon)
-    ax[1].set_xlabel('1/L')
-    ax[1].set_ylabel('Plasmon energy')
-
-    ax[2].scatter( logref, logplsm)
-
-    a, b= fit
-    lineref = np.linspace( min(logref), max(logref), 100)
-    ax[2].plot( lineref, line(lineref, a, b), c='r' , label = ' y = {:.3f}x + {:.3f}'.format(a, b))
-    ax[2].legend()
-
-
-    ax[2].set_xlabel('$log_{10} \  L$')
-    ax[2].set_ylabel('$log_{10} \  E_{plasmon}$')
-
-    fig.tight_layout()
-    plt.show()
-
-def highplasmonplot():
-
-    lam = sys.argv[1]
-    header = np.loadtxt('/Users/rayliu/Desktop/Code/iTensor/collect/plasmon/high' + lam + '/header')
-    raw = np.loadtxt('/Users/rayliu/Desktop/Code/iTensor/collect/plasmon/high' + lam + '/energy')
-
-    new = np.zeros( raw.shape)
-    for i, l in enumerate(raw):
-        new[i] = (l - l[0]) / ( l[1] - l[0])
-
-
-    else:
-
-        if platform == 'win32':
-            syspre = 'C:/Users/Ray/iCloudDrive'
+        if fftseparate:
+            axfft :plt.Axes = axes[ 'occ' + str(occ_cnt)]
+            con = ConnectionPatch(xyA=(0.05, 0.5), xyB=(float(mu), float(U)), coordsA="axes fraction", coordsB="data", axesA=axfft, axesB=axphocc, color="black")
+            con.set_in_layout(False)
+            axfft.add_artist(con)
 
         else:
-            syspre = '/Users/rayliu'
-
-        plotloc = syspre + '/Desktop/Code/iTensor/plots/'
-
-        fig, ax = plt.subplots()
-        ax.scatter( header, new[:, 3], facecolors='none', edgecolors='r')
-        ax.scatter( header, new[:, 6], facecolors='none', edgecolors='b')
-        ax.scatter( header, new[:, 11], facecolors='none', edgecolors='orange' )
-        ax.scatter( header, new[:, 19], facecolors='none', edgecolors='black' )
-
-        ref = np.linspace( 0, max(header) + 5, 100)
-        ax.plot(ref, np.ones( len(ref)) * 2, '--', c='r')
-        ax.plot(ref, np.ones( len(ref)) * 3, '--', c='b')
-        ax.plot(ref, np.ones( len(ref)) * 4, '--', c='orange')
-        ax.plot(ref, np.ones( len(ref)) * 5, '--', c='black')
-
-        ax.set_xlabel('L')
-        ax.set_ylabel('Plasmon number')
-        ax.set_title('Plasmon number vs. length of chain, $\lambda =$ {}'.format(lam))
-        #plt.show()
-        plt.savefig(plotloc + 'ex_plasmon_lam' + lam + '.png', dpi=600)
-
-        fig, ax = plt.subplots()
-        ax.scatter( header, new[:, 3] - 2, c='r', marker='o', label= '$N_{pl} = 2$' )
-        ax.scatter( header, new[:, 6] - 3, c='b', marker = '^', label= '$N_{pl} = 3$' )
-        ax.scatter( header, new[:, 11] - 4, c='orange', marker = 'x' , label= '$N_{pl} = 4$' )
-        ax.scatter( header, new[:, 19] - 5, c='black' , marker = 'v', label= '$N_{pl} = 5$' )
-        ax.legend()
+            axfft : plt.Axes = axes[ 'offt' + str(occ_cnt)]
 
 
 
-        ax.set_xlabel('L')
-        ax.set_ylabel('$\Delta N_{plasmon}$')
-        ax.set_title('Difference in plasmon number to integer, vs. length of chain, $\lambda =$ {}'.format(lam))
-        plt.savefig(plotloc + 'ex_plasmon__diff_lam' + lam +'.png' , dpi=600)
-        #plt.show()
-
-def extrendplot():
-
-    pdf = matplotlib.backends.backend_pdf.PdfPages( syspre() + '/Desktop/Code/iTensor/plots/trendplot.pdf' )
-    plasmondir = syspre () + '/Desktop/Code/iTensor/collect/plasmon/'
-
+        vx, vy, idxpeak = get_fft(occ[idswitch:], time[idswitch:])
+        axfft.plot(vx, vy, color=plotted_occ[key], label='S3')
+        
+        for peak in idxpeak:
+            axfft.scatter( vx[peak], vy[peak], label='{:.3g}'.format(vx[peak]))
     
-    for dir in sorted( glob.glob( plasmondir  + 'high*'), key= lambda x: float(x[ len(plasmondir) + 4:])):
+        axfft.set_title(r'$f_{{FFT}}(\langle n_1 \rangle) : \mu$' + ' = {}, U = {}'.format(mu, U), fontsize=fontsize)
+        #axocc.legend()
 
-        lam = dir[ len(plasmondir) + 4:]
-        header = np.loadtxt(  dir + '/header')
-        raw = np.loadtxt( dir + '/energy')
-
-        new = np.zeros( raw.shape)
-        for i, l in enumerate(raw):
-            new[i] = (l - l[0]) / ( l[1] - l[0])
-
-        fig, ax = plt.subplots()
-        for ex in range(new.shape[1]):
-            ax.plot( header, new[:, ex])
-
-        ref = np.linspace( 5, 100, 5)
-        for num in range(1, int(np.amax(new)) + 1):
-            ax.plot(ref, num * np.ones(len(ref)), ':', c='black')
-
-        ax.set_xlabel('Length of chain')
-        ax.set_ylabel('Plasmon number')
-        ax.set_xlim(5, 100)
-        ax.set_title('Plasmon number vs. L, $\lambda = $' + lam)
-
-        pdf.savefig(fig)
-            
-    pdf.close()
-
-def ccplot():
-
-    def plotcij():
-
-        amax = 1.0
-
-        #fig, ax = plt.subplots()
-        figcij.subplots_adjust(right=0.87)
-        cs = axcij[row][col].imshow(cij, cmap='bwr', vmin = -amax, vmax= amax)
-        axcij[row][col].invert_xaxis()
-        cax = figcij.add_axes([0.9, 0.1, 0.05, 0.8])
-        figcij.colorbar(cs, cax=cax)
-
-    def plotamn():
-
-        amax = 1.0
-        amn = phi.dot(cij).dot(phi.transpose())
-        figamn.subplots_adjust(right=0.87)
-        #fig, ax = plt.subplots()
-        cs = axamn[row][col].imshow(amn, cmap='bwr', vmin = -amax, vmax= amax)
-        axamn[row][col].invert_xaxis()
-        cax = figamn.add_axes([0.9, 0.1, 0.05, 0.8])
-        figamn.colorbar(cs, cax=cax)
-        
-
-    def finishcij():
-        
-        #plt.gca().invert_yaxis()
-        
-        figcij.suptitle(r'$ \langle {{{}}} | c^{{\dagger}}_i c_j | {{{}}} \rangle $ at $\lambda = {{{}}}$'.format( cur[0], cur[1], lam), size=50)
-        pdfcij.savefig(figcij)
-        print('closecij')
-        #pdfcij.close()
-
-    def finishamn():
-
-        #plt.gca().invert_yaxis()
-        figamn.suptitle(r'$ \langle {{{}}} | a^{{\dagger}}_m a_n | {{{}}} \rangle $ at $\lambda = {{{}}}$'.format( cur[0], cur[1], lam), size=50)
-        pdfamn.savefig(figamn)
-        print('closeamn')
-        #pdfamn.close()
+        axfft.legend(fontsize=fontsize)
+        axfft.set_xlim(0, axfft.get_xlim()[1]/4)
+        #axfft.set_xlabel(r'$ \omega = \frac{{k}}{{N\Delta t}} $', fontsize=fontsize)
+        axfft.set_xlabel('$ \omega / (N\Delta t) $', fontsize=fontsize)
+        axfft.set_ylabel(r'$|\sum_{m=0}^{N-1} \langle n_1\rangle e^{-2\pi i\omega m/N } |$', fontsize=fontsize)
+        axphocc.scatter([float(mu)], [float(U)], c='black', s=s)
 
 
-    def gen_phi():
+        axfft.tick_params(axis='both', labelsize=tickfontsize)
 
-        return np.array([[ np.sqrt(2/(L + 1)) * np.sin(n * np.pi * x/ (L + 1)) for x in range(1, L + 1)] for n in range(1, L + 1)])
+    def plot_cur():
 
+        time, _, cur = load_data(raw, tswitch)
 
-    lam = sys.argv[1]
+        axcur :plt.Axes = axes['cur' + str(cur_cnt)]
 
+        con = ConnectionPatch(xyA=(0.95, 0.5), xyB=(float(mu), float(U)), coordsA="axes fraction", coordsB="data", axesA=axcur, axesB=axphcur, color="black")
+        con.set_in_layout(False)
+        axcur.add_artist(con)
 
-    prefix = syspre() + '/Desktop/Code/iTensor/collect/plasmon/high' + lam + '/cc/'
-    dirs = os.listdir( prefix)
-    dirs = sorted(dirs, key= lambda x: [ int(x.split('_')[-2]), int(x.split('_')[-1]), int(x.split('_')[1])])
-
-    lengths = defaultdict(int)
-    for dir in dirs:
-
-        pair = ( int(dir.split('_')[-2]), int(dir.split('_')[-1]) )
-        lengths[pair] += 1
-
-    print(dirs)
-    plotloc = syspre() + '/Desktop/Code/iTensor/plots/cc/'
-
-    # init
-    cur = ex = (int(dirs[0].split('_')[-2]), int(dirs[0].split('_')[-1]))
-    cnt = 0
-    dim = int(np.ceil(np.sqrt( lengths[ex])))
-
-    figcij, axcij = plt.subplots(dim, dim, figsize =(dim *5, dim * 5))
-    figamn, axamn = plt.subplots(dim, dim, figsize =(dim *5, dim * 5))
-
-    pdfcij = matplotlib.backends.backend_pdf.PdfPages( plotloc + 'out_cij_lam{}.pdf'.format(lam))
-    pdfamn = matplotlib.backends.backend_pdf.PdfPages( plotloc + 'out_amn_lam{}.pdf'.format(lam))
-
-    for file in dirs:
-
-        ex = (int(file.split('_')[-2]), int(file.split('_')[-1]))
-        L = int(file.split('_')[1])
-
-        print(ex, L)
-        if ex != cur:
-
-            finishcij()
-            finishamn()
-            #pdfcij = matplotlib.backends.backend_pdf.PdfPages( plotloc + 'out_cij{}_{}_{}.pdf'.format(lam, ex[0], ex[1]))
-            #pdfamn = matplotlib.backends.backend_pdf.PdfPages( plotloc + 'out_amn{}_{}_{}.pdf'.format(lam, ex[0], ex[1]))
-            cur = ex
-            cnt = 0
-            dim = int(np.ceil(np.sqrt( lengths[ex])))
-            figcij, axcij = plt.subplots(dim, dim, figsize =(dim *5, dim * 5))
-            figamn, axamn = plt.subplots(dim, dim, figsize =(dim *5, dim * 5))
-
-        row = cnt // dim
-        col = cnt % dim
-
-        phi = gen_phi()
-        cij = np.loadtxt( prefix + file)
-        plotcij()
-        plotamn()
-
-        cnt += 1
-
-    pdfcij.close()
-    pdfamn.close()
+        #axcur.tick_params(left=True, right=False, labelleft=True, labelright=False)
+        axcur.plot(time, cur, color=plotted_current[key])
+        axcur.vlines( [ t], [axcur.get_ylim()[0]], [axcur.get_ylim()[1]], linestyles='dotted')
 
 
 
-def energytrendplot():
-
-    def line(x, a, b):
-        return a * x + b
-
-    pdf = matplotlib.backends.backend_pdf.PdfPages( syspre() + '/Desktop/Code/iTensor/plots/energytrendplot.pdf' )
-    plasmondir = syspre () + '/Desktop/Code/iTensor/collect/plasmon/'
-
-    figgs, axgs = plt.subplots( figsize=(7, 8))
-    fig1, ax1 = plt.subplots( figsize=(7, 8))
-    figpl, axpl = plt.subplots( figsize =(7,8))
-    axes = [axgs, ax1, axpl]
-    key = ['GS', '1st ex', 'Plasmon']
-    styles = ['dashdot', 'solid', 'dashed']
-    gsfits=[]
-    exfits = []
-    lams = []
-
-    for i, dir in enumerate(sorted( glob.glob( plasmondir  + 'high*'), key= lambda x: float(x[ len(plasmondir) + 4:]))):
-
-        lam = dir[ len(plasmondir) + 4:]
-        header = np.loadtxt(  dir + '/header')
-        raw = np.loadtxt( dir + '/energy')
-
-        refheader = np.log10(header)
-
-        axgs.plot( refheader, - np.log10( -raw[:, 0]), label='$\lambda = $' + str(lam), linestyle=styles[i//10])
-        ax1.plot( refheader, - np.log10( -raw[:, 1]), label='$\lambda = $'+ str(lam), linestyle=styles[i//10])
-        axpl.plot( refheader, np.log10(raw[:, 1] - raw[:, 0]), label='$\lambda = $'+ str(lam), linestyle=styles[i//10])
-
-        gsfit, cov = curve_fit(line, refheader,  np.log10( -raw[:, 0]))
-        exfit, cov = curve_fit(line, refheader,  np.log10( -raw[:, 1]))
-
-        gsfits += [gsfit[0]]
-        exfits += [exfit[0]]
-        lams += [ float(lam)]
-
-
-    for i, ax in enumerate(axes):
+        axcur.set_title(r'$I/\mu$: $\mu$' + '= {}, U = {}'.format(mu, U), fontsize=fontsize)
         #ax.legend()
-        ax.legend(loc='center left', bbox_to_anchor=(1, 0.4))
+        axphcur.scatter([float(mu)], [float(U)], c='black', s=s)
 
-        if i < 2:
-            ax.set_ylabel( r'$ - log_{{10}}(|E_{{{}}}|)$'.format(key[i]))
+        axcur.set_xlabel('t $(1/\omega_0)$', fontsize=fontsize)
+        axcur.set_ylabel('$I/\mu$', fontsize=fontsize)
+        
+        axcur.tick_params(axis='both', labelsize=tickfontsize)
+    
+
+    def fft_cur():
+
+        time, _, cur = load_data(raw, tswitch)
+
+        idswitch = np.argwhere( time <= tswitch ).flatten()[-1] + 1
+
+        # [left, bottom, width, height
+
+        if fftseparate:
+            axfft :plt.Axes = axes[ 'cur' + str(cur_cnt)]
+            con = ConnectionPatch(xyA=(0.95, 0.5), xyB=(float(mu), float(U)), coordsA="axes fraction", coordsB="data", axesA=axfft, axesB=axphcur, color="black")
+            con.set_in_layout(False)
+            axfft.add_artist(con)
 
         else:
-            ax.set_ylabel(r'$  log_{{10}}(|E_{{{}}}|)$'.format(key[i]))
+            axfft :plt.Axes = axes[ 'cfft' + str(cur_cnt)]
+
+        vx, vy, idxpeak = get_fft(cur[idswitch//2:idswitch], time[idswitch//2:idswitch])
+        axfft.plot(vx, vy, color=plotted_current[key], linestyle='dotted', label='Stage 2 ($t>t_s/2$)')
+
+        for peak in idxpeak:
+            axfft.scatter( vx[peak], vy[peak], label='S2: {:.3g}'.format(vx[peak]) )
         
-        ax.set_xlabel(r'$log_{{10}} L$')
-        ax.set_title(key[i] + ' Energy vs. L')
-        #ax.set_xscale('log')
-        #ax.set_xlim(5, 100)
+        vx, vy, idxpeak= get_fft(cur[idswitch:], time[idswitch:])
+        axfft.plot(vx, vy, color=plotted_current[key], label='Stage 3')
 
-    figfit, axfit = plt.subplots()
+        for peak in idxpeak:
+            axfft.scatter( vx[peak], vy[peak], label='S3: {:.3g}'.format(vx[peak]), marker='x')
 
-    axfit.plot(lams, gsfits, label='GS fit')
-    axfit.plot(lams, exfits, label='1st ex fit')
-    axfit.set_xlabel('$\lambda$')
-    axfit.set_ylabel('Power law exponent')
-    axfit.set_title('Power law exponent $(E \sim L^a)$ vs. $\lambda$')
-    axfit.legend()
+        axfft.legend(fontsize=fontsize)
+    
+        axfft.set_title(r'$I/\mu : \mu$' + ' = {}, U = {}'.format(mu, U), fontsize=fontsize)
+        #axocc.legend()
 
-    figgs.tight_layout()
-    fig1.tight_layout()
-    figpl.tight_layout()
-    figfit.tight_layout()
+        axfft.set_xlim(0, axfft.get_xlim()[1]/4)
+        #axfft.set_xlabel(r'$ \omega = \frac{{k}}{{N\Delta t}} $', fontsize=fontsize)
+        axfft.set_xlabel('$ \omega/ (N\Delta t) $', fontsize=fontsize)
+        axfft.set_ylabel(r'$|\sum_{m=0}^{N-1} I e^{-2\pi i\omega m/N } |$', fontsize=fontsize)
+        axphocc.scatter([float(mu)], [float(U)], c='black', s=s)
 
-    pdf.savefig(figgs) 
-    pdf.savefig(fig1)
-    pdf.savefig(figpl)
-    pdf.savefig(figfit)
-    pdf.close()
 
-def tcdplot():
+        axfft.tick_params(axis='both', labelsize=tickfontsize)
 
-    workdir = os.getcwd() + '/collect/plasmon/tcd/'
-    plotdir = os.getcwd() + '/plots/'
-    dirs = [0.5, 1.0]
-    L = 98
-    dis = 0
-    upper = 21
+    modes =[ "discrete", "equal"]
 
-    gap = 0.15
-    for d in dirs:
-        fig, ax = plt.subplots( figsize = (100, 15))
-        for left in range(1, upper - 1):
-            for right in range(left + 1, upper):
 
-                tcd = np.loadtxt( workdir + '{}/TCD_{}_ex_{}_{}'.format(d, L, left, right))
 
-                ref = np.arange(  1, L + 1) + (L + 5) * (left - 1)
-                ax.scatter(ref, tcd + gap * (right - 2), label='GS to {}ex'.format(right - 1), s=1)
-                ax.plot(ref, tcd + gap * (right - 2))
+    for mode in modes:
 
-            ax.annotate( 'Transition to excited state {}'.format(left ) , ( -L , gap * ( left - 1)), size=20)
-            ax.annotate( 'Transition from excited state {}'.format(left - 1), ( (L + 5) * (left - 1) + 2 , gap * ( left - 2)), size=20)
+
+        if fftseparate:
+            file = '../plots/MFphase{}mode{}fft{}.pdf'.format(vs, mode, fft)
+            mosaic = [
+                        ["phocc", "occ1", "cur1", "phcur"], 
+                        ["phocc", "occ2", "cur2", "phcur"], 
+                        ["phocc", "occ3", "cur3", "phcur"]
+                                                ]
+        else:
+            mosaic = [
+                        ["phocc", "occ1", "offt1", "cfft1", "cur1", "phcur"], 
+                        ["phocc", "occ2", "offt2", "cfft2", "cur2", "phcur"], 
+                        ["phocc", "occ3", "offt3", "cfft3", "cur3", "phcur"]
+                                                ]
+            file = '../plots/MFphase{}mode{}.pdf'.format(vs, mode)
+    
+        with PdfPages(file)  as pdf:
+            factor_str = {1 : '$U, U, U, U$',
+                        2 : r'$\frac{U}{2}  , \ U,  U,   \ \frac{U}{2}$'}
+                        
+
+            plotted_occ = {
+                            ('5.0', '1.0') if vs == 1.0 else ('2.0', '1.0'): 'red',
+                            ('2.0', '1.0') if vs == 1.0 else ('1.0', '1.0'): 'blue',
+                            ('1.0', '1.0') if vs == 1.0 else ('0.5', '1.0'): 'black',
+                            }
             
-        ax.set_xlim( - L, L * (upper - 1))
-        #ax.legend(loc='center left', bbox_to_anchor=(1, 0.4))
-        ax.spines['top'].set_visible(False)
-        ax.spines['right'].set_visible(False)
-        ax.spines['bottom'].set_visible(False)
-        ax.spines['left'].set_visible(False)
-        ax.get_xaxis().set_ticks([])
-        ax.get_yaxis().set_ticks([])
-        ax.set_title( 'TCD: GS to {} lowest Ex, L = {}, disorder = {}, $\lambda = ${}'.format(upper - 1, L, dis, d))
-        fig.tight_layout()
-        fig.savefig(plotdir + 'TCDGS{}_{}.pdf'.format(L, d))
-        plt.show()
+            plotted_current = {
+                            ('5.0', '1.0') if vs == 1.0 else ('2.0', '1.0'): 'red',
+                            ('2.0', '1.0') if vs == 1.0 else ('1.0', '1.0'): 'blue',
+                            ('1.0', '1.0') if vs == 1.0 else ('0.5', '1.0'): 'black',
+                            }
+            
+            #eachrow = max( len(plotted_current.keys()), len(plotted_occ.keys()))
 
-
-def gpiplot():
-
-    def cal_GPI(tcd, ees):
-
-        gpi = tcd.dot(ees).dot(tcd)
-
-        #print(gpi)
-        return gpi
-
-    def ee(L, Lx, disx, disy, lam):
-        
-        arr = np.zeros((L, L))
-
-        int_ee = 2 * lam
-        zeta = 0.5
-        z = 1.0
-        ex = 0.2
-        dis = [disx, disy]
-
-        def distance():
-            return np.sqrt( ( - dis[0][i] + xd + dis[0][j]) ** 2 + ( - dis[1][i] + yd + dis[1][j] ) ** 2)
-
-        for i in range(L):
-            for j in range(L):
-                #ex = 0
-                #zeta = 0
-                xi = i % Lx
-                yi = i // Lx 
-
-                xj = j % Lx
-                yj = j // Lx
-
-                xd = xj - xi
-                yd = yj - yi
-
+            
+            for factor in [1, 2]:
                 
-                if abs(xd) + abs(yd) == 1:
-                    factor = 1 - ex
-                
-                else:
-                    factor = 1
+                tickfontsize = 20
+                fontsize=20
+                s = 5
+                avg_step = 200
+                Ns = [ 258]
 
-                arr[i, j] =  z * int_ee * factor / ( distance() + zeta)
+                if vs == 1.0:
+                    ts = np.array([1/4])
 
-        return arr
-        
+                elif vs == 0.125:
+                    ts = np.array([1/2])
 
-    workdir = os.getcwd() + '/collect/plasmon/tcd/'
-    plotdir = os.getcwd() + '/plots/'
-    dirs = [1.0, 0.5]
-    L = 98
-    dis = 0
-    upper = 21
+                # fig = plt.figure(
+                #     figsize = (4 * 4, 6 * eachrow),
+                #     layout="constrained"
+                #     )
+                # gs = GridSpec(eachrow, 4, figure=fig) 
 
-    disx = np.zeros(L)
-    disy = np.zeros(L)
+                fig, axes = plt.subplot_mosaic(mosaic, constrained_layout=True,
+                                    gridspec_kw={'width_ratios':[1 for _ in range(len(mosaic[0]))],
+                                    'height_ratios':[0.7 for _ in range(len(mosaic))]}, figsize=(6 * len(mosaic[0]), 16))
+
+
+                #dirs = "examples_v{}/".format(vs)
+                dirs = "new/"
+
+                for i, n in enumerate(Ns):
+                    
+                    tswitch = ts * n - 1
+                    for j, t in enumerate(tswitch):
+                        
+                        #axes[i][j * metric + 1].set_axis_off()
+
+                        raws = glob.glob( dirs + '*N{}*tswitch{}*factor{}*{}*'.format( n, float(t), factor, mode))
+
+
+                        raws = sorted(raws, reverse=True)
+
+                        mus = sorted(list(set([searchkey('mu', f) for f in raws])))
+                        mus = { mu : k for k, mu in enumerate(mus)}
+
+                        Us = sorted(list(set([searchkey('U', f) for f in raws])))
+                        Us = { U : k for k, U in enumerate(Us)}
+
+                        occ_data = np.zeros((len(mus), len(Us)))
+                        cur_data = np.zeros((len(mus), len(Us)))
+                        #diffs = np.zeros((len(mus), len(Us)))
+
+                        extent = [ float(min(mus.keys())), float(max(mus.keys())), float(max(Us.keys())), float(min(Us.keys()))]
+
+
+                        occ_cnt = 1
+                        cur_cnt = 1
+
+
+                        for raw in raws:
+                            
+                            mu = searchkey( 'mu', raw)
+                            U = searchkey('U', raw)
+                        
+                            _, occ, cur = load_data(raw, tswitch)
+                            cur = cur / float(mu)
+
+                            idx1, idx2 = sign_change(np.gradient(occ))
+
+                            #print(idx1, idx2)
+                            occ_to_avg = occ[idx1:idx2]
+                            cur_to_avg = cur[-avg_step:]
+
+                            #diff = np.amax(occ_to_avg) - np.amin(occ_to_avg)
+                            occ_avg = np.average(occ_to_avg)
+                            cur_avg = np.average(cur_to_avg)
+
+                            occ_data[ mus[mu], Us[U]] = occ_avg
+                            cur_data[ mus[mu], Us[U]] = cur_avg
+
+
+
+                        axphocc : plt.Axes = axes['phocc']
+                        im = axphocc.imshow(occ_data.transpose(), extent=extent, cmap='bwr', vmin=0, vmax=1)
+                        axphocc.invert_yaxis()
+                        axphocc.set_xlabel('$\mu$', fontsize=fontsize)
+                        axphocc.set_ylabel('U', fontsize=fontsize)
+                        axphocc.set_title(r'$\overline{\langle n_1\rangle}$: ' + ' N = {}, tswitch = {}'.format(n, t), fontsize=fontsize)
+
+                        divider = make_axes_locatable(axphocc)
+                        cax = divider.append_axes("bottom", size="3%", pad=0.65)
+
+                        cb = fig.colorbar(im, cax=cax, orientation="horizontal"
+                                    )
+                        cb.ax.tick_params(labelsize=tickfontsize)
+                        cb.set_label(label=r'$\overline{\langle n_1\rangle}$', fontsize=fontsize)
     
-    gpis = np.zeros((upper - 2, upper - 2))
-    for d in dirs:
-        ees = ee(L, L, disx, disy, d)
-        fig, ax = plt.subplots( figsize = (15, 15))
-        for left in range(1, upper - 1):
-            for right in range(left + 1, upper):
+                        
+                        axphocc.tick_params(axis='both', labelsize=tickfontsize)
 
-                tcd = np.loadtxt( workdir + '{}/TCD_{}_ex_{}_{}'.format(d, L, left, right))
-                gpi = cal_GPI(tcd, ees)
-                
-                gpis[right - 2][left - 1] = gpi
+                        axphcur : plt.Axes = axes['phcur']
+                        im = axphcur.imshow(cur_data.transpose(), extent=extent, cmap='autumn')
+                        axphcur.invert_yaxis()
+                        axphcur.set_xlabel('$\mu$', fontsize=fontsize)
+                        axphcur.set_ylabel('U', fontsize=fontsize)
+                        axphcur.set_title(r'$\overline{I/\mu}$: ' + ' N = {}, tswitch = {}'.format(n, t), fontsize=fontsize)
 
-        print(gpis)
-        cs = ax.imshow(gpis, origin='lower', extent=[0, upper - 2, 1, upper - 1])
-        ax.xaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.yaxis.set_major_locator(MaxNLocator(integer=True))
-        ax.set_title( 'GPI: GS to {} lowest Ex, L = {}, disorder = {}, $\lambda = ${}'.format(upper - 1, L, dis, d))
-        ax.set_xlabel('From state (0 = GS)')
-        ax.set_ylabel('To state')
-        fig.colorbar(cs, ax=ax)
-        fig.tight_layout()
-        fig.savefig(plotdir + 'GPIGS{}_{}.pdf'.format(L, d))
-        plt.show()
+                        divider = make_axes_locatable(axphcur)
+                        cax = divider.append_axes("bottom", size="3%", pad=0.65)
 
+                        cb = fig.colorbar(im, cax=cax, orientation="horizontal"
+                                    )
+                        cb.ax.tick_params(labelsize=tickfontsize)
+                        cb.set_label(label=r'$\overline{I/\mu}$', fontsize=fontsize)
+
+                        axphcur.tick_params(axis='both', labelsize=tickfontsize#, left=False, right=True, labelleft=False, labelright=True
+                                            )
+
+                        
+                        for raw in raws:
+                            mu = searchkey( 'mu', raw)
+                            U = searchkey('U', raw)
+                            key = (U, mu)
+                            
+                            
+                            if key in plotted_occ:
+                                
+                                if not fftseparate or not fft:
+                                    plot_occ()
+                                
+                                if not fftseparate or fft:
+                                    fft_occ()
+
+                                occ_cnt += 1
+                                
+
+                            if key in plotted_current:
+                                
+                                if not fftseparate or not fft:
+                                    plot_cur()
+
+                                if not fftseparate or fft:
+                                    fft_cur()
+
+                                cur_cnt += 1
+                            occ_data[ mus[mu], Us[U]]= occ_avg
+                            cur_data[ mus[mu], Us[U]]= cur_avg 
+                            #diffs[ mus[mu], Us[U]]= diff    
+
+
+
+
+
+                fig.suptitle('$v_S ={}$, QPC: {} interaction'.format(vs, factor_str[factor]), fontsize=50)
+                #fig.subplots_adjust(wspace=0, hspace=0)
+                #fig.tight_layout()
+                fig.savefig('factor{}.pdf'.format(factor))
+                #plt.show()
+                pdf.savefig(fig)
+                    
+                    
+
+
+if __name__  == '__main__':
+
+    rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
+    rc('text', usetex=True) 
+
+    #MF1(glob.glob('*equal')[0])
+    phase_diagram(fftseparate = False, fft=True)
+    #test()
+
+    # files = sys.argv[1:]
+
+    # if not len(files):
+    #     files = glob.glob('Current*')
+    #     files = sorted( files, key=lambda x: [float(searchkey('U', x)), int(searchkey('N', x)), float(searchkey('tswitch', x))])
+
+    # if len(files) > 1:
+
+    #     with PdfPages('../plots/MFmulti.pdf') as pdf:
+    #         for file in files:
+    #             fig = MF1(file)
+    #             fig.suptitle(file)
+
+    #             pdf.savefig(fig)
+
+    #test_fft()
+    # else:
+
+    #     fig = MF1(files)
+    #     fig.suptitle(files)
+    #     fig.savefig('../plots/MFtest'+ files)
         
-if __name__ == '__main__':
-    
-    lengthcompplot()
-    #weightplot()
-    #longplot()
-    #plot2d()
-    #plasmonplot()
-    #highplasmonplot()
-    #ccplot()
-    #energytrendplot()
-    #extrendplot()
-    #tcdplot()
-    #gpiplot()

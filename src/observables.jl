@@ -553,7 +553,13 @@ function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
             corr = correlation_matrix(ψ, op1, op2)
             outfile = workdir * "corr" * op1 * op2 * ".h5"
             h5open(outfile, isfile( outfile) ? "r+" : "w") do io
-                write(io, string(t), corr)
+
+                if !haskey(io, string(t))
+                    write(io, string(t), corr)
+                else
+                    @warn "duplicate key found, not write"
+                end 
+                
             end 
         end 
 

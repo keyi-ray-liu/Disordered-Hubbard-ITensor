@@ -111,7 +111,7 @@ function QE_SSH(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0
     @info "Stage 2"
     Stage2= QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, mode="regular", kwargs...)
     dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=tswitch + τ, fin=fin, kwargs...)
-    run_dynamic_simulation(Stage2, dynamic, ψ; message="QEStage2", save_every=save_every, obs=obs)
+    run_dynamic_simulation(Stage2, dynamic, ψ; message="QEStage2", save_every=save_every, obs=obs, init_obs = tswitch <= start ? true : false)
 
 end 
 

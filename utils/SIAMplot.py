@@ -74,7 +74,7 @@ def check_interface(override=''):
 
 def get_qesite(file):
 
-    if 'QEtwo' in file:
+    if 'QEtwo' in file or 'QESSH' in file:
         qeidx = [0, 2]
 
         total = 2 + 1
@@ -271,6 +271,7 @@ def occ_direct(get_animate=True,  file=None, occ=None, fig=None, ax=None, out=Tr
     begin, end = get_begin_end(occ.shape[-1], key=file)
     ranges = np.concatenate([ np.arange(begin[b], end[b]) for b in actual])
 
+    print(ranges)
     occ = occ[:, ranges]
 
     if diff:
@@ -292,8 +293,8 @@ def occ_direct(get_animate=True,  file=None, occ=None, fig=None, ax=None, out=Tr
         ax : plt.Axes = ax
         im = ax.imshow(occ.transpose(), aspect="auto", cmap='hot',
                        interpolation='none', rasterized=True, 
-                       norm='log',
-                       vmin = 10 ** (-2.5), vmax = 1
+                       #norm='log',
+                       #vmin = 10 ** (-2.5), vmax = 1
                        )
         fig.colorbar(im, location='bottom')
 
@@ -321,9 +322,10 @@ def tcd_direct():
         ref = np.arange( tcd.shape[-1])
         ax.clear()
         ax.scatter( ref, tcd[i], c='blue')
+        ax.plot( ref, tcd[i], c='blue')
 
-        sep =  np.arange(0, ref.shape[-1], 12)
-        ax.vlines( sep, lo *np.ones(sep.shape[0]), hi *np.ones(sep.shape[0]), linestyles='dotted')
+        #sep =  np.arange(0, ref.shape[-1], 12)
+        #ax.vlines( sep, lo *np.ones(sep.shape[0]), hi *np.ones(sep.shape[0]), linestyles='dotted')
 
         # if systype == "Electron":
         #     ax.scatter( ref, -occdn[i], c ='red')
@@ -335,12 +337,15 @@ def tcd_direct():
         ax : plt.Axes = axes[1]
 
         ax.clear()
-        ax.scatter( ref, logtcd[i], c='orange')
-        ax.vlines( sep, loglo *np.ones(sep.shape[0]), loghi *np.ones(sep.shape[0]), linestyles='dotted')
+
+        ref_processed = np.arange(tcd_processed.shape[-1])
+        ax.scatter( ref_processed, tcd_processed[i], c='orange')
+        ax.plot( ref_processed, tcd_processed[i], c='orange')
+        #ax.vlines( sep, loglo *np.ones(sep.shape[0]), loghi *np.ones(sep.shape[0]), linestyles='dotted')
         # if systype == "Electron":
         #     ax.scatter( ref, -occdn[i], c ='red')
 
-        ax.set_ylim( loglo, loghi)
+        ax.set_ylim( processed_lo, processed_hi)
         ax.set_xlim( 0, tcd.shape[-1])
         ax.set_title('Transition Charge density (TCD) per site vs. time, LOG, step = {}'.format(i))
 
@@ -351,11 +356,18 @@ def tcd_direct():
     lo = np.amin(tcd)
     hi = np.amax(tcd)
 
-    logtcd = np.where( tcd !=0, tcd, np.exp(1e-10))
-    logtcd = np.where( logtcd > 0, -np.log(logtcd), np.log(-logtcd))
+    # logtcd = np.where( tcd !=0, tcd, np.exp(1e-10))
+    # logtcd = np.where( logtcd > 0, -np.log(logtcd), np.log(-logtcd))
 
-    loglo = np.amin(logtcd)
-    loghi = np.amax(logtcd)
+    # loglo = np.amin(logtcd)
+    # loghi = np.amax(logtcd)
+
+    pad = np.zeros( (tcd.shape[0], 1))
+    tcd_processed = np.concatenate( (pad, tcd, pad), axis=1)
+
+    tcd_processed = (tcd_processed[:, 1:] + tcd_processed[:, :-1])/2
+    processed_lo = np.amin(tcd_processed)
+    processed_hi = np.amax(tcd_processed)
 
     fig, axes= plt.subplots( 2, 1, figsize=(15, 10))
 
@@ -396,16 +408,19 @@ def all(override='', tilltick=1000, visualize=True, multisvn =False, diff=False)
         elif 'parallel' in file:
             key = 'parallel'
 
-        elif 'QEtwo' in file:
+        elif 'QEtwo' in file or 'QESSH' in file:
             key = 'QEtwo'
 
         else:
-            key = 'parallel'
+            raise(ValueError("Unknown file, recheck"))
 
         SvN = ees[i]
         occ = occs[i]
 
         time = times[i]
+
+        print(key)
+        print(occ.shape)
         begin, end = get_begin_end(occ.shape[-1], key=key)
 
         cnt = 0
@@ -665,18 +680,18 @@ def segment(override=''):
 if __name__ == '__main__':
 
     
-    override= 'Gaussian100test12w6'
+    override= 'GaussianQE100dyna'
     rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     rc('text', usetex=True) 
     #occ_direct(get_animate=False)
 
-    tcd_direct()
+    #tcd_direct()
     #check_interface(override=override)
     # seff(filename_override=override)
-    # all(override=override, 
-    #     visualize=False,
-    #     multisvn=False
-    #     #tilltick=150
-    #     )
+    all(override=override, 
+        visualize=False,
+        multisvn=False
+        #tilltick=150
+        )
     #segment(override = override )
     #corr()
