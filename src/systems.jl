@@ -654,6 +654,7 @@ function set_reservoir(;
     systype = "Fermion",
     N = 6,
     contact = L,
+    reservoir_type = "spatial",
     bias = 0.0,
     kwargs...)
 
@@ -663,7 +664,14 @@ function set_reservoir(;
         N = [L - N, N, 0, 0]
     end 
 
-    reservoir = reservoir_spatial(L, systype, t, N, contact, bias)
+    if reservoir_type == "spatial"
+        reservoir = reservoir_spatial(L, systype, t, N, contact, bias)
+
+    elseif reservoir_type == "mixed"
+        reservoir = reservoir_mixed()
+
+
+    end 
     return reservoir
 
 end 

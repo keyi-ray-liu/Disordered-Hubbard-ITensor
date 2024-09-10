@@ -119,7 +119,7 @@ function DPT_wrapper()
     sweepcnt = get(dpt_in, "sweepcnt", 60)
     t_doubledot = get(dpt_in, "tdoubledot", 0.125)
 
-    if DISABLE_BLAS && TEdim > 256
+    if DISABLE_BLAS && TEdim > 128
         @show ITensors.enable_threaded_blocksparse()
         @show ITensors.enable_threaded_blocksparse()
     else

@@ -89,8 +89,9 @@ function SD_wrapper()
     fin = get(sd_in, "fin", 10.0)
     τ = get(sd_in, "timestep", 0.1)
     contact_scaling = get(sd_in, "contactscaling", 2.0)
+    reservoir_type = get(sd_in, "reservoir_type", "spatial")
 
     run_SD(L, R, fin; τ=τ, Ns=Ns, Nd=Nd, Na=Na, s_coupling=s_coupling, d_coupling=d_coupling, 
-    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, contact_scaling=contact_scaling)
+    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, contact_scaling=contact_scaling, reservoir_type=reservoir_type)
 
 end 
