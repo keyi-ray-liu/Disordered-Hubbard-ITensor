@@ -471,3 +471,19 @@ function get_tcd_gs()
 end 
 
 
+function prev_res() 
+  if !isempty(Glob.glob( "$LASTSTSTR.h5", getworkdir())) 
+
+      last_time = readdlm(getworkdir() * "tTDVPlasttime")[end]
+      last_state = load_ψ( "$LASTSTSTR")
+
+  else
+
+      last_time = -Inf
+      last_state = MPS[]
+
+  end 
+
+  return last_time, last_state
+
+end 

@@ -61,10 +61,18 @@ function run_SD(L, R, fin; τ=0.125, bias_L=0.0, bias_R=0.0, kwargs...)
     @show dyna = set_SD(;L=L, R=R, bias_L=bias_L, bias_R=bias_R, kwargs...)
 
     ψ = gen_state(dyna)
+
+    # if ED
+    #     run_exact_diagonalization(dyna, ψ)
+
+    # else
+
     Stage1 = set_Dynamic(;τ=τ, start=τ, fin=fin)
     #ψ = load_ψ(eqinit_str)
 
     _ = run_dynamic_simulation(dyna, Stage1, ψ; save_every=false, obs=obs)
+
+    # end 
 
     return nothing
 
@@ -80,8 +88,8 @@ function SD_wrapper()
     d_coupling = get(sd_in, "dcoupling", -0.001)
     λ_ne = get(sd_in, "int_ne", 2.0)
     λ_ee = get(sd_in, "int_ee", 2.0)
-    L = get(sd_in, "L", 16)
-    R = get(sd_in, "R", 16)
+    L = get(sd_in, "L", 1)
+    R = get(sd_in, "R", 1)
     Ns = get(sd_in, "Ns", 1)
     Nd = get(sd_in, "Nd", 0)
     Na = get(sd_in, "Na", 0)

@@ -16,6 +16,7 @@ using JSON3
 using LinearAlgebra
 using StatsBase
 using Suppressor
+using KrylovKit: eigsolve
 using ITensorTDVP
 using Random
 using HDF5
@@ -71,6 +72,7 @@ include("specific.jl")
 include("basis.jl")
 include("QEutil.jl")
 include("test.jl")
+#include("ed.jl")
 
 
 const DISABLE_BLAS = true
