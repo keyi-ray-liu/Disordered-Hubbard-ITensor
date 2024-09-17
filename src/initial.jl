@@ -1,6 +1,6 @@
-gen_state_str(sys::systems) = shuffle([ get_type_dict(systype(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])
+gen_state_str(sys::systems; kwargs...) = shuffle([ get_type_dict(systype(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])
 
-function gen_state_str(sys::QE_two) 
+function gen_state_str(sys::QE_two; kwargs...) 
 
     #state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain), QE_str(sys)[2])
 
@@ -20,7 +20,7 @@ function gen_state_str(sys::QE_two)
 end 
 
 
-function gen_state_str(sys::DPT) 
+function gen_state_str(sys::DPT; initdd="LOWER", kwargs...) 
     Lres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
     Rres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
@@ -28,14 +28,22 @@ function gen_state_str(sys::DPT)
     M = []
     R = []
 
+    if initdd == "LOWER"
+        initarr = ["Occ", "Emp"]
+    elseif initdd == "UPPER"
+        initarr = ["Emp", "Occ"]
+    else
+        error("Unknown init")
+    end 
+
     if ddposition(sys) == "L"
-        L = ["Occ", "Emp"]
+        L = initarr
 
     elseif ddposition(sys) == "M"
-        M = ["Occ", "Emp"]
+        M = initarr
 
     else
-        R = ["Occ", "Emp"]
+        R = initarr
     end 
 
     state_str = vcat(L, Lres, M, Rres, R)
@@ -43,7 +51,7 @@ function gen_state_str(sys::DPT)
 end 
 
 
-function gen_state_str(sys::DPT_avg)
+function gen_state_str(sys::DPT_avg; kwargs...)
     Lres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
     Rres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
@@ -59,17 +67,17 @@ function gen_state_str(sys::DPT_avg)
 
 end 
 
-gen_state_str(sys::reservoir_spatial) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
+gen_state_str(sys::reservoir_spatial; kwargs...) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
 
-gen_state_str(sys::SD_array) = vcat( gen_state_str(sys.source), gen_state_str(sys.array), gen_state_str(sys.drain))
-
-
-gen_state_str(sys::DPT_mixed) = gen_state_str(sys.dpt)
-
-gen_state_str(sys::LSR_SIAM) = vcat([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+gen_state_str(sys::SD_array; kwargs...) = vcat( gen_state_str(sys.source), gen_state_str(sys.array), gen_state_str(sys.drain))
 
 
-function gen_state_str(sys::biased_chain) 
+gen_state_str(sys::DPT_mixed; kwargs...) = gen_state_str(sys.dpt; kwargs...)
+
+gen_state_str(sys::LSR_SIAM; kwargs...) = vcat([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+
+
+function gen_state_str(sys::biased_chain; kwargs...) 
 
     chain_arr = gen_state_str(sys.chain)
 
@@ -113,7 +121,7 @@ end
 
 # end 
 
-gen_state_str(sys::QE_HOM) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower))
+gen_state_str(sys::QE_HOM; kwargs...) = vcat( gen_state_str(sys.upper),  gen_state_str(sys.lower))
 
 gen_state_map(sys::DPT_graph, sites) = Dict( s => gen_state_str(sys.dpt)[ sitemap(sys)[s] ]  for s in vertices(sites)) 
 
@@ -199,7 +207,7 @@ function gen_state(sys::systems; QN=true, sites=nothing, kwargs...)
     end 
 
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
-    @show gen_state_str(sys)
+    @show gen_state_str(sys; kwargs...)
     ψ = randomMPS(sites, gen_state_str(sys) 
     #; linkdims=2
     )

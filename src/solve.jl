@@ -149,15 +149,19 @@ end
 
 function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=Function[], init_obs = true, kwargs...)
 
+    τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
+
     # get the t=0 stats
 
     if init_obs
         for ob in obs
             ob(;ψ=ψ, t=0, kwargs...)
         end 
-    end 
 
-    τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
+        open(getworkdir() * "times", "a" ) do io
+            writedlm(io, start - τ)
+        end 
+    end 
 
     for dt in start:τ:fin
 

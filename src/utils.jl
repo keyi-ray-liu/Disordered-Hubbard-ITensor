@@ -474,11 +474,13 @@ end
 function prev_res() 
   if !isempty(Glob.glob( "$LASTSTSTR.h5", getworkdir())) 
 
+      @warn "prev state detected"
       last_time = readdlm(getworkdir() * "tTDVPlasttime")[end]
       last_state = load_ψ( "$LASTSTSTR")
 
   else
 
+      @warn "no prev state"
       last_time = -Inf
       last_state = MPS[]
 

@@ -16,7 +16,7 @@ using JSON3
 using LinearAlgebra
 using StatsBase
 using Suppressor
-using KrylovKit: eigsolve
+#using KrylovKit: eigsolve
 using ITensorTDVP
 using Random
 using HDF5
@@ -90,7 +90,7 @@ end
 
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
-    #rm(getworkdir(), force=true, recursive=true)
+    rm(getworkdir(), force=true, recursive=true)
     #plot_mix()
     #static_tcd()
     #chain_wrapper()
