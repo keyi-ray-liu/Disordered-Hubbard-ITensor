@@ -211,7 +211,7 @@ ddoperators(sys::DPT_avg) =  [["Ndn", "Nup"]]
 function add_DensityDensity!(sys::systems, res::OpSum)
     
 
-    @info "Adding DemDen"
+    @info "Adding Den-Den Interaction"
 
     for j=1 :get_systotal(sys)
         # E-E and N-E

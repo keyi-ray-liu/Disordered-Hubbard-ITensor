@@ -1,7 +1,6 @@
 const GLOBAL_CNT = 400
 const TOL = 1e-10
 const DYNA_STR = "tTDVP"
-const DPT_INIT_BIAS = [-100.0, 100.0]
 const BIAS_LR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
 const TEMP_tag = "temp_"
@@ -267,13 +266,13 @@ function set_Rectangular(;
 
 end 
 
-struct NF_square{T} <: systems where T<: Number
+struct NF_square{T} <: systems where T <: Union{Float64, Int}
 
     L :: Int
     N :: Vector{Int}
     U :: Float64
     t :: Vector{T}
-    bias :: Float64
+    bias :: Union{Float64, Int}
 
 end 
 

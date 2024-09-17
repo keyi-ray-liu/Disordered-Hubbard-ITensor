@@ -134,7 +134,13 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
 
     open(workdir * "staticocc", "w") do io
         for psi in prev_state
-            writedlm(io, expect(psi, "N"))
+
+            try
+                writedlm(io, expect(psi, "N"))
+            catch 
+                writedlm(io, expect(psi, "Ntot"))
+            end 
+            
         end
     end
 
