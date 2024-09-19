@@ -1,4 +1,4 @@
-HoppingNeighbor(sys::systems, j::Int; left_offset=0) = []
+HoppingNeighbor(sys::Systems, j::Int; left_offset=0) = []
 
 
 # for a flat chain, return next NN until end
@@ -6,7 +6,7 @@ HoppingNeighbor(sys::Chain, j::Int; left_offset=0) = 0 < (j - left_offset) < L(s
 
 HoppingNeighbor(sys::SSH_chain, j::Int; left_offset=0) = 0 < (j - left_offset) < get_systotal(sys) ? [[t(sys, j)..., j + 1] ] : []
 
-HoppingNeighbor(sys::biased_chain, j::Int; left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? HoppingNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
+HoppingNeighbor(sys::Biased_chain, j::Int; left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? HoppingNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
 
 HoppingNeighbor(sys::GQS, j ::Int) = HoppingNeighbor(sys.chain, j)
 """
@@ -245,7 +245,7 @@ end
 
 
 
-function HoppingNeighbor(res::reservoir_spatial, j::Int, contacts::Array; left_offset=0)
+function HoppingNeighbor(res::Reservoir_spatial, j::Int, contacts::Array; left_offset=0)
 
     hop = []
     adj_j = j - left_offset
@@ -286,7 +286,7 @@ end
 
 
 """This function only concerns with the 'simple' hopping, complex terms such as QE dipole offsets are calculated elsewhere"""
-function add_hop!(sys::systems, res::OpSum)
+function add_hop!(sys::Systems, res::OpSum)
     
 
     @info "Adding all hopping"

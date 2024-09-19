@@ -7,19 +7,19 @@ const TEMP_tag = "temp_"
 
 
 
-abstract type systems end 
-abstract type simulations end
-abstract type reservoir end
+abstract type Systems end 
+abstract type Simulations end
+abstract type Reservoir end
 
 # """ Defines a Hubbard system """
-# struct Hubbard <: systems
+# struct Hubbard <: Systems
 #     U::Float64
 # end 
 
 # U(sys::Hubbard) = sys.U
-systype(sys::systems) = "Fermion"
+systype(sys::Systems) = "Fermion"
 
-struct Static <: simulations
+struct Static <: Simulations
 
     ex :: Int
     prev_state :: Vector{Any}
@@ -68,7 +68,7 @@ function set_Static(;
 
 end 
 
-struct Dynamic <: simulations
+struct Dynamic <: Simulations
 
     τ :: Float64
     start :: Float64
@@ -102,7 +102,7 @@ function set_Dynamic(;
 end 
 
 """ Defines a Coulomb system """
-struct Coulombic <: systems
+struct Coulombic <: Systems
 
     λ_ee :: Float64
     λ_ne :: Float64
@@ -135,7 +135,7 @@ function set_Coulombic(;
 
 end 
 
-struct Chain{T} <: systems where T <: Number
+struct Chain{T} <: Systems where T <: Number
 
     L :: Int
     N :: Vector{Int}
@@ -177,13 +177,17 @@ function set_Chain(;
 end 
 
 
-struct SSH_chain <: systems
+struct SSH_chain <: Systems
 
     chain:: Chain
     v :: Float64
     w :: Float64
 
 end 
+
+# for func ∈ [ζ, L, N, systype, get_systotal]
+#     @forward SSH_chain.chain func
+# end 
 
 ζ(sys::SSH_chain) = ζ(sys.chain)
 L(sys::SSH_chain) = L(sys.chain)
@@ -194,7 +198,7 @@ t(sys::SSH_chain, j::Int) = t(sys.chain) .* (isodd(j) ? sys.v : sys.w)
 
 set_SSH_chain(; v=0.0, w=1.0, kwargs...) = SSH_chain( set_Chain(; kwargs...), v, w)
 
-struct biased_chain <: systems
+struct Biased_chain <: Systems
 
     chain:: Chain
     full_size :: Int
@@ -202,12 +206,12 @@ struct biased_chain <: systems
 
 end 
 
-systype(sys::biased_chain) = systype(sys.chain)
-get_systotal(sys::biased_chain) = sys.full_size
+systype(sys::Biased_chain) = systype(sys.chain)
+get_systotal(sys::Biased_chain) = sys.full_size
 
-set_biased_chain(; chain_start=1, full_size=100, kwargs...) = biased_chain( set_Chain(;kwargs...), full_size, chain_start)
+set_biased_chain(; chain_start=1, full_size=100, kwargs...) = Biased_chain( set_Chain(;kwargs...), full_size, chain_start)
 
-struct GQS <: systems
+struct GQS <: Systems
     chain :: Chain
     init :: Int
 end 
@@ -221,7 +225,7 @@ systype(sys::GQS) = systype(sys.chain)
 get_systotal(sys::GQS) = get_systotal(sys.chain)
 
 
-struct Rectangular{T} <: systems where T <: Number
+struct Rectangular{T} <: Systems where T <: Number
 
     Lx :: Int
     Ly :: Int
@@ -229,6 +233,7 @@ struct Rectangular{T} <: systems where T <: Number
     systype :: String
     t :: Vector{T}
     coulomb :: Coulombic
+    U :: Union{Float64, Int}
 
 end 
 
@@ -237,6 +242,7 @@ systype(sys::Rectangular) = sys.systype
 N(sys::Rectangular) = sys.N
 t(sys::Rectangular) = sys.t
 get_systotal(sys::Rectangular) = sys.Lx * sys.Ly
+U(sys::Rectangular) = sys.U
 
 function set_Rectangular(;
     Lx =3,
@@ -244,6 +250,7 @@ function set_Rectangular(;
     N =1,
     systype="Fermion",
     t=-1,
+    U=4.0,
     kwargs...
     )
 
@@ -261,12 +268,13 @@ function set_Rectangular(;
         N,
         systype,
         t,
-        coulomb
+        coulomb,
+        U
     )
 
 end 
 
-struct NF_square{T} <: systems where T <: Union{Float64, Int}
+struct NF_square{T} <: Systems where T <: Union{Float64, Int}
 
     L :: Int
     N :: Vector{Int}
@@ -311,7 +319,7 @@ function set_NF_square(;
 end 
 
 
-struct DPT <: systems
+struct DPT <: Systems
 
     U :: Float64
     t_reservoir :: Float64
@@ -451,7 +459,7 @@ L_contact(sys::DPT) = sys.lattice_info["L_contact"]
 R_contact(sys::DPT) = sys.lattice_info["R_contact"]
 ddposition(sys::DPT) = sys.lattice_info["ddposition"]
 
-struct DPT_mixed <: systems
+struct DPT_mixed <: Systems
     dpt :: DPT
     energies :: Vector
     ks :: Vector
@@ -512,14 +520,14 @@ ks(sys::DPT_mixed) = sys.ks
 LR(sys::DPT_mixed) = sys.LR
 
 
-struct DPT_avg <: systems
+struct DPT_avg <: Systems
 
     dpt :: Union{DPT, DPT_mixed}
 
 end 
 
 
-struct DPT_graph <: systems
+struct DPT_graph <: Systems
 
     dpt :: Union{DPT, DPT_mixed}
     sitemap :: Dict
@@ -602,7 +610,7 @@ end
 
 
 
-struct reservoir_spatial <: reservoir
+struct Reservoir_spatial <: Reservoir
 
     L :: Int
     systype :: String
@@ -613,7 +621,7 @@ struct reservoir_spatial <: reservoir
 
 end 
 
-struct reservoir_mixed <: reservoir
+struct Reservoir_momentum <: Reservoir
 
     energies :: Vector
     systype :: String
@@ -625,11 +633,11 @@ struct reservoir_mixed <: reservoir
 end 
 
 
-get_systotal(res::reservoir_spatial) = res.L
-get_systotal(res::reservoir_mixed) = length(res.energies)
+get_systotal(res::Reservoir_spatial) = res.L
+get_systotal(res::Reservoir_momentum) = length(res.energies)
 
 
-struct SD_array{T, U, V} <: systems where {T <: reservoir, U <: systems, V <: Any}
+struct SD_array{T, U, V} <: Systems where {T <: Reservoir, U <: Systems, V <: Any}
 
     source :: T 
     drain :: T 
@@ -642,46 +650,59 @@ end
 
 get_systotal(sys::SD_array) = sum( [get_systotal(subsys) for subsys in [sys.source, sys.array, sys.drain]])
 
-for func ∈ [:systype
-    ]
-    @eval $func(sys::SD_array) = sys.$func
-end 
+# for func ∈ [:systype
+#     ]
+#     @eval $func(sys::SD_array) = sys.$func
+# end 
+
+systype(sys::SD_array) = sys.systype
 
 function set_reservoir(;
-    L = 12,
+    Ls :: Int = 12,
+    Ld :: Int= Ls,
+    Ns = 6,
+    Nd = Ns,
     t = -1.0,
     systype = "Fermion",
-    N = 6,
-    contact = L,
+    contacts = [Ls, 1],
     reservoir_type = "spatial",
-    bias = 0.0,
+    biasS= 0.0,
+    biasD= 0.0,
     kwargs...)
 
     t = FermionCondition(systype, t)
 
-    if typeof(N) == Int
-        N = [L - N, N, 0, 0]
+    if typeof(Ns) == Int
+        Ns = [Ls - Ns, 0, 0, Ns]
+    end 
+
+    if typeof(Nd) == Int
+        Nd = [Ld - Nd, 0, 0, Nd]
     end 
 
     if reservoir_type == "spatial"
-        reservoir = reservoir_spatial(L, systype, t, N, contact, bias)
+        source = Reservoir_spatial(Ls, systype, t, Ns, contacts[1], biasS)
+        drain = Reservoir_spatial(Ld, systype, t, Nd, contacts[2], biasD)
 
     elseif reservoir_type == "mixed"
-        reservoir = reservoir_mixed()
+
+        energies, ks, LR = gen_mixed(Ls, Ld, biasS, biasD; couple_range=0)
+        Reservoir = Reservoir_momentum()
 
 
     end 
-    return reservoir
+    return source, drain
 
 end 
 
 
 function set_SD(
     ;
-    L = 12,
-    Ns = [0, 0, 0, 1],
+    Ls :: Int= 12,
+    Ld :: Int= 12,
+    Ns = 1,
     Na = 0,
-    Nd = 0,
+    Nd  = 0,
     contact_scaling = 2.0,
     s_coupling = -0.01,
     d_coupling = -0.01,
@@ -692,11 +713,10 @@ function set_SD(
     s_coupling = FermionCondition(systype, s_coupling)
     d_coupling = FermionCondition(systype, d_coupling)
 
-    s_contacts, d_contacts = set_SD_contacts(s_coupling, d_coupling, contact_scaling, L)
+    s_contacts, d_contacts = set_SD_contacts(s_coupling, d_coupling, contact_scaling, Ls)
 
 
-    source = set_reservoir(; L=L, N=Ns, contact = L, systype=systype,  kwargs...)
-    drain = set_reservoir(; L=L, N=Nd, contact = 1, systype=systype, kwargs...)
+    source, drain = set_reservoir(; Ls=Ls, Ld=Ld, Ns=Ns, Nd=Nd, contacts = [Ls, 1], systype=systype,  kwargs...)
     array = set_Rectangular(; N=Na, systype=systype, kwargs...)
 
     SD = SD_array(
@@ -716,7 +736,7 @@ end
 
 
 
-struct LSR_SIAM <: systems
+struct LSR_SIAM <: Systems
 
     t_reservoir :: Float64
     t_couple :: Float64
@@ -766,7 +786,7 @@ get_systotal(sys::LSR_SIAM) = 1 + L(sys) + R(sys)
 N(sys::LSR_SIAM) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
 
-dis(i::Int, j::Int, sys::systems; range=Inf64) = abs(i- j) <= range ? abs(i - j) : Inf64
+dis(i::Int, j::Int, sys::Systems; range=Inf64) = abs(i- j) <= range ? abs(i - j) : Inf64
 
 
 function dis(i::Int, j::Int, sys::Rectangular; range=Inf64)
@@ -794,7 +814,7 @@ SimulationParameters(sys::Static) = sys.ex, sys.prev_state, sys.prev_energy, sys
 
 SimulationParameters(sys::Dynamic) = sys.τ, sys.start, sys.fin, sys.TEcutoff, sys.TEdim, sys.nsite
 
-add_specific_int!(sys::systems, res) = res
+add_specific_int!(sys::Systems, res) = res
 
 
 

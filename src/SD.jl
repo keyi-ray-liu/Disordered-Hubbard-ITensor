@@ -41,10 +41,10 @@ end
 
 
 
-"""worker function that runs DPT calculations"""
-function run_SD(L, R, fin; τ=0.125, bias_L=0.0, bias_R=0.0, kwargs...)
+"""worker function that runs SD calculations"""
+function run_SD(fin; τ=0.125, biasS=0.0, biasD=0.0, kwargs...)
  
-    obs= [dyna_EE, dyna_occ,  dyna_SRDM,
+    obs= [dyna_EE, dyna_occ,  dyna_SRDM, dyna_corr
     #dyna_SDcurrent, dyna_corr,
     ]
 
@@ -58,7 +58,7 @@ function run_SD(L, R, fin; τ=0.125, bias_L=0.0, bias_R=0.0, kwargs...)
     # run_static_simulation(sys, Static, ψ)
 
     # now we switch on the bias in L/R
-    @show dyna = set_SD(;L=L, R=R, bias_L=bias_L, bias_R=bias_R, kwargs...)
+    @show dyna = set_SD(; biasS = biasS, biasD=biasD, kwargs...)
 
     ψ = gen_state(dyna)
 
@@ -67,7 +67,7 @@ function run_SD(L, R, fin; τ=0.125, bias_L=0.0, bias_R=0.0, kwargs...)
 
     # else
 
-    Stage1 = set_Dynamic(;τ=τ, start=τ, fin=fin)
+    Stage1 = set_Dynamic(;τ=τ, start=τ, fin=fin, kwargs...)
     #ψ = load_ψ(eqinit_str)
 
     _ = run_dynamic_simulation(dyna, Stage1, ψ; save_every=false, obs=obs)
@@ -86,10 +86,11 @@ function SD_wrapper()
 
     s_coupling = get(sd_in, "scoupling", -0.001)
     d_coupling = get(sd_in, "dcoupling", -0.001)
-    λ_ne = get(sd_in, "int_ne", 2.0)
-    λ_ee = get(sd_in, "int_ee", 2.0)
-    L = get(sd_in, "L", 1)
-    R = get(sd_in, "R", 1)
+    λ_ne = get(sd_in, "intne", 2.0)
+    λ_ee = get(sd_in, "intee", 2.0)
+    TEdim = get(sd_in, "TEdim", 64)
+    Ls = get(sd_in, "Ls", 1)
+    Ld = get(sd_in, "Ld", Ls)
     Ns = get(sd_in, "Ns", 1)
     Nd = get(sd_in, "Nd", 0)
     Na = get(sd_in, "Na", 0)
@@ -98,8 +99,9 @@ function SD_wrapper()
     τ = get(sd_in, "timestep", 0.1)
     contact_scaling = get(sd_in, "contactscaling", 2.0)
     reservoir_type = get(sd_in, "reservoir_type", "spatial")
+    U = get(sd_in, "U", 4.0)
 
-    run_SD(L, R, fin; τ=τ, Ns=Ns, Nd=Nd, Na=Na, s_coupling=s_coupling, d_coupling=d_coupling, 
-    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, contact_scaling=contact_scaling, reservoir_type=reservoir_type)
+    run_SD(fin; τ=τ,  s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, 
+    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, reservoir_type=reservoir_type)
 
 end 

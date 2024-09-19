@@ -1,7 +1,7 @@
-"""we completely decoupled the code logic of static simulations, it is required that one provides an initial state
+"""we completely decoupled the code logic of static Simulations, it is required that one provides an initial state
 Returns: return of solve function. Array of MPS's
 """
-function run_static_simulation(sys::systems, simulation::Static, ψ::MPS; message = "Static")
+function run_static_simulation(sys::Systems, simulation::Static, ψ::MPS; message = "Static")
 
     @info message
     h = gen_hamiltonian(sys)
@@ -15,9 +15,9 @@ function run_static_simulation(sys::systems, simulation::Static, ψ::MPS; messag
 end 
 
 
-"""we completely decoupled the code logic of dynamic simulations, it is required that one provides an initial state"""
+"""we completely decoupled the code logic of dynamic Simulations, it is required that one provides an initial state"""
 
-function run_dynamic_simulation(sys::systems, simulation::Dynamic, ψ::MPS; message = "Dynamic", save_every=true, obs=Function[], init_obs=true)
+function run_dynamic_simulation(sys::Systems, simulation::Dynamic, ψ::MPS; message = "Dynamic", save_every=true, obs=Function[], init_obs=true)
 
     @info message
     h = gen_hamiltonian(sys)

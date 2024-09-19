@@ -1,4 +1,4 @@
-gen_state_str(sys::systems; kwargs...) = shuffle([ get_type_dict(systype(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])
+gen_state_str(sys::Systems; kwargs...) = shuffle([ get_type_dict(systype(sys))[i] for i= 1:4 for _ in 1:N(sys)[i] ])
 
 function gen_state_str(sys::QE_two; kwargs...) 
 
@@ -67,7 +67,7 @@ function gen_state_str(sys::DPT_avg; kwargs...)
 
 end 
 
-gen_state_str(sys::reservoir_spatial; kwargs...) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
+gen_state_str(sys::Reservoir_spatial; kwargs...) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
 
 gen_state_str(sys::SD_array; kwargs...) = vcat( gen_state_str(sys.source), gen_state_str(sys.array), gen_state_str(sys.drain))
 
@@ -77,7 +77,7 @@ gen_state_str(sys::DPT_mixed; kwargs...) = gen_state_str(sys.dpt; kwargs...)
 gen_state_str(sys::LSR_SIAM; kwargs...) = vcat([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
 
-function gen_state_str(sys::biased_chain; kwargs...) 
+function gen_state_str(sys::Biased_chain; kwargs...) 
 
     chain_arr = gen_state_str(sys.chain)
 
@@ -197,7 +197,7 @@ end
 
 
 
-function gen_state(sys::systems; QN=true, sites=nothing, kwargs...)
+function gen_state(sys::Systems; QN=true, sites=nothing, kwargs...)
 
     if isnothing(sites)
         sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=QN)
@@ -217,7 +217,7 @@ function gen_state(sys::systems; QN=true, sites=nothing, kwargs...)
 end 
 
 
-function gen_hamiltonian(sys::systems)
+function gen_hamiltonian(sys::Systems)
 
     res = OpSum()
 

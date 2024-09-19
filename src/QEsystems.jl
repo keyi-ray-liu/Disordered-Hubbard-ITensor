@@ -20,7 +20,7 @@ const EMPTY_CONFINES = [EMPTY_CONFINE, EMPTY_CONFINE]
 
 
 """Regular two QE sys """
-struct QE_two <: systems
+struct QE_two <: Systems
 
     QE_distance :: Float64
     offset_scale :: Float64
@@ -87,7 +87,7 @@ function set_QE_two(;
 end 
 
 """ Currently the QE sys 1 and QEsys 2 are put side-by-side , with the center site at the very end"""
-struct QE_parallel <: systems
+struct QE_parallel <: Systems
 
     upper :: QE_two
     lower :: QE_two
@@ -131,7 +131,7 @@ end
 
 
 """QE X SIAM system struct, here we assume each leg is attached to each QE, and all legs are connect via a SINGLE 'center' site """
-struct QE_flat_SIAM <: systems
+struct QE_flat_SIAM <: Systems
 
     legleft::Int
     legright::Int
@@ -219,7 +219,7 @@ function set_QE_SIAM(;
 
 end 
 
-# struct QE_G_SIAM <: systems
+# struct QE_G_SIAM <: Systems
 #     system :: QE_flat_SIAM
 #     sitemap :: Dict
 # end 
@@ -246,7 +246,7 @@ end
 
 
 
-struct QE_HOM <: systems
+struct QE_HOM <: Systems
 
     upper :: QE_two
     lower :: QE_two

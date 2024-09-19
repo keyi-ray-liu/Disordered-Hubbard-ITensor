@@ -90,7 +90,7 @@ function fuse_inds_binary(A::Union{MPS,MPO}, fusion_tree::Vector{Vector{ITensor}
 end
 
 
-function run_exact_diagonalization(sys::systems, ψ::MPS; message = "ED", dims=100)
+function run_exact_diagonalization(sys::Systems, ψ::MPS; message = "ED", dims=100)
 
     @info message
     h = gen_hamiltonian(sys)

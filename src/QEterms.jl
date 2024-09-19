@@ -1,6 +1,6 @@
 
 """default no QE"""
-QECoupling(sys::systems, j) = []
+QECoupling(sys::Systems, j) = []
 
 
 function QECoupling(sys::QE_two, j) 
@@ -98,7 +98,7 @@ end
 """
 All logic are wrapped in respective functions. The QE diagonal Energies are wrapped in onsite function, where the left_offset QE hopping should be included in the hopping part of the Hamiltoian
 """
-function add_qe!(sys::systems, res::OpSum)
+function add_qe!(sys::Systems, res::OpSum)
 
     @info "Adding QE"
 

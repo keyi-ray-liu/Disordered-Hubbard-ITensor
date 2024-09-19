@@ -7,7 +7,7 @@ keyi.liu@nist.gov
 ALL RIGHTS RESERVED
 """
 
-
+using Lazy
 using DelimitedFiles
 using Glob
 using ITensors
@@ -102,12 +102,12 @@ if test
     #GQS_wrapper()
     #set_SD()
     #DPT_wrapper()
-    #SD_wrapper()
+    SD_wrapper()
     #solve_QE()
     #DPT_corr()
     #benchmark()
     #dyna_dptcurrent_mix()
-    NF_wrapper()
+    #NF_wrapper()
     #dyna_EE()
     #QE_SIAM_wrapper()
     #QE_wrapper("QE_two")

@@ -567,10 +567,20 @@ function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
 
     end 
 
+
     if systype(sys) == "Fermion"
         ops = [ 
             ["Cdag", "C"],
             ["N", "N"]
+        ]
+
+    elseif typeof(sys) <: SD_array
+
+        ops = [
+            ["Cdagup", "Cup"],
+            ["Cdagdn", "Cdn"],
+            #["Nup", "Nup"],
+            #["Ndn", "Ndn"]
         ]
 
     elseif typeof(sys) == DPT_avg

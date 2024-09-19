@@ -178,7 +178,7 @@ function prepare_wavepacket(; includegs=false, center=6.5, sigma=2, L=12, paddin
 end 
 
 
-function solve_QE(; para_in = nothing, mode="biased_chain", output=get_static_str(mode), kwargs...)
+function solve_QE(; para_in = nothing, mode="Biased_chain", output=get_static_str(mode), kwargs...)
 
     if !(typeof(para_in) <: Dict)
 
@@ -232,7 +232,7 @@ sys is the input system WITH QE
 
 We always generate a NEW site basis and state
 """
-function QE_embedding(sys::systems, ψ)
+function QE_embedding(sys::Systems, ψ)
 
     if typeof(sys) == QE_two
 

@@ -4,7 +4,7 @@ Uk(j::Int, sys::DPT_mixed) = Uk(j, ks(sys), LR(sys))
 Uk(j::Int, sys::DPT_graph) = typeof(sys.dpt) == DPT_mixed ? Uk(j, sys.dpt) : error("subsystem not mixed")
 
 
-"""generate the  transformation LR vectors for the reservoir(s) SPATIAL site j, with given ordering of the momentum space, with LR cross terms being zero"""
+"""generate the  transformation LR vectors for the Reservoir(s) SPATIAL site j, with given ordering of the momentum space, with LR cross terms being zero"""
 function Uk(j::Int, ks, LR)
 
     N = div(length(ks), 2)

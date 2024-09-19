@@ -1,7 +1,7 @@
 ifexch(j::Int, k::Int, sys, range, exch::Float64) = ( 1 - (dis(j, k, sys; range=range) == 1) * exch )
 
 """ A general principle is that we always use native indexing in the subsystem"""
-DenDenNeighbor(sys::systems, j) = []
+DenDenNeighbor(sys::Systems, j) = []
 
 # function DenDenNeighbor(sys::QE_flat_SIAM, j)
 
@@ -142,7 +142,7 @@ end
 
 DenDenNeighbor(sys::SSH_chain, j::Int; left_offset=0) = DenDenNeighbor(sys.chain, j; left_offset=left_offset)
 
-DenDenNeighbor(sys::biased_chain, j::Int, left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? DenDenNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
+DenDenNeighbor(sys::Biased_chain, j::Int, left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? DenDenNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
 
 DenDenNeighbor(sys::GQS, j::Int) = DenDenNeighbor(sys.chain, j)
 
@@ -175,7 +175,7 @@ function DenDenNeighbor(sys::DPT_mixed, j::Int)
     return den
 end 
 
-DenDenNeighbor(res::reservoir, j::Int; left_offset=0) = []
+DenDenNeighbor(res::Reservoir, j::Int; left_offset=0) = []
 
 function DenDenNeighbor(sys::SD_array, j::Int)
 
@@ -205,10 +205,10 @@ end
 
 DenDenNeighbor(sys::DPT_graph, j::Int) = DenDenNeighbor(sys.dpt, j)
 
-ddoperators(sys::systems) = systype(sys) == "Fermion" ? [["N", "N"]] : [["Ntot", "Ntot"]]
+ddoperators(sys::Systems) = systype(sys) == "Fermion" ? [["N", "N"]] : [["Ntot", "Ntot"]]
 ddoperators(sys::DPT_avg) =  [["Ndn", "Nup"]]
 
-function add_DensityDensity!(sys::systems, res::OpSum)
+function add_DensityDensity!(sys::Systems, res::OpSum)
     
 
     @info "Adding Den-Den Interaction"

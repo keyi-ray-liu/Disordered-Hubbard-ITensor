@@ -1,8 +1,20 @@
-HubbardRepulsion(sys::systems, j::Int) = 0.0
-HubbardRepulsion(sys::NF_square, j::Int) = U(sys)
+HubbardRepulsion(sys::Systems, j::Int) = systype(sys) == "Fermion" ? 0.0 : U(sys)
 
+function HubbardRepulsion(sys::SD_array, j::Int)
 
-function add_HubbardRepulsion!(sys::systems, res::OpSum)
+    source = get_systotal(sys.source)
+    array = get_systotal(sys.array)
+
+    if source < j <= source + array
+        return U(sys.array)
+
+    else
+        return 0
+    end 
+
+end 
+
+function add_HubbardRepulsion!(sys::Systems, res::OpSum)
     
     @info "Adding HubbardRepulsion"
     systotal = get_systotal(sys)

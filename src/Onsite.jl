@@ -1,4 +1,4 @@
-Onsite(sys::systems, j; left_offset=0) = 0.0
+Onsite(sys::Systems, j; left_offset=0) = 0.0
 
 
 function Onsite(sys::QE_two, j; left_offset=0) :: Float64
@@ -146,7 +146,7 @@ function Onsite(sys::Union{Rectangular, Chain}, j::Int; left_offset=0) :: Float6
 end 
 
 # we biase everywhere else on the chain with a large positive potential
-Onsite(sys::biased_chain, j::Int, left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? Onsite(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : 500.0
+Onsite(sys::Biased_chain, j::Int, left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? Onsite(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : 500.0
 
 
 Onsite(sys::SSH_chain, j::Int; left_offset =0) = Onsite(sys.chain, j; left_offset=left_offset)
@@ -215,7 +215,7 @@ end
 function Onsite(sys::DPT_mixed, j::Int)
 
     mix_onsite(sys, j_mix) = energies(sys)[j_mix] + (LR(sys)[j_mix] > 0 ? bias_L(sys) : bias_R(sys))
-    # 'true' reservoir L, regardless of contact region
+    # 'true' Reservoir L, regardless of contact region
 
     # lower
     # we do these two first in case we move the dd sites around
@@ -313,7 +313,7 @@ function Onsite(sys::LSR_SIAM, j::Int)
 end 
 
 
-Onsite(sys::reservoir_spatial, j::Int; left_offset=0.0) = sys.bias
+Onsite(sys::Reservoir_spatial, j::Int; left_offset=0.0) = sys.bias
 
 
 function Onsite(sys::SD_array, j::Int)
@@ -335,10 +335,10 @@ function Onsite(sys::SD_array, j::Int)
 end 
 
 
-onsiteoperators(sys::systems) = systype(sys) == "Fermion" ? ["N"] : ["Ntot"]
+onsiteoperators(sys::Systems) = systype(sys) == "Fermion" ? ["N"] : ["Ntot"]
 onsiteoperators(sys::DPT_avg) = ["Nup", "Ndn"]
 
-function add_onsite!(sys::systems, res::OpSum)
+function add_onsite!(sys::Systems, res::OpSum)
     
     @info "Adding onsite"
 
