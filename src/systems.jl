@@ -1,7 +1,7 @@
 const GLOBAL_CNT = 400
 const TOL = 1e-10
 const DYNA_STR = "tTDVP"
-const BIAS_LR = 0.5
+const BIASLR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
 const TEMP_tag = "temp_"
 

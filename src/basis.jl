@@ -4,6 +4,7 @@ function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, coupl
     @info "Set mixed basis, $ordering"
     unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 
+
     if !includeU
         L -= couple_range
         R -= couple_range

@@ -1,6 +1,6 @@
 
 """worker function that runs DPT calculations"""
-function run_LSR(L, R, fin; bias_L = BIAS_LR, bias_R = -BIAS_LR, τ=0.125, kwargs...)
+function run_LSR(L, R, fin; bias_L = biasLR, bias_R = -biasLR, τ=0.125, kwargs...)
 
     # we first run a calculation with no bias on the LR, 
     sys = set_LSR_SIAM(;L=L, R=R)
