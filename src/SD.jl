@@ -42,7 +42,7 @@ end
 
 
 """worker function that runs SD calculations"""
-function run_SD(fin; τ=0.125, biasS=0.0, biasD=0.0, kwargs...)
+function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, kwargs...)
  
     obs= [dyna_EE, dyna_occ,  dyna_SRDM, dyna_corr
     #dyna_SDcurrent, dyna_corr,
@@ -58,9 +58,9 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasD=0.0, kwargs...)
     # run_static_simulation(sys, Static, ψ)
 
     # now we switch on the bias in L/R
-    @show dyna = set_SD(; biasS = biasS, biasD=biasD, kwargs...)
+    @show dyna = set_SD(; biasA = biasA, biasS = biasS, biasD=biasD, kwargs...)
 
-    ψ = gen_state(dyna)
+    ψ = gen_state(dyna, manual_unitary=true)
 
     # if ED
     #     run_exact_diagonalization(dyna, ψ)
@@ -94,6 +94,9 @@ function SD_wrapper()
     Ns = get(sd_in, "Ns", 1)
     Nd = get(sd_in, "Nd", 0)
     Na = get(sd_in, "Na", 0)
+    biasS = get(sd_in, "biasS", 0.0)
+    biasA = get(sd_in, "biasA", 0.0)
+    biasD = get(sd_in, "biasD", 0.0)
     systype = get(sd_in, "systype", "Electron")
     fin = get(sd_in, "fin", 10.0)
     τ = get(sd_in, "timestep", 0.1)
@@ -102,6 +105,6 @@ function SD_wrapper()
     U = get(sd_in, "U", 4.0)
 
     run_SD(fin; τ=τ,  s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, 
-    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, reservoir_type=reservoir_type)
+    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, biasD = biasD, reservoir_type=reservoir_type)
 
 end 

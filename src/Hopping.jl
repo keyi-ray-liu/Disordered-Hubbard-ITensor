@@ -265,6 +265,22 @@ function HoppingNeighbor(res::Reservoir_spatial, j::Int, contacts::Array; left_o
 end 
 
 
+function HoppingNeighbor(res::Reservoir_momentum, j::Int, contacts::Array; left_offset=0)
+
+    hop = []
+    adj_j = j - left_offset
+
+    v = Ujk(res, adj_j, 1)
+
+    for (coupling..., site) in contacts
+        append!(hop, [[ v .* coupling..., site]])
+    end 
+
+    return hop
+
+end 
+
+
 function HoppingNeighbor(sys::SD_array, j::Int)
 
     source = get_systotal(sys.source)

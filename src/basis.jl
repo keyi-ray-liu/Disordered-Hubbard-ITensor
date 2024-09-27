@@ -56,3 +56,20 @@ function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, coupl
     return energies, ks, LR
 
 end 
+
+function Ujk(sys::Reservoir_momentum, j::Int, k::Int)
+
+    ks = sys.ks
+    L = length(ks) + 1
+    v = sqrt(2/L) * sin(j * k * π/L)
+
+    return v
+
+end 
+
+function Ujk(sys::Reservoir_momentum)
+
+    L = length(sys.ks)
+    return vectomat( [[ Ujk(sys, j, k) for j in 1:L] for k in 1:L])
+
+end 

@@ -6,6 +6,10 @@ const LASTSTSTR = "tTDVPlaststate"
 const TEMP_tag = "temp_"
 
 
+A = rand()
+ITensors.state(::StateName"A", ::SiteType"Fermion") = [sqrt(1 - A), sqrt(A)]
+
+
 
 abstract type Systems end 
 abstract type Simulations end
@@ -627,7 +631,8 @@ struct Reservoir_momentum <: Reservoir
     systype :: String
     ks :: Vector
     LR :: Vector
-    bias :: Float64
+    biasS :: Union{Float64, Int}
+    biasD :: Union{Float64, Int}
     N :: Vector{Int}
 
 end 
@@ -645,6 +650,7 @@ struct SD_array{T, U, V} <: Systems where {T <: Reservoir, U <: Systems, V <: An
     systype :: String
     s_contacts :: Array{V}
     d_contacts :: Array{V}
+    biasA :: Union{Float64, Int}
 
 end 
 
@@ -687,7 +693,11 @@ function set_reservoir(;
     elseif reservoir_type == "mixed"
 
         energies, ks, LR = gen_mixed(Ls, Ld, biasS, biasD; couple_range=0)
-        Reservoir = Reservoir_momentum()
+
+        # we assume the reservoir is partitioned according to the Ls, Ld
+        source = Reservoir_momentum(energies[1:Ls], systype, ks[1:Ls], LR[1:Ls], biasS, biasD, Ns)
+
+        drain = Reservoir_momentum(energies[Ls + 1:end], systype, ks[Ls + 1:end], LR[Ls + 1:end], biasS, biasD, Nd)
 
 
     end 
@@ -707,6 +717,7 @@ function set_SD(
     s_coupling = -0.01,
     d_coupling = -0.01,
     systype = "Fermion",
+    biasA = 0.0,
     kwargs...
 )
 
@@ -725,7 +736,8 @@ function set_SD(
         array, 
         systype, 
         s_contacts,
-        d_contacts
+        d_contacts,
+        biasA
     )
 
 

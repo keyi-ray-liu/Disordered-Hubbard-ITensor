@@ -67,7 +67,7 @@ function gen_state_str(sys::DPT_avg; kwargs...)
 
 end 
 
-gen_state_str(sys::Reservoir_spatial; kwargs...) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
+gen_state_str(sys::Reservoir; kwargs...) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
 
 gen_state_str(sys::SD_array; kwargs...) = vcat( gen_state_str(sys.source), gen_state_str(sys.array), gen_state_str(sys.drain))
 
@@ -174,6 +174,30 @@ end
 
 
 
+function gen_state(sys::SD_array, manual_unitary=false, kwargs...)
+
+    state_str =  gen_state_str(sys; kwargs...)
+    if typeof(sys.source) == Reservoir_spatial || !manual_unitary
+
+        sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=true)
+
+        ψ = randomMPS(sites, state_str
+        #; linkdims=2
+        )
+
+    else
+        
+        sites = siteinds(systype(sys), get_systotal(SD_array))
+        source = sys.source
+
+        U = Ujk(source)
+        @show init = [ val == "UpDn" ? 1 : 0 for val in state_str]
+        Uinit = U * init
+
+    end 
+
+    return ψ
+end 
 
 # function gen_state(sys::Union{QE_G_SIAM, DPT_graph}; QN=true, kwargs...)
 #     @info "gen state for graph"

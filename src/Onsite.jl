@@ -313,19 +313,34 @@ function Onsite(sys::LSR_SIAM, j::Int)
 end 
 
 
-Onsite(sys::Reservoir_spatial, j::Int; left_offset=0.0) = sys.bias
+Onsite(sys::Reservoir_spatial, j::Int; left_offset=0) = sys.bias
+
+function Onsite(sys::Reservoir_momentum, j:: Int; left_offset=0)
+
+    adj_j = j - left_offset
+
+    energies = sys.energies
+    biasS = sys.biasS
+    biasD = sys.biasD
+    LR = sys.LR
+
+    onsite = energies[adj_j] + (LR[adj_j] > 0 ? biasS : biasD)
+    return onsite
+
+end 
 
 
 function Onsite(sys::SD_array, j::Int)
 
     source = get_systotal(sys.source)
     array = get_systotal(sys.array)
+    biasA = sys.biasA
 
     if j <= source
         return Onsite(sys.source, j)
 
     elseif j <= source + array
-        return Onsite(sys.array, j; left_offset=source)
+        return Onsite(sys.array, j; left_offset=source) + biasA
 
     else
         return Onsite(sys.drain, j; left_offset= source + array)

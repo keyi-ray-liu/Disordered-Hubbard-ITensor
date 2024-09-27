@@ -10,14 +10,14 @@ ALL RIGHTS RESERVED
 using Lazy
 using DelimitedFiles
 using Glob
-using ITensors
-using ITensors: OneITensor, linkind, siteinds, tr
+using ITensors, ITensorMPS
+#using ITensors: OneITensor, linkind, siteinds, tr
 using JSON3
 using LinearAlgebra
 using StatsBase
 using Suppressor
 #using KrylovKit: eigsolve
-using ITensorTDVP
+#using ITensorTDVP
 using Random
 using HDF5
 using Logging
@@ -91,6 +91,7 @@ end
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
     rm(getworkdir(), force=true, recursive=true)
+    #corr_test()
     #plot_mix()
     #static_tcd()
     #chain_wrapper()
