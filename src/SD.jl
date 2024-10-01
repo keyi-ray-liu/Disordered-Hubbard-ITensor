@@ -42,7 +42,7 @@ end
 
 
 """worker function that runs SD calculations"""
-function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, kwargs...)
+function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, manualmixprod=false, kwargs...)
  
     obs= [dyna_EE, dyna_occ,  dyna_SRDM, dyna_corr
     #dyna_SDcurrent, dyna_corr,
@@ -60,7 +60,7 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, kwargs...)
     # now we switch on the bias in L/R
     @show dyna = set_SD(; biasA = biasA, biasS = biasS, biasD=biasD, kwargs...)
 
-    ψ = gen_state(dyna, manual_unitary=true)
+    ψ = gen_state(dyna, manualmixprod=manualmixprod)
 
     # if ED
     #     run_exact_diagonalization(dyna, ψ)
@@ -103,8 +103,9 @@ function SD_wrapper()
     contact_scaling = get(sd_in, "contactscaling", 2.0)
     reservoir_type = get(sd_in, "reservoir_type", "spatial")
     U = get(sd_in, "U", 4.0)
+    manualmixprod = get(sd_in, "manualmixprod", false)
 
     run_SD(fin; τ=τ,  s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, 
-    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, biasD = biasD, reservoir_type=reservoir_type)
+    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, biasD = biasD, reservoir_type=reservoir_type, manualmixprod=manualmixprod)
 
 end 
