@@ -190,63 +190,39 @@ function gen_state(sys::SD_array; manualmixprod=false, kwargs...)
     else
 
         
-        
-        sites = siteinds(systype(sys), get_systotal(sys))
+        sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=true)
         source :: Reservoir_momentum = sys.source
-        drain :: Reservoir_momentum = sys.drain
+        #drain :: Reservoir_momentum = sys.drain
+        #array :: Systems = sys.array
 
         @warn "Only support spatial source unitary for now"
-        state_str =  gen_state_str(source; kwargs...)
-        U = Ujk(source)
 
-
-        init = [ val == "UpDn" ? 1 : 0 for val in state_str]
-        Uinit = U * init
-
-        @show sum(Uinit)
-        ψ = randomMPS(sites)
+        N = source.N
+        Nup = N[2] + N[4]
+        Ndn = N[3] + N[4]
         
+        #source part LR
 
-        # set left
-        @show "manual, left"
-        for i in 1:length(source.LR)
-            
-            lattice_i = i
-            
-            if source.LR[i] > 0
-                @show i
-                amp = Uinit[i]
-                
-                arr = vcat([ sqrt(Complex(1 - amp))], (systype(sys) == "Fermion" ? [] : [0, 0]), [sqrt(Complex(amp))])
-                ψ[lattice_i] = ITensor(arr, sites[lattice_i])
-            else
-                arr = vcat([ 0], (systype(sys) == "Fermion" ? [] : [0, 0]), [0])
-                ψ[lattice_i] = ITensor(arr, sites[lattice_i])
+        leftind, _ = reservoirmapping(sys)
+        @show leftind
 
-            end
+        #define the transformation matrices for GaussianMPS
+        u = Ujk(source)
+        U = zeros( get_systotal(sys), get_systotal(sys))
+        U[leftind, leftind] = u
+
+        ϕup = U[:, leftind[1:Nup]]
+        ϕdn = U[:, leftind[1:Ndn]]
+
+        ψ = slater_determinant_to_mps(sites, ϕup, ϕdn; maxblocksize=4)
+        
+        
+        @show positiveind(expect(ψ, "Ntot"))
 
 
-        end
+        #drain part LR
 
-        @show "manual, right"
-        for i in 1:length(drain.LR)
-    
-            lattice_i = i + get_systotal(sys.array) + length(source.LR)
-
-            if drain.LR[i] > 0
-                @show i
-                amp = Uinit[i]
-                
-                arr = vcat([ sqrt(Complex(1 - amp))], (systype(sys) == "Fermion" ? [] : [0, 0]), [sqrt(Complex(amp))])
-                ψ[lattice_i] = ITensor(arr, sites[lattice_i])
-            else
-                arr = vcat([ 0], (systype(sys) == "Fermion" ? [] : [0, 0]), [0])
-                ψ[lattice_i] = ITensor(arr, sites[lattice_i])
-
-            end
-
-            
-        end
+        
 
     end 
 

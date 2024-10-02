@@ -27,39 +27,79 @@ end
 function corr_test()
 
     qn = true
+
+    L = 80
+    N = 20
+    
+    t = -1.0
+    s = siteinds("Electron", L;
+    conserve_qns=qn
+    )
+    
+    @show leftinds = shuffle([isodd(n) ? 1 : 0 for n in 1:L])
+    @show latticeleftind = positiveind(leftinds)
+
+    # Free fermion hopping Hamiltonian
+    #h = Hermitian(diagm(1 => fill(-t, N-1), -1 => fill(-t, N-1)))
+
+    h = zeros(L, L)
+
+    for i in eachindex(latticeleftind[1:end - 1])
+        
+        h[ latticeleftind[i], latticeleftind[i + 1]] = t
+        h[ latticeleftind[i + 1], latticeleftind[i]] = t
+        h[ latticeleftind[i], latticeleftind[i]] = -10
+
+    end 
+
+    _, u = eigen(h)
+
+    # Get the Slater determinant
+    Φ = u[:, 1:N]
+    ψ0 = slater_determinant_to_mps(s, Φ, Φ; maxblocksize = 4)
+
+    
+    @show expect(ψ0, "Ntot")
+
+
+end 
+
+
+function init_test()
+
     N = 40
     L = 20
     
-
     s = siteinds("Fermion", N;
-    conserve_qns=qn
+    conserve_qns=true
     )
+    
 
-    if !qn
+    @show state = [  "Emp" for _ in 1:N]
+    ref = [ n <= L ? "Emp" : "Occ" for n in 1:N]
 
-        @show A = rand(N)
-        M = randomMPS(s)
-        
-        for i in 1:N
-            a = A[i]
-            M[i] = ITensor([sqrt(1 -a), sqrt(a)], s[i])
-        end
-    else
+    M = randomMPS(s, state)
+    reference = randomMPS(s, ref)
 
-        @show state = [ n <= L ? "Occ" : "Emp" for n in 1:N]
+    for j in 1:L
 
-        M = randomMPS(s, state)
+        # operator = ITensor(1.0)
+        # for k in 1:N
 
-        for i in 1:N
-            a = 0.5 #A[i]
-            M[i] = ITensor([sqrt(1 -a), sqrt(a)], s[i])
-        end
+        #     U = Ujk(N, j, k)
+        #     operator *= U * op("Cdag", s[k])
+            
+        # end 
+        operator = op("Cdag", s[j])
 
-    end
+        M = apply(operator, M)
+    end 
 
     # Ms = [ sqrt(A[i]) * randomMPS(s, [ n == i ? "Occ" : "Emp" for n in 1:N] ) for i in 1:40]
     
     # M = add( Ms..., maxdim=10)
+
+    # M = add(M, reference)
 
     @show expect(M, "N")
     return nothing

@@ -13,7 +13,9 @@ get_static_files(static_str::String) = sort( filter(x->occursin( Regex(TEMP_tag 
 
 get_QE_ref_files() = sort( filter(x->(occursin(r"start.*h5",x) && !occursin(TEMP_tag, x)), readdir(getworkdir())), by=get_start)
 
+positiveind(arr) = filter( x -> x!=0, [ arr[n] > 1e-5 ? n  : 0 for n in eachindex(arr)])
 
+negativeind(arr) = filter( x -> x!=0, [ arr[n] < -1e-5 ? n  : 0 for n in eachindex(arr)])
 
 FermionCondition(systype::String) = systype == "Fermion" ? 1 : 2
 

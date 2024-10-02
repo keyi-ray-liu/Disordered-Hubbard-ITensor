@@ -842,3 +842,22 @@ function ITensors.measure!(o::SizeObserver; bond, sweep, half_sweep, psi, projec
     println("After sweep $sweep, |psi| = $psi_size, |PH| = $PH_size")
   end
 end
+
+
+
+
+function reservoirmapping(sys::SD_array)
+
+    source :: Reservoir_momentum = sys.source
+    drain :: Reservoir_momentum = sys.drain
+    array :: Systems = sys.array
+
+    offset = get_systotal(source) + get_systotal(array)
+    leftind = vcat( positiveind(source.LR), [offset + arr for arr in positiveind(drain.LR)])
+
+    rightind = vcat( negativeind(source.LR), [offset + arr for arr in negativeind(drain.LR)])
+
+    return leftind, rightind
+
+
+end 

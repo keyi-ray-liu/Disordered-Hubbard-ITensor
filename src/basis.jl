@@ -57,11 +57,18 @@ function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, coupl
 
 end 
 
+function Ujk(L::Int, j::Int, k::Int)
+    
+    v = sqrt(2/ (L + 1)) * sin(j * k * π/ (L + 1))
+    return v
+
+end 
+
 function Ujk(sys::Reservoir_momentum, j::Int, k::Int)
 
     ks = sys.ks
-    L = length(ks) + 1
-    v = sqrt(2/L) * sin(j * k * π/L)
+    L = length(ks)
+    v = Ujk(L, j, k)
 
     return v
 

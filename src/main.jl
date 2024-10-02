@@ -16,6 +16,7 @@ using JSON3
 using LinearAlgebra
 using StatsBase
 using Suppressor
+using ITensorGaussianMPS
 #using KrylovKit: eigsolve
 #using ITensorTDVP
 using Random
@@ -91,32 +92,11 @@ end
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
     rm(getworkdir(), force=true, recursive=true)
+    
     #corr_test()
-    #plot_mix()
-    #static_tcd()
-    #chain_wrapper()
-    #prepare_wavepacket()
-    #test_embedding_wrapper()
-    #QE_gaussian_wrapper()
-    #gen_GS_scan()
-    #dyna_pϕ()
-    #GQS_wrapper()
-    #set_SD()
-    #DPT_wrapper()
+    #init_test()
     SD_wrapper()
-    #solve_QE()
-    #DPT_corr()
-    #benchmark()
-    #dyna_dptcurrent_mix()
-    #NF_wrapper()
-    #dyna_EE()
-    #QE_SIAM_wrapper()
-    #QE_wrapper("QE_two")
-    #QE_HOM_wrapper()
-    #DPT_graph_test()
-    #runtest()
-    #solve_QE()
-    #dyna_tcd()
+    #DPT_wrapper()
 
     return nothing
 
