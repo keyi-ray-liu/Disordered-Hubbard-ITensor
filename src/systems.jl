@@ -798,7 +798,7 @@ get_systotal(sys::LSR_SIAM) = 1 + L(sys) + R(sys)
 N(sys::LSR_SIAM) = [div(L(sys), 2), div(L(sys), 2), 0, 0]
 
 
-dis(i::Int, j::Int, sys::Systems; range=Inf64) = abs(i- j) <= range ? abs(i - j) : Inf64
+dis(i::Int, j::Int, ::Systems; range=Inf64) = abs(i- j) <= range ? abs(i - j) : Inf64
 
 
 function dis(i::Int, j::Int, sys::Rectangular; range=Inf64)
@@ -826,7 +826,7 @@ SimulationParameters(sys::Static) = sys.ex, sys.prev_state, sys.prev_energy, sys
 
 SimulationParameters(sys::Dynamic) = sys.τ, sys.start, sys.fin, sys.TEcutoff, sys.TEdim, sys.nsite
 
-add_specific_int!(sys::Systems, res) = res
+add_specific_int!(::Systems, res) = res
 
 
 

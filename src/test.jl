@@ -111,3 +111,14 @@ end
 
 # @show Regex(TEMP_tag * get_static_str("biasedchain") * "*.h5")
 # occursin(Regex(TEMP_tag * get_static_str("biasedchain") * ".*.h5"), "temp_temp_plasmon1111111.h5")
+
+
+
+function typetest()
+
+    sys = set_Chain()
+    @show  dis(0, 1, sys)
+    res = []
+    @show add_specific_int!(sys, res)
+
+end 
