@@ -1,0 +1,22 @@
+{
+    "Ls" : 64,
+    "Ld" : 64,
+    "Ns" : 32,
+    "Na" : 0,
+    "Nd" : 0,
+    "fin": 100,
+    "timestep" : 0.5,
+    "contactscaling" : 2.0,
+    "scoupling": -0.1,
+    "dcoupling": -0.1,
+    "biasS" : 0.0,
+    "biasA" : 0.0,
+    "biasD" : -0.0,
+    "intee" : 0.0,
+    "intne" : 0.0,
+    "systype" : "Electron",
+    "reservoir_type" : "spatial",
+    "U" : 0.0,
+    "TEdim" : 256,
+    "manualmixprod" : false
+}

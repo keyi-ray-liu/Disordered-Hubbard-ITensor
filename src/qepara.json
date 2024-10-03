@@ -1,6 +1,5 @@
 {
     "L" : 12,
-    "N" : 6,
     "TEdim" : 128,
     "QEmul" : 1.0,
     "center_parameter": {
@@ -15,8 +14,8 @@
     "confine_parameters" :[
         {
             "confine_start" : 1,
-            "confine_range" : 20,
-            "confine_potential" : -10.0
+            "confine_range" : 12,
+            "confine_potential" : -50.0
         },
         {
             "confine_start" : 1,
@@ -24,10 +23,13 @@
             "confine_potential" : 0.0
         }
     ],
-    "range" : 1000,
+    "range" : 100,
     "_start" : 200.0,
-    "timestep" : 2.0,
-    "fin" : 150,
+    "timestep" : 0.5,
+    "fin" : 200.0,
     "adiabatic" : 0,
-    "tswitch" : 10.0
+    "tswitch" : 50.0,
+    "mode" : "SSH",
+    "v" : 0.1,
+    "w" : 1.0
 }

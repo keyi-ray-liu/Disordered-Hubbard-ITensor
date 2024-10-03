@@ -1,0 +1,18 @@
+{
+    "L" : 12,
+    "N" : 6,
+    "center" : 10,
+    "sigma" : 5,
+    "includegs" : true,
+    "ex" : 150,
+    "timestep" : 0.5,
+    "dim" : 128,
+    "sweepcnt" : 15,
+    "TEdim" : 128,
+    "fin" : 200,
+    "fullsize" : 12,
+    "fullN" : 6,
+    "conv" : true,
+    "mode" : "QE_two",
+    "padding" : false
+}

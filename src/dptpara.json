@@ -1,12 +1,18 @@
 {
-    "U": 2.0,
-    "L": 6,
-    "R": 6,
+    "U": 1.0,
+    "L": 130,
+    "R": 130,
     "tswitch": 2,
-    "timestep": 0.25,
-    "TEdim": 128,
+    "timestep": 0.5,
+    "TEdim": 256,
     "mixed": true,
-    "ordering" : "MATCH",
-    "includeU" : true,
-    "ddposition" : "M"
+    "ordering": "SORTED",
+    "includeU": true,
+    "sweepcnt" : 20,
+    "ddposition": "R",
+    "tdoubledot" : 0.125,
+    "avg" : false,
+    "switchinterval" : 1,
+    "initdd" : "UPPER",
+    "biasLR" : 10.0
 }
