@@ -15,7 +15,7 @@
     "intee" : 0.0,
     "intne" : 0.0,
     "systype" : "Electron",
-    "reservoir_type" : "spatial",
+    "reservoir_type" : "mixed",
     "U" : 0.0,
     "TEdim" : 256,
     "manualmixprod" : false

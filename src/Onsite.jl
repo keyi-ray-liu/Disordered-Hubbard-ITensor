@@ -357,7 +357,6 @@ function add_onsite!(sys::Systems, res::OpSum)
     
     @info "Adding onsite"
 
-
     for j=1 :get_systotal(sys)
         # E-E and N-
 

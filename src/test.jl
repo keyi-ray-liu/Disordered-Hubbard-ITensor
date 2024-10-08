@@ -122,3 +122,10 @@ function typetest()
     @show add_specific_int!(sys, res)
 
 end 
+
+function argtest(; kwargs...)
+
+    L = get(kwargs, :L, error("No L!"))
+
+
+end 

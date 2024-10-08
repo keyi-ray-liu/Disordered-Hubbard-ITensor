@@ -42,7 +42,7 @@ end
 
 
 """worker function that runs SD calculations"""
-function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, manualmixprod=false, kwargs...)
+function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0,manualmixprod=false, mode="productstate",  kwargs...)
  
     obs= [dyna_EE, dyna_occ,  dyna_SRDM, dyna_corr
     #dyna_SDcurrent, dyna_corr,
@@ -58,19 +58,37 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, manualmixprod=fa
     # run_static_simulation(sys, Static, ψ)
 
     # now we switch on the bias in L/R
-    @show dyna = set_SD(; biasA = biasA, biasS = biasS, biasD=biasD, kwargs...)
+    energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed", get(kwargs, :Ls, 4), get(kwargs, :Ld, 4), biasA, biasD; couple_range=0 )
+
+    @show dyna = set_SD(; biasA = biasA, biasS = biasS, biasD=biasD, energies = energies, ks =ks, LR =LR, kwargs...)
 
     ψ = gen_state(dyna, manualmixprod=manualmixprod)
 
+    
     # if ED
     #     run_exact_diagonalization(dyna, ψ)
 
     # else
+    if mode == "productstate"
+        Stage1 = set_Dynamic(;τ=τ, start=τ, fin=fin, kwargs...)
+        #ψ = load_ψ(eqinit_str)
 
-    Stage1 = set_Dynamic(;τ=τ, start=τ, fin=fin, kwargs...)
-    #ψ = load_ψ(eqinit_str)
+        _ = run_dynamic_simulation(dyna, Stage1, ψ; save_every=false, obs=obs)
+    elseif mode == "leftGS"
 
-    _ = run_dynamic_simulation(dyna, Stage1, ψ; save_every=false, obs=obs)
+        eqinit_str = "Eqinit"
+        # we have a extremely strong bias on Left so we can load left
+        init = set_SD(; biasS = -1000, biasA = 0, biasD = 0, energies = energies, ks =ks, LR=LR, kwargs...)
+
+        Static = set_Static(; output=eqinit_str, sweepdim=get(kwargs, :TEdim, 64), ex=1, kwargs...)
+
+        # GS calculation
+        ψ0 =  run_static_simulation(init, Static, ψ; message = "Init")[1]
+
+        Dyna = set_Dynamic(;τ=τ, start=τ, fin=fin, kwargs...)
+        _ = run_dynamic_simulation(dyna, Dyna, ψ0; save_every=false, obs=obs)
+    end 
+
 
     # end 
 
@@ -104,8 +122,9 @@ function SD_wrapper()
     reservoir_type = get(sd_in, "reservoir_type", "spatial")
     U = get(sd_in, "U", 4.0)
     manualmixprod = get(sd_in, "manualmixprod", false)
+    mode = get(sd_in, "mode", "productstate")
 
     run_SD(fin; τ=τ,  s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, 
-    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, biasD = biasD, reservoir_type=reservoir_type, manualmixprod=manualmixprod)
+    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, biasD = biasD, reservoir_type=reservoir_type, manualmixprod=manualmixprod, mode=mode)
 
 end 

@@ -96,7 +96,7 @@ if test
     #corr_test()
     #init_test()
     SD_wrapper()
-    #typetest()
+    #argtest()
     #DPT_wrapper()
     return nothing
 

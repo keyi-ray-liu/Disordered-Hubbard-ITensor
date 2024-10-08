@@ -622,6 +622,7 @@ struct Reservoir_spatial <: Reservoir
     N :: Vector{Int}
     contact :: Int
     bias :: Float64
+    ext_contact :: Vector
 
 end 
 
@@ -634,6 +635,7 @@ struct Reservoir_momentum <: Reservoir
     biasS :: Union{Float64, Int}
     biasD :: Union{Float64, Int}
     N :: Vector{Int}
+    ext_contact :: Vector{Vector}
 
 end 
 
@@ -642,14 +644,12 @@ get_systotal(res::Reservoir_spatial) = res.L
 get_systotal(res::Reservoir_momentum) = length(res.energies)
 
 
-struct SD_array{T, U, V} <: Systems where {T <: Reservoir, U <: Systems, V <: Any}
+struct SD_array{T, U} <: Systems where {T <: Reservoir, U <: Systems}
 
     source :: T 
     drain :: T 
     array :: U
     systype :: String
-    s_contacts :: Array{V}
-    d_contacts :: Array{V}
     biasA :: Union{Float64, Int}
 
 end 
@@ -674,6 +674,11 @@ function set_reservoir(;
     reservoir_type = "spatial",
     biasS= 0.0,
     biasD= 0.0,
+    energies = [],
+    ks = [],
+    LR = [],
+    s_contacts = [],
+    d_contacts = [],
     kwargs...)
 
     t = FermionCondition(systype, t)
@@ -687,17 +692,16 @@ function set_reservoir(;
     end 
 
     if reservoir_type == "spatial"
-        source = Reservoir_spatial(Ls, systype, t, Ns, contacts[1], biasS)
-        drain = Reservoir_spatial(Ld, systype, t, Nd, contacts[2], biasD)
+        source = Reservoir_spatial(Ls, systype, t, Ns, contacts[1], biasS, s_contacts)
+        drain = Reservoir_spatial(Ld, systype, t, Nd, contacts[2], biasD, d_contacts)
 
     elseif reservoir_type == "mixed"
 
-        energies, ks, LR = gen_mixed(Ls, Ld, biasS, biasD; couple_range=0)
 
         # we assume the reservoir is partitioned according to the Ls, Ld
-        source = Reservoir_momentum(energies[1:Ls], systype, ks[1:Ls], LR[1:Ls], biasS, biasD, Ns)
+        source = Reservoir_momentum(energies[1:Ls], systype, ks[1:Ls], LR[1:Ls], biasS, biasD, Ns, [s_contacts, d_contacts])
 
-        drain = Reservoir_momentum(energies[Ls + 1:end], systype, ks[Ls + 1:end], LR[Ls + 1:end], biasS, biasD, Nd)
+        drain = Reservoir_momentum(energies[Ls + 1:end], systype, ks[Ls + 1:end], LR[Ls + 1:end], biasS, biasD, Nd, [s_contacts, d_contacts])
 
 
     end 
@@ -727,7 +731,7 @@ function set_SD(
     s_contacts, d_contacts = set_SD_contacts(s_coupling, d_coupling, contact_scaling, Ls)
 
 
-    source, drain = set_reservoir(; Ls=Ls, Ld=Ld, Ns=Ns, Nd=Nd, contacts = [Ls, 1], systype=systype,  kwargs...)
+    source, drain = set_reservoir(; Ls=Ls, Ld=Ld, Ns=Ns, Nd=Nd, contacts = [Ls, 1], systype=systype, s_contacts=s_contacts, d_contacts = d_contacts, kwargs...)
     array = set_Rectangular(; N=Na, systype=systype, kwargs...)
 
     SD = SD_array(
@@ -735,8 +739,6 @@ function set_SD(
         drain, 
         array, 
         systype, 
-        s_contacts,
-        d_contacts,
         biasA
     )
 

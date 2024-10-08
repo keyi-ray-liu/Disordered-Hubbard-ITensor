@@ -245,14 +245,14 @@ end
 
 
 
-function HoppingNeighbor(res::Reservoir_spatial, j::Int, contacts::Array; left_offset=0)
+function HoppingNeighbor(res::Reservoir_spatial, j::Int; left_offset=0)
 
     hop = []
     adj_j = j - left_offset
 
     # check if hopping to sys
     if adj_j == res.contact
-        append!(hop, contacts)
+        append!(hop, res.ext_contact)
     end 
 
     # check if can hop to NN
@@ -265,12 +265,16 @@ function HoppingNeighbor(res::Reservoir_spatial, j::Int, contacts::Array; left_o
 end 
 
 
-function HoppingNeighbor(res::Reservoir_momentum, j::Int, contacts::Array; left_offset=0)
+function HoppingNeighbor(res::Reservoir_momentum, j::Int; left_offset=0)
 
     hop = []
     adj_j = j - left_offset
+    adj_k = res.ks[adj_j]
 
-    v = Ujk(res, adj_j, 1)
+    v = Ujk(res, adj_k, 1)
+
+    contacts_ind = res.LR[adj_j] > 0 ? 1 : 2
+    contacts = res.ext_contact[contacts_ind]
 
     for (coupling..., site) in contacts
         append!(hop, [[ v .* coupling..., site]])
@@ -287,13 +291,13 @@ function HoppingNeighbor(sys::SD_array, j::Int)
     array = get_systotal(sys.array)
 
     if j <= source
-        return HoppingNeighbor(sys.source, j, sys.s_contacts)
+        return HoppingNeighbor(sys.source, j)
 
     elseif j <= source + array
         return HoppingNeighbor(sys.array, j; left_offset=source)
 
     else
-        return HoppingNeighbor(sys.drain, j, sys.d_contacts; left_offset= source + array)
+        return HoppingNeighbor(sys.drain, j; left_offset= source + array)
 
     end 
     

@@ -7,7 +7,7 @@ gen_obs(mixed, includeU) = [dyna_EE, dyna_occ, (mixed && includeU) ? dyna_dptcur
 
 
 """worker function that runs DPT calculations"""
-function run_DPT(U, L, R, t_switch::Float64; bias_L = BIASLR/2, bias_R  = - BIASLR/2, τ=0.125, mixed=false, save_every=false,  ddposition="R", graph=false, avg=false, switchinterval ::Int=1,  initdd="LOWER", kwargs...)
+function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2, bias_R  = - BIASLR/2, τ=0.125, mixed=false, save_every=false,  ddposition="R", graph=false, avg=false, switchinterval ::Int=1,  initdd="LOWER", kwargs...)
 
     INIT_BIAS = 100
     if initdd == "LOWER"
@@ -114,11 +114,11 @@ function run_DPT(U, L, R, t_switch::Float64; bias_L = BIASLR/2, bias_R  = - BIAS
         end 
     end 
 
-    if last_time < t_switch * 2
+    if last_time < t_fin
         s3begin = max(t_switch + τ, last_time)
         noneqtun = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, t_doubledot=t_doubledot, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
-        Stage3 = set_Dynamic(;τ=τ, start=s3begin + τ, fin=t_switch * 2, kwargs...)
+        Stage3 = set_Dynamic(;τ=τ, start=s3begin + τ, fin=t_fin, kwargs...)
 
         #ψ = load_ψ(t_switch)
 
@@ -140,6 +140,7 @@ function DPT_wrapper()
     L = get(dpt_in, "L", 16)
     R = get(dpt_in, "R", 16)
     t_switch = Float64(get(dpt_in, "tswitch", 5.0))
+    t_fin = Float64(get(dpt_in, "tfin", 2 * t_switch))
     τ = get(dpt_in, "timestep", 0.125)
     TEdim = get(dpt_in, "TEdim", 64)
     biasLR = get(dpt_in, "biasLR", BIASLR)
@@ -161,7 +162,7 @@ function DPT_wrapper()
         @show ITensors.disable_threaded_blocksparse()
     end 
 
-    run_DPT(U, L, R, t_switch; τ=τ, TEdim=TEdim, bias_L = biasLR/2, bias_R  = -biasLR/2, mixed=mixed, ordering=ordering, includeU=includeU, ddposition=ddposition, avg=avg, switchinterval=switchinterval, sweepcnt=sweepcnt, initdd = initdd, t_doubledot=t_doubledot)
+    run_DPT(U, L, R, t_switch, t_fin; τ=τ, TEdim=TEdim, bias_L = biasLR/2, bias_R  = -biasLR/2, mixed=mixed, ordering=ordering, includeU=includeU, ddposition=ddposition, avg=avg, switchinterval=switchinterval, sweepcnt=sweepcnt, initdd = initdd, t_doubledot=t_doubledot)
 
     # dyna_occ()
     # dyna_EE()
