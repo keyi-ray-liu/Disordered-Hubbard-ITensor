@@ -6,7 +6,7 @@ HoppingNeighbor(sys::Chain, j::Int; left_offset=0) = 0 < (j - left_offset) < L(s
 
 HoppingNeighbor(sys::SSH_chain, j::Int; left_offset=0) = 0 < (j - left_offset) < get_systotal(sys) ? [[t(sys, j)..., j + 1] ] : []
 
-HoppingNeighbor(sys::Biased_chain, j::Int; left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? HoppingNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
+HoppingNeighbor(sys::Biased_chain, j::Int; left_offset=0) = HoppingNeighbor(sys.chain, j; left_offset=left_offset)
 
 HoppingNeighbor(sys::GQS, j ::Int) = HoppingNeighbor(sys.chain, j)
 """

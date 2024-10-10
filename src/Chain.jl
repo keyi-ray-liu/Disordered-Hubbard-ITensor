@@ -25,9 +25,9 @@ function run_chain( L, N, ex; dim=64, kwargs...)
 end 
 
 
-function run_biased_chain(full_size, L, N, ex; dim=64, sweepcnt=sweepcnt, kwargs...)
+function run_biased_chain(fullsize, L, N, ex; dim=64, sweepcnt=40, kwargs...)
 
-    sys = set_biased_chain(; full_size=full_size, L=L, N=N, kwargs...)
+    sys = set_biased_chain(; biaswindow = [1, L], L=fullsize, N=N, kwargs...)
 
     @show sys
     static = set_Static(; ex=ex, sweepdim=dim, sweepcnt=sweepcnt, kwargs...)
@@ -35,6 +35,33 @@ function run_biased_chain(full_size, L, N, ex; dim=64, sweepcnt=sweepcnt, kwargs
     ψ = run_static_simulation(sys, static, ψ)
 
     return ψ
+
+end 
+
+function biased_quench(L, N; biaswindow=[1, 10], bias=500, dim=64, τ=0.5,  tswitch=50, fin=100, kwargs...)
+
+    sys = set_Chain(;  L=L, N=N, kwargs...)
+    obs = [dyna_EE, dyna_occ, dyna_corr]
+
+    @show sys
+    @info "Solve GS"
+    static = set_Static(; ex=1, sweepdim=dim, sweepcnt=10, kwargs...)
+    ψ = gen_state(sys)
+    ψ = run_static_simulation(sys, static, ψ)[1]
+
+    @info "Quench"
+    biased_sys = set_biased_chain(; L=L, N=N, biaswindow=biaswindow, bias=bias)
+    @show biased_sys
+    Quench =  set_Dynamic(; TEdim=dim, τ=τ, start= τ, fin=tswitch, kwargs...)
+    ψ = run_dynamic_simulation(biased_sys, Quench, ψ; message="Quench", save_every=false, obs=obs)
+    
+    @info "Relaxation"
+    Relaxation = set_Dynamic(; TEdim=dim, τ=τ, start= tswitch + τ, fin=fin, kwargs...)
+    _ = run_dynamic_simulation(sys, Relaxation, ψ; message="Relaxation", save_every=false, obs=obs)
+
+
+
+    return nothing
 
 end 
 
@@ -70,6 +97,25 @@ function chain_wrapper()
     
 
     run_chain(L, N, ex; sweepcnt=sweepcnt, dim=dim)
+
+    return nothing
+end 
+
+function quench_wrapper()
+
+    chain_in = load_JSON(pwd() * "/chainquench.json")
+
+    L = get(chain_in, "L", 12)
+    N = get(chain_in, "N", 6)
+    
+    τ = get(chain_in, "timestep", 0.5)
+    tswitch = get(chain_in, "tswitch", 50)
+    fin = get(chain_in, "fin", 100)
+    biaswindow = get(chain_in, "biaswindow", [1, 10])
+    dim = get(chain_in, "dim", 64)
+    bias = get(chain_in, "bias", 500)
+
+    biased_quench(L, N; biaswindow = biaswindow,dim=dim, τ=τ, tswitch=tswitch, fin=fin, bias=bias)
 
     return nothing
 end 

@@ -52,10 +52,19 @@ function QE_dyna_regular(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  
 end 
 
 
-function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, center_parameter = EMPTY_CENTER, save_every=false, tswitch=0.0, confine_parameters = EMPTY_CONFINES,  kwargs...)
+function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, center_parameter = EMPTY_CENTER, save_every=false, tswitch=0.0, confine_parameters = EMPTY_CONFINES, reverse=true, kwargs...)
+
+    if reverse
+        s1 = EMPTY_CONFINES
+        s2 = confine_parameters
+
+    else
+        s1 = confine_parameters
+        s2 = EMPTY_CONFINES
+    end 
 
     # set initial state
-    QEen = get_QEen(QEen, key, output, TEdim, QEmul, product; confine_parameters=confine_parameters, mode=mode, kwargs...)
+    QEen = get_QEen(QEen, key, output, TEdim, QEmul, product; confine_parameters=s1, mode=mode, kwargs...)
     
 
     obs = [dyna_EE, dyna_occ, dyna_corr]
@@ -77,7 +86,7 @@ function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul
     #Stage 2 we release the potential
 
     @info "Stage 2"
-    Stage2= QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, confine_parameters=EMPTY_CONFINES, kwargs...)
+    Stage2= QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, confine_parameters=s2, kwargs...)
     dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=tswitch + τ, fin=fin, kwargs...)
     run_dynamic_simulation(Stage2, dynamic, ψ; message="QEStage2", save_every=save_every, obs=obs)
 
@@ -140,15 +149,18 @@ function QE_wrapper(key)
     #adiabatic = get(qe_in, "adiabatic", 0.0)
 
     inits = get(qe_in, "inits", "1")
+    reverse = get(qe_in, "reverse", true)
     mode = get(qe_in, "mode", "regular")
-    v = get(qe_in, "v", 0.1)
-    w = get(qe_in, "w", 1.0)
 
     
     #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
     # QE_dyna_regular("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, dp=dp, inits=inits, adiabatic=adiabatic)
-    # QE_confine(key, QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, confine_parameters=confine_parameters, dp=dp, inits=inits, tswitch=tswitch)
-    QE_SSH(key, QEen, "initialSSHstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, mode=mode, v=v, w=w, dp=dp, inits=inits, tswitch=tswitch)
+    QE_confine(key, QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, confine_parameters=confine_parameters, dp=dp, inits=inits, tswitch=tswitch, reverse=reverse, mode=mode)
+
+    # 
+    # v = get(qe_in, "v", 0.1)
+    # w = get(qe_in, "w", 1.0)
+    # QE_SSH(key, QEen, "initialSSHstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, mode=mode, v=v, w=w, dp=dp, inits=inits, tswitch=tswitch)
 
 end 
 

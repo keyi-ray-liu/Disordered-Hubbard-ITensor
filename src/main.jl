@@ -95,7 +95,9 @@ if test
     
     #corr_test()
     #init_test()
-    SD_wrapper()
+    #SD_wrapper()
+    #QE_wrapper("QE_two")
+    quench_wrapper()
     #argtest()
     #DPT_wrapper()
     return nothing
@@ -107,6 +109,9 @@ else
 
     if ARG == "DPT"
         DPT_wrapper()
+
+    elseif ARG == "Quench"
+        quench_wrapper()
 
     elseif ARG == "occ"
         dyna_occ()

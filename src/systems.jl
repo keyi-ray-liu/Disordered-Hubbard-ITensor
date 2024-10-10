@@ -205,15 +205,15 @@ set_SSH_chain(; v=0.0, w=1.0, kwargs...) = SSH_chain( set_Chain(; kwargs...), v,
 struct Biased_chain <: Systems
 
     chain:: Chain
-    full_size :: Int
-    chain_start :: Int
+    biaswindow :: Vector{Int}
+    bias :: Union{Float64, Int}
 
 end 
 
 systype(sys::Biased_chain) = systype(sys.chain)
-get_systotal(sys::Biased_chain) = sys.full_size
+get_systotal(sys::Biased_chain) = get_systotal(sys.chain)
 
-set_biased_chain(; chain_start=1, full_size=100, kwargs...) = Biased_chain( set_Chain(;kwargs...), full_size, chain_start)
+set_biased_chain(; biaswindow=[1, 2], bias=-500, kwargs...) = Biased_chain( set_Chain(;kwargs...), biaswindow, bias)
 
 struct GQS <: Systems
     chain :: Chain

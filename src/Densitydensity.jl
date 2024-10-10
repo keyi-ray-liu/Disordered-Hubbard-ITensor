@@ -1,7 +1,7 @@
 ifexch(j::Int, k::Int, sys, range, exch::Float64) = ( 1 - (dis(j, k, sys; range=range) == 1) * exch )
 
 """ A general principle is that we always use native indexing in the subsystem"""
-DenDenNeighbor(sys::Systems, j) = []
+DenDenNeighbor(::Systems, j) = []
 
 # function DenDenNeighbor(sys::QE_flat_SIAM, j)
 
@@ -142,7 +142,7 @@ end
 
 DenDenNeighbor(sys::SSH_chain, j::Int; left_offset=0) = DenDenNeighbor(sys.chain, j; left_offset=left_offset)
 
-DenDenNeighbor(sys::Biased_chain, j::Int, left_offset=0) = sys.chain_start <= j - left_offset < sys.chain_start + L(sys.chain) ? DenDenNeighbor(sys.chain, j, left_offset=left_offset + (sys.chain_start - 1)) : []
+DenDenNeighbor(sys::Biased_chain, j::Int, left_offset=0) = DenDenNeighbor(sys.chain, j; left_offset=left_offset) 
 
 DenDenNeighbor(sys::GQS, j::Int) = DenDenNeighbor(sys.chain, j)
 
