@@ -171,11 +171,17 @@ function gen_state(sys::SD_array; manualmixprod=false, kwargs...)
     
     if typeof(sys.source) == Reservoir_spatial || !manualmixprod
 
+        
         state_str =  gen_state_str(sys; kwargs...)
+
+        if typeof(sys.source) == Reservoir_momentum
+            shuffle!(state_str)
+        end 
+
         sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=true)
 
         ψ = randomMPS(sites, state_str
-        #; linkdims=2
+        ; linkdims=10
         )
 
     else

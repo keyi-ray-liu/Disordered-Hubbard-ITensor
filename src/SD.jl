@@ -58,22 +58,22 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0,manualmixprod=fal
     # run_static_simulation(sys, Static, ψ)
 
     # now we switch on the bias in L/R
-    energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed", get(kwargs, :Ls, 4), get(kwargs, :Ld, 4), biasA, biasD; couple_range=0 )
+    energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed", get(kwargs, :Ls, 4), get(kwargs, :Ld, 4), biasS, biasD; couple_range=0 )
 
-    @show dyna = set_SD(; biasA = biasA, biasS = biasS, biasD=biasD, energies = energies, ks =ks, LR =LR, kwargs...)
+    @show sys = set_SD(; biasA = biasA, biasS = biasS, biasD=biasD, energies = energies, ks =ks, LR =LR, kwargs...)
 
-    ψ = gen_state(dyna, manualmixprod=manualmixprod)
+    ψ = gen_state(sys, manualmixprod=manualmixprod)
 
     
     # if ED
-    #     run_exact_diagonalization(dyna, ψ)
+    #     run_exact_diagonalization(sys, ψ)
 
     # else
     if mode == "productstate"
         Stage1 = set_Dynamic(;τ=τ, start=τ, fin=fin, kwargs...)
         #ψ = load_ψ(eqinit_str)
 
-        _ = run_dynamic_simulation(dyna, Stage1, ψ; save_every=false, obs=obs)
+        _ = run_dynamic_simulation(sys, Stage1, ψ; save_every=false, obs=obs)
     elseif mode == "leftGS"
 
         eqinit_str = "Eqinit"
@@ -85,8 +85,25 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0,manualmixprod=fal
         # GS calculation
         ψ0 =  run_static_simulation(init, Static, ψ; message = "Init")[1]
 
-        Dyna = set_Dynamic(;τ=τ, start=τ, fin=fin, kwargs...)
-        _ = run_dynamic_simulation(dyna, Dyna, ψ0; save_every=false, obs=obs)
+        Dynamic = set_Dynamic(;τ=τ, start=τ, fin=fin, kwargs...)
+        _ = run_dynamic_simulation(sys, Dynamic, ψ0; save_every=false, obs=obs)
+
+    elseif mode == "LRbias"
+
+        @assert biasS != biasD != 0
+
+        eqinit_str = "Eqinit"
+        # we solve for the GS of the whole system at zero bias, we also bias the array so that nothing is occupied there
+        init = set_SD(; biasS = 0, biasA = 500, biasD = 0, energies = energies, ks =ks, LR=LR, kwargs...)
+
+        Static = set_Static(; output=eqinit_str, sweepdim=get(kwargs, :TEdim, 64), sweepcnt=80, ex=1, kwargs...)
+
+        # GS calculation
+        ψ0 =  run_static_simulation(init, Static, ψ; message = "Init")[1]
+
+        Dynamic = set_Dynamic(;τ=τ, start=τ, fin=fin, kwargs...)
+        _ = run_dynamic_simulation(sys, Dynamic, ψ0; save_every=false, obs=obs)
+
     end 
 
 

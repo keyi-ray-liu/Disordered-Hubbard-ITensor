@@ -684,11 +684,11 @@ function set_reservoir(;
     t = FermionCondition(systype, t)
 
     if typeof(Ns) == Int
-        Ns = [Ls - Ns, 0, 0, Ns]
+        Ns = systype == "Electron" ? [Ls - Ns, 0, 0, Ns] : [Ls - Ns, Ns, 0, 0]
     end 
 
     if typeof(Nd) == Int
-        Nd = [Ld - Nd, 0, 0, Nd]
+        Nd = systype == "Electron" ? [Ld - Nd, 0, 0, Nd] : [Ld - Nd, Nd, 0, 0]
     end 
 
     if reservoir_type == "spatial"
