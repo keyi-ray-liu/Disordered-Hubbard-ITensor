@@ -174,9 +174,9 @@ function gen_state(sys::SD_array; manualmixprod=false, kwargs...)
         
         state_str =  gen_state_str(sys; kwargs...)
 
-        if typeof(sys.source) == Reservoir_momentum
-            shuffle!(state_str)
-        end 
+        # if typeof(sys.source) == Reservoir_momentum
+        #     shuffle!(state_str)
+        # end 
 
         sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=true)
 
