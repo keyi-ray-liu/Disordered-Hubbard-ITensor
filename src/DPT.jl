@@ -20,7 +20,6 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
         error("Unknown initdd config")
     end 
 
-    eqinit_str = "EqInit"
 
     includeU = get(kwargs, :includeU, true)
     couple_range = get(kwargs, :couple_range, 2)
@@ -54,15 +53,15 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
         # if not present, we calculate the initial state
 
-        if !check_ψ(eqinit_str)
+        if !check_ψ(EQINIT_STR)
             
-            Static = set_Static(; output=eqinit_str, sweepdim=get(kwargs, :TEdim, 64) , kwargs...)
+            Static = set_Static(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 64) , kwargs...)
 
             # GS calculation
             ψ = gen_state(eq; initdd = initdd)
             ψ0 =  run_static_simulation(eq, Static, ψ; message = "Init")[1]
         else
-            ψ0 = load_ψ(eqinit_str)
+            ψ0 = load_ψ(EQINIT_STR)
         end 
 
         # Stage1, no bias, GS, start negative time

@@ -180,7 +180,7 @@ function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=
 
         @info "TDVP time : $dt"
         #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
-        @time ψ = tdvp(H,  -im * τ, ψ; maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true,outputlevel=1,
+        @time ψ = tdvp(H,  -im * τ, ψ; updater_kwargs = (; eager=true), maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true,outputlevel=1,
         # (step_observer!)=sys_obs
         )
 

@@ -14,33 +14,21 @@ from matplotlib.gridspec import GridSpec
 from numpy.fft import rfft
 from scipy.signal import find_peaks
 from matplotlib.backends.backend_pdf import PdfPages
+from random_utils import *
 
-
-def load_data(raw, tswitch):
+def load_data(raw, tend):
     raw_data = np.loadtxt(raw)
 
     time = raw_data[:, 0]
     occ = raw_data[:, 5]
     cur = raw_data[:, 3]
 
-    idstop = np.argwhere(time <= tswitch * 2).flatten()[-1] + 1
+    idstop = np.argwhere(time <= tend).flatten()[-1] + 1
     time = time[:idstop]
     occ = occ[:idstop]
     cur = cur[:idstop]
 
     return time, occ, cur
-
-
-def sign_change(arr, avg_step=200):
-
-    signs = np.sign(arr)
-    signs = np.roll(signs, 1) - signs
-    
-    idx = np.argwhere(signs != 0).flatten()[-2:]
-
-    if len(idx) < 2:
-        idx = [-avg_step, -1]
-    return idx
 
 
 def MF1(file):
@@ -166,12 +154,12 @@ def get_fft(occ, sample_time):
 
     return xf[1:], yf[1:], peaks
 
-def phase_diagram(vs =0.125, fftseparate=True, fft=True):
+def phase_diagram(vs =0.125, dirs ='', tswitches =[], tends=[], fftseparate=True, fft=True, comment=''):
 
 
     def plot_occ():
         
-        time, occ, _ = load_data(raw, tswitch)
+        time, occ, _ = load_data(raw, tend)
 
         # [left, bottom, width, height
         axocc :plt.Axes = axes[ 'occ' + str(occ_cnt)]
@@ -192,7 +180,7 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
         lo, hi = axocc.get_ylim()
         l, r = axocc.get_xlim()
         
-        axocc.vlines( [ t], [lo], [hi], linestyles='dotted')
+        axocc.vlines( [ tswitch], [lo], [hi], linestyles='dotted')
         axocc.hlines( [ vs], [l], [r], linestyles='dashed')
     
         axocc.set_title(r'$\langle n_1 \rangle: \mu$' + ' = {}, U = {}'.format(mu, U), fontsize=fontsize)
@@ -206,7 +194,7 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
 
     def fft_occ():
 
-        time, occ, _ = load_data(raw, tswitch)
+        time, occ, _ = load_data(raw, tend)
 
         idswitch = np.argwhere( time <= tswitch ).flatten()[-1] + 1
 
@@ -244,7 +232,7 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
 
     def plot_cur():
 
-        time, _, cur = load_data(raw, tswitch)
+        time, _, cur = load_data(raw, tend)
 
         axcur :plt.Axes = axes['cur' + str(cur_cnt)]
 
@@ -253,10 +241,13 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
         axcur.add_artist(con)
 
         #axcur.tick_params(left=True, right=False, labelleft=True, labelright=False)
-        axcur.plot(time, cur, color=plotted_current[key])
-        axcur.vlines( [ t], [axcur.get_ylim()[0]], [axcur.get_ylim()[1]], linestyles='dotted')
+        axcur.plot(time, cur/float(mu), color=plotted_current[key])
+        axcur.vlines( [ tswitch], [axcur.get_ylim()[0]], [axcur.get_ylim()[1]], linestyles='dotted')
 
+        non_int = np.loadtxt('/Users/knl20/Desktop/Code/TN/non-interacting/{}currentCC{}{}'.format(n, U, mu))
+        non_int_time = np.loadtxt('/Users/knl20/Desktop/Code/TN/non-interacting/{}timeCC{}{}'.format(n, U, mu ))
 
+        axcur.plot(non_int_time, non_int/float(mu), label='exact stage 2', color='green')
 
         axcur.set_title(r'$I/\mu$: $\mu$' + '= {}, U = {}'.format(mu, U), fontsize=fontsize)
         #ax.legend()
@@ -270,7 +261,7 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
 
     def fft_cur():
 
-        time, _, cur = load_data(raw, tswitch)
+        time, _, cur = load_data(raw, tend)
 
         idswitch = np.argwhere( time <= tswitch ).flatten()[-1] + 1
 
@@ -311,7 +302,9 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
 
         axfft.tick_params(axis='both', labelsize=tickfontsize)
 
-    modes =[ "discrete", "equal"]
+    #modes =[ "discrete", "equal"]
+    modes = ["discrete"]
+    factors = [1]
 
 
 
@@ -319,7 +312,7 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
 
 
         if fftseparate:
-            file = '../plots/MFphase{}mode{}fft{}.pdf'.format(vs, mode, fft)
+            file = '../plots/MFphase{}mode{}fft{}{}.pdf'.format(vs, mode, fft, comment)
             mosaic = [
                         ["phocc", "occ1", "cur1", "phcur"], 
                         ["phocc", "occ2", "cur2", "phcur"], 
@@ -331,7 +324,7 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
                         ["phocc", "occ2", "offt2", "cfft2", "cur2", "phcur"], 
                         ["phocc", "occ3", "offt3", "cfft3", "cur3", "phcur"]
                                                 ]
-            file = '../plots/MFphase{}mode{}.pdf'.format(vs, mode)
+            file = '../plots/MFphase{}mode{}{}.pdf'.format(vs, mode, comment)
     
         with PdfPages(file)  as pdf:
             factor_str = {1 : '$U, U, U, U$',
@@ -339,33 +332,33 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
                         
 
             plotted_occ = {
-                            ('5.0', '1.0') if vs == 1.0 else ('2.0', '1.0'): 'red',
-                            ('2.0', '1.0') if vs == 1.0 else ('1.0', '1.0'): 'blue',
-                            ('1.0', '1.0') if vs == 1.0 else ('0.5', '1.0'): 'black',
+                            ('5.0', '0.5') if vs == 1.0 else ('2.0', '0.5'): 'red',
+                            ('2.0', '0.5') if vs == 1.0 else ('1.0', '0.5'): 'blue',
+                            ('1.0', '0.5') if vs == 1.0 else ('0.5', '0.5'): 'black',
                             }
             
             plotted_current = {
-                            ('5.0', '1.0') if vs == 1.0 else ('2.0', '1.0'): 'red',
-                            ('2.0', '1.0') if vs == 1.0 else ('1.0', '1.0'): 'blue',
-                            ('1.0', '1.0') if vs == 1.0 else ('0.5', '1.0'): 'black',
+                            ('5.0', '0.5') if vs == 1.0 else ('2.0', '0.5'): 'red',
+                            ('2.0', '0.5') if vs == 1.0 else ('1.0', '0.5'): 'blue',
+                            ('1.0', '0.5') if vs == 1.0 else ('0.5', '0.5'): 'black',
                             }
             
             #eachrow = max( len(plotted_current.keys()), len(plotted_occ.keys()))
 
             
-            for factor in [1, 2]:
+            for factor in factors:
                 
                 tickfontsize = 20
                 fontsize=20
                 s = 5
-                avg_step = 200
-                Ns = [ 258]
+                avg_step = 128
+                Ns = [ 130]
 
-                if vs == 1.0:
-                    ts = np.array([1/4])
+                # if vs == 1.0:
+                #     ts = np.array([1/4])
 
-                elif vs == 0.125:
-                    ts = np.array([1/2])
+                # elif vs == 0.125:
+                #     ts = np.array([1/2])
 
                 # fig = plt.figure(
                 #     figsize = (4 * 4, 6 * eachrow),
@@ -379,16 +372,17 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
 
 
                 #dirs = "examples_v{}/".format(vs)
-                dirs = "new/"
+                #dirs = "new/"
+                
 
                 for i, n in enumerate(Ns):
-                    
-                    tswitch = ts * n - 1
-                    for j, t in enumerate(tswitch):
+                    for j, tswitch in enumerate(tswitches):
                         
+
+                        tend = tends[j]
                         #axes[i][j * metric + 1].set_axis_off()
 
-                        raws = glob.glob( dirs + '*N{}*tswitch{}*factor{}*{}*'.format( n, float(t), factor, mode))
+                        raws = glob.glob( dirs + '*N{}*tswitch{}*factor{}*{}*'.format( n, float(tswitch), factor, mode))
 
 
                         raws = sorted(raws, reverse=True)
@@ -403,7 +397,7 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
                         cur_data = np.zeros((len(mus), len(Us)))
                         #diffs = np.zeros((len(mus), len(Us)))
 
-                        extent = [ float(min(mus.keys())), float(max(mus.keys())), float(max(Us.keys())), float(min(Us.keys()))]
+                        extent = [ float(min(mus.keys())), float(max(mus.keys())), float(min(Us.keys())), float(max(Us.keys()))]
 
 
                         occ_cnt = 1
@@ -414,11 +408,12 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
                             
                             mu = searchkey( 'mu', raw)
                             U = searchkey('U', raw)
+                            
                         
-                            _, occ, cur = load_data(raw, tswitch)
+                            _, occ, cur = load_data(raw, tend)
                             cur = cur / float(mu)
 
-                            idx1, idx2 = sign_change(np.gradient(occ))
+                            idx1, idx2 = sign_change(occ)
 
                             #print(idx1, idx2)
                             occ_to_avg = occ[idx1:idx2]
@@ -434,11 +429,10 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
 
 
                         axphocc : plt.Axes = axes['phocc']
-                        im = axphocc.imshow(occ_data.transpose(), extent=extent, cmap='bwr', vmin=0, vmax=1)
-                        axphocc.invert_yaxis()
+                        im = axphocc.imshow(occ_data.transpose(), extent=extent, cmap='bwr', vmin=0, vmax=1, origin='lower')
                         axphocc.set_xlabel('$\mu$', fontsize=fontsize)
                         axphocc.set_ylabel('U', fontsize=fontsize)
-                        axphocc.set_title(r'$\overline{\langle n_1\rangle}$: ' + ' N = {}, tswitch = {}'.format(n, t), fontsize=fontsize)
+                        axphocc.set_title(r'$\overline{\langle n_1\rangle}$: ' + ' N = {}, tswitch = {}'.format(n, tswitch), fontsize=fontsize)
 
                         divider = make_axes_locatable(axphocc)
                         cax = divider.append_axes("bottom", size="3%", pad=0.65)
@@ -452,11 +446,10 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
                         axphocc.tick_params(axis='both', labelsize=tickfontsize)
 
                         axphcur : plt.Axes = axes['phcur']
-                        im = axphcur.imshow(cur_data.transpose(), extent=extent, cmap='autumn')
-                        axphcur.invert_yaxis()
+                        im = axphcur.imshow(cur_data.transpose(), extent=extent, cmap='autumn', origin='lower')
                         axphcur.set_xlabel('$\mu$', fontsize=fontsize)
                         axphcur.set_ylabel('U', fontsize=fontsize)
-                        axphcur.set_title(r'$\overline{I/\mu}$: ' + ' N = {}, tswitch = {}'.format(n, t), fontsize=fontsize)
+                        axphcur.set_title(r'$\overline{I/\mu}$: ' + ' N = {}, tswitch = {}'.format(n, tswitch), fontsize=fontsize)
 
                         divider = make_axes_locatable(axphcur)
                         cax = divider.append_axes("bottom", size="3%", pad=0.65)
@@ -507,20 +500,38 @@ def phase_diagram(vs =0.125, fftseparate=True, fft=True):
                 fig.suptitle('$v_S ={}$, QPC: {} interaction'.format(vs, factor_str[factor]), fontsize=50)
                 #fig.subplots_adjust(wspace=0, hspace=0)
                 #fig.tight_layout()
-                fig.savefig('factor{}.pdf'.format(factor))
+                fig.savefig('cur.png')
                 #plt.show()
                 pdf.savefig(fig)
                     
                     
 
+def ref_130_32_4():
+
+    dirs = "130_32_4.0/examples/"
+    phase_diagram(vs=4, dirs=dirs)
+
+
+def ref_130_64_0125():
+    dirs = "130_64_0.125/examples/"
+    tswitch = [64.0]
+    phase_diagram(vs=0.125, dirs=dirs, tswitches=tswitch, fftseparate=False)
+
+def ref_130_largermu():
+    dirs = "uptoM4/"
+    tswitch = [32.0]
+    tend = [128.0]
+    phase_diagram(vs=0.125, dirs=dirs, tswitches=tswitch, tends=tend, fftseparate=False, comment='new')
 
 if __name__  == '__main__':
 
     rc('font', **{'family': 'serif', 'serif': ['Computer Modern']})
     rc('text', usetex=True) 
 
+    #ref_130_64_0125()
+    ref_130_largermu()
     #MF1(glob.glob('*equal')[0])
-    phase_diagram(fftseparate = False, fft=True)
+    #phase_diagram(vs=4.0, fftseparate = False, fft=True)
     #test()
 
     # files = sys.argv[1:]

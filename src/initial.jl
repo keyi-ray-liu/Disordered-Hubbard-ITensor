@@ -69,7 +69,20 @@ end
 
 gen_state_str(sys::Reservoir; kwargs...) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
 
-gen_state_str(sys::SD_array; kwargs...) = vcat( gen_state_str(sys.source), gen_state_str(sys.array), gen_state_str(sys.drain))
+function gen_state_str(sys::SD_array; random=false, kwargs...) 
+    
+    if random
+        sd = shuffle(vcat( gen_state_str(sys.source),gen_state_str(sys.drain)))
+        source = sd[1:get_systotal(sys.source)]
+        drain = sd[get_systotal(sys.source) + 1:end]
+
+    else
+        source = gen_state_str(sys.source)
+        drain = gen_state_str(sys.drain)
+    end 
+    return vcat( source, gen_state_str(sys.array), drain)
+end 
+
 
 
 gen_state_str(sys::DPT_mixed; kwargs...) = gen_state_str(sys.dpt; kwargs...)
@@ -165,19 +178,14 @@ end
 
 
 
-function gen_state(sys::SD_array; manualmixprod=false, kwargs...)
+function gen_state(sys::SD_array; manualmixprod=false, random=false, kwargs...)
 
     @show manualmixprod
     
     if typeof(sys.source) == Reservoir_spatial || !manualmixprod
-
         
-        state_str =  gen_state_str(sys; kwargs...)
-
-        # if typeof(sys.source) == Reservoir_momentum
-        #     shuffle!(state_str)
-        # end 
-
+        state_str =  gen_state_str(sys; random=random, kwargs...)
+        @show state_str
         sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=true)
 
         ψ = randomMPS(sites, state_str

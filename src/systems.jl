@@ -4,6 +4,7 @@ const DYNA_STR = "tTDVP"
 const BIASLR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
 const TEMP_tag = "temp_"
+const EQINIT_STR = "EqInit"
 
 
 A = rand()
