@@ -79,7 +79,7 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0,manualmixprod=fal
     elseif mode == "leftGS"
 
         # we have a extremely strong bias on Left so we can load left
-        init = set_SD(; biasS = -1000, biasA = 0, biasD = 0, energies = energies, ks =ks, LR=LR, kwargs...)
+        init = set_SD(; biasS = -1000, biasA = 0, biasD = 0, energies = energies, ks =ks, LR=LR, s_coupling = 0.0, d_coupling = 0.0, kwargs...)
 
         Static = set_Static(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 64), ex=1, kwargs...)
 
@@ -97,7 +97,7 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0,manualmixprod=fal
 
         ψ = gen_state(sys; manualmixprod=manualmixprod, random=true)
         # we solve for the GS of the whole system at zero bias, we also bias the array so that nothing is occupied there
-        init = set_SD(; biasS = 0, biasA = 500, biasD = 0, energies = energies, ks =ks, LR=LR, kwargs...)
+        init = set_SD(; biasS = 0, biasA = 500, biasD = 0, energies = energies, ks =ks, LR=LR, s_coupling = 0.0, d_coupling = 0.0, kwargs...)
 
         Static = set_Static(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 64), sweepcnt=80, ex=1, kwargs...)
 
@@ -139,7 +139,7 @@ function SD_wrapper()
     fin = get(sd_in, "fin", 10.0)
     τ = get(sd_in, "timestep", 0.1)
     contact_scaling = get(sd_in, "contactscaling", 2.0)
-    reservoir_type = get(sd_in, "reservoir_type", "spatial")
+    reservoir_type = get(sd_in, "reservoirtype", "spatial")
     U = get(sd_in, "U", 4.0)
     manualmixprod = get(sd_in, "manualmixprod", false)
     mode = get(sd_in, "mode", "productstate")

@@ -9,6 +9,8 @@ get_dyna_files() = sort(
     filter(x->occursin(DYNA_STR,x), readdir(getworkdir())))
     , by=get_time)
 
+shuffler(arr, random) = random ? shuffle(arr) : arr
+
 get_static_files(static_str::String) = sort( filter(x->occursin( Regex(TEMP_tag * get_static_str("biasedchain") * ".*.h5"),x), readdir(getworkdir())), by= x -> get_ex(x, static_str ))
 
 get_QE_ref_files() = sort( filter(x->(occursin(r"start.*h5",x) && !occursin(TEMP_tag, x)), readdir(getworkdir())), by=get_start)

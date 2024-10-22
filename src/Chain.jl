@@ -66,7 +66,7 @@ function biased_quench(L, N; biaswindow=[1, 10], bias=500, dim=64, τ=0.5,  tswi
 end 
 
 
-function run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin, bias=bias, kwargs...)
+function run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin,  kwargs...)
 
     sys = set_Chain(;  L=L, N=N, kwargs...)
     obs = [dyna_EE, dyna_occ, dyna_corr]
@@ -160,7 +160,7 @@ function perturbation_wrapper()
     dim = get(chain_in, "dim", 64)
     sites = get(chain_in, "sites", [1])
 
-    run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin, bias=bias)
+    run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin)
 
     return nothing
 end 

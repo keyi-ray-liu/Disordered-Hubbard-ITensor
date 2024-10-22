@@ -69,17 +69,13 @@ end
 
 gen_state_str(sys::Reservoir; kwargs...) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
 
-function gen_state_str(sys::SD_array; random=false, kwargs...) 
-    
-    if random
-        sd = shuffle(vcat( gen_state_str(sys.source),gen_state_str(sys.drain)))
-        source = sd[1:get_systotal(sys.source)]
-        drain = sd[get_systotal(sys.source) + 1:end]
 
-    else
-        source = gen_state_str(sys.source)
-        drain = gen_state_str(sys.drain)
-    end 
+
+function gen_state_str(sys::SD_array; random=false, kwargs...) 
+
+    source = shuffler(gen_state_str(sys.source), random)
+    drain = shuffler(gen_state_str(sys.drain), random)
+
     return vcat( source, gen_state_str(sys.array), drain)
 end 
 
