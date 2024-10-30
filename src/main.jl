@@ -91,8 +91,8 @@ end
 
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
-    rm(getworkdir(), force=true, recursive=true)
-    #corr_test()
+    #rm(getworkdir(), force=true, recursive=true)
+    #corr_test2()
     #init_test()
     SD_wrapper()
     #QE_wrapper("QE_two")

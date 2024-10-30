@@ -43,8 +43,8 @@ end
 """worker function that runs SD calculations"""
 function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0,manualmixprod=false, mode="productstate",  kwargs...)
  
-    obs= [dyna_EE, dyna_occ,  dyna_SRDM, dyna_corr
-    #dyna_SDcurrent, dyna_corr,
+    obs= [dyna_EE, dyna_occ, dyna_SDcurrent
+    #dyna_SRDM, dyna_SDcurrent, dyna_corr,
     ]
 
     # we first run a calculation with no bias on the LR, 
@@ -85,7 +85,7 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0,manualmixprod=fal
 
         ψ = gen_state(sys, manualmixprod=manualmixprod)
         # GS calculation
-        ψ0 = last_time > -Inf ? last_state :  run_static_simulation(init, Static, ψ; message = "Init")[1]
+        ψ0 = last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ; message = "Init")[1]
 
 
         Dynamic = set_Dynamic(;τ=τ, start=start, fin=fin, kwargs...)
@@ -102,7 +102,7 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0,manualmixprod=fal
         Static = set_Static(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 64), sweepcnt=80, ex=1, kwargs...)
 
         # GS calculation
-        ψ0 =  last_time > -Inf ? last_state : run_static_simulation(init, Static, ψ; message = "Init")[1]
+        ψ0 =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ; message = "Init")[1]
 
         Dynamic = set_Dynamic(;τ=τ, start=start, fin=fin, kwargs...)
         _ = run_dynamic_simulation(sys, Dynamic, ψ0; save_every=false, obs=obs)
@@ -141,10 +141,10 @@ function SD_wrapper()
     contact_scaling = get(sd_in, "contactscaling", 2.0)
     reservoir_type = get(sd_in, "reservoirtype", "spatial")
     U = get(sd_in, "U", 4.0)
+    config = get(sd_in, "config", "3x3")
     manualmixprod = get(sd_in, "manualmixprod", false)
     mode = get(sd_in, "mode", "productstate")
 
-    run_SD(fin; τ=τ,  s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, 
-    λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, biasD = biasD, reservoir_type=reservoir_type, manualmixprod=manualmixprod, mode=mode)
+    run_SD(fin; τ=τ,  s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, biasD = biasD, reservoir_type=reservoir_type, manualmixprod=manualmixprod, mode=mode, config=config)
 
 end 

@@ -636,7 +636,7 @@ struct Reservoir_momentum <: Reservoir
     biasS :: Union{Float64, Int}
     biasD :: Union{Float64, Int}
     N :: Vector{Int}
-    ext_contact :: Vector{Vector}
+    ext_contacts :: Vector{Vector}
 
 end 
 
@@ -723,17 +723,20 @@ function set_SD(
     d_coupling = -0.01,
     systype = "Fermion",
     biasA = 0.0,
+    config = "3x3",
     kwargs...
 )
 
     s_coupling = FermionCondition(systype, s_coupling)
     d_coupling = FermionCondition(systype, d_coupling)
 
-    s_contacts, d_contacts = set_SD_contacts(s_coupling, d_coupling, contact_scaling, Ls)
+    s_contacts, d_contacts, Lx, Ly = set_SD_parameters(s_coupling, d_coupling, contact_scaling, Ls, config)
 
-
+    @show s_contacts, d_contacts
     source, drain = set_reservoir(; Ls=Ls, Ld=Ld, Ns=Ns, Nd=Nd, contacts = [Ls, 1], systype=systype, s_contacts=s_contacts, d_contacts = d_contacts, kwargs...)
-    array = set_Rectangular(; N=Na, systype=systype, kwargs...)
+
+
+    array = set_Rectangular(; Lx=Lx, Ly=Ly, N=Na, systype=systype, kwargs...)
 
     SD = SD_array(
         source, 

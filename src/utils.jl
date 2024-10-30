@@ -63,8 +63,29 @@ function inner_product(L::MPS, R::MPS, opname::String; sites=1:length(L))
 end
 
 
-set_SD_contacts(s_coupling, d_coupling, contact_scaling, L) = [ [s_coupling..., L + 1], [contact_scaling .* s_coupling..., L + 4], [ s_coupling..., L + 7]], [ [d_coupling..., L + 3], [contact_scaling .* d_coupling..., L + 6], [d_coupling..., L + 9]]
+function set_SD_parameters(s_coupling, d_coupling, contact_scaling, L::Int, config) 
+  
+  if config == "3x3"
+      Lx = Ly = 3
+      s_contacts = [ (s_coupling..., L + 1), (contact_scaling .* s_coupling..., L + 4), (s_coupling..., L + 7)]
+      d_contacts = [ (s_coupling..., L + 3), (contact_scaling .* s_coupling..., L + 6), (s_coupling..., L + 9)]
 
+  elseif config == "2x2"
+      Lx = Ly = 2
+      s_contacts = [ (s_coupling..., L + 1), (s_coupling..., L + 3)]
+      d_contacts = [ (s_coupling..., L + 2), (s_coupling..., L + 4)]
+
+  elseif config == "1x1"
+      Lx = Ly = 1
+      s_contacts = [(s_coupling..., L + 1)]
+      d_contacts = [(s_coupling..., L + 1)]
+
+  else
+      error("Unrecognized config")
+  end 
+  
+  return s_contacts, d_contacts, Lx, Ly
+end 
 
 
 function get_type_dict(systype)
@@ -491,5 +512,38 @@ function prev_res()
   end 
 
   return last_time, last_state
+
+end 
+
+
+
+function ops_determiner(sys)
+
+  if systype(sys) == "Fermion"
+    ops = [ 
+        ["Cdag", "C"],
+        ["N", "N"]
+    ]
+
+  elseif typeof(sys) <: SD_array
+
+      ops = [
+          ["Cdagup", "Cup"],
+          ["Cdagdn", "Cdn"],
+          #["Nup", "Nup"],
+          #["Ndn", "Ndn"]
+      ]
+
+  elseif typeof(sys) == DPT_avg
+      ops = [
+          ["Cdagup", "Cup"],
+          #["Cdagdn", "Cdn"],
+          #["Cdagup", "Cdn"],
+          #["Cdagdn", "Cup"],
+          ["Nup", "Nup"]
+      ]
+  end 
+
+  return ops
 
 end 

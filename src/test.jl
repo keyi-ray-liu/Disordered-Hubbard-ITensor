@@ -113,6 +113,17 @@ end
 # occursin(Regex(TEMP_tag * get_static_str("biasedchain") * ".*.h5"), "temp_temp_plasmon1111111.h5")
 
 
+function corr_test2()
+
+    L = 5
+    s = siteinds("Fermion", L)
+    M = randomMPS(s)
+
+    ops = [["Cdag", "C"]]
+    @show corr_work(M, ops, 0)[1]
+
+
+end 
 
 function typetest()
 

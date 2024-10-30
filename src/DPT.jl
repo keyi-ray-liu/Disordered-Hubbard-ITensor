@@ -1,7 +1,7 @@
 """get mixed basis Reservoir parameters, the energies returned are at 0 bias, however the order is done at finite bias"""
 
 
-gen_obs(mixed, includeU) = [dyna_EE, dyna_occ, (mixed && includeU) ? dyna_dptcurrent_mix : dyna_dptcurrent, dyna_corr, dyna_SRDM]
+gen_obs(mixed, includeU) = [dyna_EE, dyna_occ, dyna_coherence, (mixed && includeU) ? dyna_dptcurrent_mix : dyna_dptcurrent, dyna_corr, dyna_SRDM]
 
 
 

@@ -159,8 +159,9 @@ function perturbation_wrapper()
     fin = get(chain_in, "fin", 100)
     dim = get(chain_in, "dim", 64)
     sites = get(chain_in, "sites", [1])
+    range = get(chain_in, "range", 1000)
 
-    run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin)
+    run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin, range=range)
 
     return nothing
 end 

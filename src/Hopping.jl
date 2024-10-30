@@ -274,7 +274,7 @@ function HoppingNeighbor(res::Reservoir_momentum, j::Int; left_offset=0)
     v = Ujk(res, adj_k, 1)
 
     contacts_ind = res.LR[adj_j] > 0 ? 1 : 2
-    contacts = res.ext_contact[contacts_ind]
+    contacts = res.ext_contacts[contacts_ind]
 
     for (coupling..., site) in contacts
         append!(hop, [[ v .* coupling..., site]])

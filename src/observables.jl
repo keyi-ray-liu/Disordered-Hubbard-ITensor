@@ -396,6 +396,53 @@ function dyna_occ(; sys=set_Chain(), ψ=nothing, kwargs...)
 
 end 
 
+function dyna_coherence(; ψ=nothing, sys=set_DPT(), kwargs...)
+
+    function work(ψ, sys)
+        
+        if systype(sys) == "Fermion" 
+            op1, op2 = "Cdag", "C"
+        else
+            op1, op2 = "Cdagup", "Cup"
+        end 
+        
+        coh = correlation_matrix(ψ, op1, op2; sites= get_systotal(sys) -1 : get_systotal(sys))
+        return coh[1, 2]
+    end 
+
+    workdir = getworkdir()
+
+    if isnothing(ψ)
+        T = []
+        cohs = []
+
+        for file in get_dyna_files()
+
+            ψ = load_ψ(file)
+            t = get_time(file)
+            append!(T, t)
+
+            println("Calculating coherence, $t")
+
+            coh = work(ψ, sys)
+            @show append!(cohs, coh)
+
+        end 
+
+        writedlm(workdir* "times", T)
+        writedlm(workdir* "coherence", cohs)
+    else
+
+        coh = work(ψ, sys)
+        open( workdir * "coherence", "a") do io
+            writedlm(io, coh)
+        end 
+
+    end 
+
+
+end 
+
 function dyna_dptcurrent(; ψ=nothing, sys=set_DPT(), kwargs...)
 
     function work(ψ, sys)
@@ -496,26 +543,83 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=set_DPT_mixed(), kwargs...)
 
 end 
 
-function dyna_SDcurrent(; ψ=nothing, sys=set_SD(), kwargs...)
-    @error "Not completed"
-    @assert typeof(sys) == SD_array "sys systype wrong!"
+function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, kwargs...)
     function work(ψ, sys)
         
         if  sys.systype == "Fermion" 
-            op1, op2 = "Cdag", "C"
+            ops = [["Cdag", "C"]]
         else
-            op1, op2 = "Cdagup", "Cup"
+            ops = [["Cdagup", "Cup"]]
         end 
         
-        corr = correlation_matrix(ψ, op1, op2; sites=sys.source.contact:sys.s_contact)
-        return 2 * imag(corr[1, end])
+        corrs = corr_work(ψ, ops, t)[1]
+        current = []
+
+        source = sys.source
+        drain = sys.drain
+        arr = sys.array
+
+        offset = get_systotal(source) + get_systotal(arr)
+
+        if typeof(source) == Reservoir_spatial
+
+            for (coupling, site) in source.ext_contact
+                contact = source.contact
+                @show contact, site
+                currentval = -2 * coupling * imag(corrs[ contact, site])
+                append!(current, currentval)
+            end 
+
+            for (coupling, site) in drain.ext_contact
+                contact = drain.contact + offset
+                @show contact, site
+                currentval = -2 * coupling * imag(corrs[ site, contact])
+                append!(current, currentval)
+
+            end 
+            # 
+
+        else
+            LR = vcat(source.LR, drain.LR)
+            ks = vcat(source.ks, drain.ks)
+
+            sourceinds = filter( x -> LR[x] > 0, 1:length(LR))
+            draininds = filter( x -> LR[x] < 0, 1:length(LR))
+
+            sourceadjinds = [ x > get_systotal(source) ? x + get_systotal(arr) : x for x in  sourceinds]
+            drainadjinds = [ x > get_systotal(source) ? x + get_systotal(arr) : x for x in  draininds]
+
+            Usource = [ Ujk(source, 1, k ) for k in ks[sourceinds]]
+            Udrain = [ Ujk(drain, 1, k) for k in ks[draininds]]
+
+            @show sourceinds, draininds, sourceadjinds, drainadjinds
+
+            # the contacts has both the source and drain
+            for (coupling, site) in source.ext_contacts[1]
+                
+                currentval = sum(Usource .* corrs[ sourceadjinds, site])
+                currentval = - 2 * coupling * imag(currentval)
+                append!(current, currentval)
+            end 
+
+            for (coupling, site) in source.ext_contacts[2]
+
+                currentval = sum(Udrain .* corrs[ site, drainadjinds])
+                currentval = - 2 * coupling * imag(currentval)
+                append!(current, currentval)
+            end 
+
+        end 
+
+        # check 
+        return current
     end 
 
     workdir = getworkdir()
 
     if isnothing(ψ)
         T = []
-        currentLR = []
+        SDcurrents = []
 
         for file in get_dyna_files()
 
@@ -526,17 +630,17 @@ function dyna_SDcurrent(; ψ=nothing, sys=set_SD(), kwargs...)
             println("Calculating DPT current, $t")
 
             current = work(ψ, sys)
-            @show append!(currentLR, current)
+            @show append!(SDcurrents, [current])
 
         end 
 
         writedlm(workdir* "times", T)
-        writedlm(workdir* "currentLR", currentLR)
+        writedlm(workdir* "currentSD", SDcurrents)
     else
 
         current = work(ψ, sys)
-        open( workdir * "currentLR", "a") do io
-            writedlm(io, current)
+        open( workdir * "currentSD", "a") do io
+            writedlm(io, [current])
         end 
 
     end 
@@ -545,55 +649,38 @@ function dyna_SDcurrent(; ψ=nothing, sys=set_SD(), kwargs...)
 end 
 
 
-function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
 
-    function work(ψ)
-
-        for (op1, op2) in ops
-            corr = correlation_matrix(ψ, op1, op2)
-            outfile = workdir * "corr" * op1 * op2 * ".h5"
-            h5open(outfile, isfile( outfile) ? "r+" : "w") do io
-
-                if !haskey(io, string(t))
-                    write(io, string(t), corr)
-                else
-                    @warn "duplicate key found, not write"
-                end 
-                
-            end 
-        end 
-
-        return nothing
-
-    end 
-
-
-    if systype(sys) == "Fermion"
-        ops = [ 
-            ["Cdag", "C"],
-            ["N", "N"]
-        ]
-
-    elseif typeof(sys) <: SD_array
-
-        ops = [
-            ["Cdagup", "Cup"],
-            ["Cdagdn", "Cdn"],
-            #["Nup", "Nup"],
-            #["Ndn", "Ndn"]
-        ]
-
-    elseif typeof(sys) == DPT_avg
-        ops = [
-            ["Cdagup", "Cup"],
-            #["Cdagdn", "Cdn"],
-            #["Cdagup", "Cdn"],
-            #["Cdagdn", "Cup"],
-            ["Nup", "Nup"]
-        ]
-    end 
+function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t)
 
     workdir = getworkdir()
+    corrs = []
+
+    for (op1, op2) in ops
+        corr = correlation_matrix(ψ, op1, op2)
+        #@show corr
+        outfile = workdir * "corr" * op1 * op2 * ".h5"
+        h5open(outfile, isfile( outfile) ? "r+" : "w") do io
+
+            if !haskey(io, string(t))
+                write(io, string(t), corr)
+            else
+                @warn "duplicate key found, not write"
+            end 
+            
+        end 
+        
+        append!(corrs, [corr])
+    end 
+
+    return corrs
+
+end 
+
+
+function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...) 
+
+    workdir = getworkdir()
+    ops = ops_determiner(sys)
 
     if isnothing(ψ)
 
@@ -604,7 +691,7 @@ function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
             ψ = load_ψ(file)
             t = get_time(file)
             println("Calculating corr, $t")
-            work(ψ)
+            _ = corr_work(ψ, ops, t)
 
             append!(T, t)
         end 
@@ -613,9 +700,10 @@ function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
 
     else
         
-        work(ψ)
+        _ = corr_work(ψ, ops, t)
     end 
 
+    return nothing
 
 end 
 
