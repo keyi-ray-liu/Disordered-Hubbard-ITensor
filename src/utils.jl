@@ -80,6 +80,17 @@ function set_SD_parameters(s_coupling, d_coupling, contact_scaling, L::Int, conf
       s_contacts = [(s_coupling..., L + 1)]
       d_contacts = [(s_coupling..., L + 1)]
 
+  elseif config == "3x3-single"
+      Lx = Ly = 3
+      s_contacts = [ (s_coupling..., L + 4)]
+      d_contacts = [ (s_coupling..., L + 6)]
+
+  elseif config == "2x2-single"
+      Lx = Ly = 2
+      s_contacts = [ (s_coupling..., L + 1)]
+      d_contacts = [ (s_coupling..., L + 4)]
+
+
   else
       error("Unrecognized config")
   end 
@@ -108,6 +119,7 @@ function getworkdir()
 
   if !isdir(workdir)
     mkdir(workdir)
+
   end 
 
   return workdir

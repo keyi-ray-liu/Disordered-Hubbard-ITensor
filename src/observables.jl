@@ -563,17 +563,17 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, kwarg
 
         if typeof(source) == Reservoir_spatial
 
-            for (coupling, site) in source.ext_contact
+            for (_, site) in source.ext_contact
                 contact = source.contact
                 @show contact, site
-                currentval = -2 * coupling * imag(corrs[ contact, site])
+                currentval = -2  * imag(corrs[ contact, site])
                 append!(current, currentval)
             end 
 
-            for (coupling, site) in drain.ext_contact
+            for (_, site) in drain.ext_contact
                 contact = drain.contact + offset
                 @show contact, site
-                currentval = -2 * coupling * imag(corrs[ site, contact])
+                currentval = -2 * imag(corrs[ site, contact])
                 append!(current, currentval)
 
             end 
@@ -595,17 +595,17 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, kwarg
             @show sourceinds, draininds, sourceadjinds, drainadjinds
 
             # the contacts has both the source and drain
-            for (coupling, site) in source.ext_contacts[1]
+            for (_, site) in source.ext_contacts[1]
                 
                 currentval = sum(Usource .* corrs[ sourceadjinds, site])
-                currentval = - 2 * coupling * imag(currentval)
+                currentval = -2 * imag(currentval)
                 append!(current, currentval)
             end 
 
-            for (coupling, site) in source.ext_contacts[2]
+            for (_, site) in source.ext_contacts[2]
 
                 currentval = sum(Udrain .* corrs[ site, drainadjinds])
-                currentval = - 2 * coupling * imag(currentval)
+                currentval = -2 * imag(currentval)
                 append!(current, currentval)
             end 
 
