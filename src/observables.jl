@@ -549,10 +549,10 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, kwarg
         if  sys.systype == "Fermion" 
             ops = [["Cdag", "C"]]
         else
-            ops = [["Cdagup", "Cup"]]
+            ops = [["Cdagup", "Cup"], ["Cdagdn", "Cdn"]]
         end 
         
-        corrs = corr_work(ψ, ops, t)[1]
+        corrs = corr_work(ψ, ops, t)
         current = []
 
         source = sys.source
@@ -561,54 +561,56 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, kwarg
 
         offset = get_systotal(source) + get_systotal(arr)
 
-        if typeof(source) == Reservoir_spatial
+        for corr in corrs
+            if typeof(source) == Reservoir_spatial
 
-            for (_, site) in source.ext_contact
-                contact = source.contact
-                @show contact, site
-                currentval = -2  * imag(corrs[ contact, site])
-                append!(current, currentval)
+                for (_, site) in source.ext_contact
+                    contact = source.contact
+                    @show contact, site
+                    currentval = -2  * imag(corr[ contact, site])
+                    append!(current, currentval)
+                end 
+
+                for (_, site) in drain.ext_contact
+                    contact = drain.contact + offset
+                    @show contact, site
+                    currentval = -2 * imag(corr[ site, contact])
+                    append!(current, currentval)
+
+                end 
+                # 
+
+            else
+                LR = vcat(source.LR, drain.LR)
+                ks = vcat(source.ks, drain.ks)
+
+                sourceinds = filter( x -> LR[x] > 0, 1:length(LR))
+                draininds = filter( x -> LR[x] < 0, 1:length(LR))
+
+                sourceadjinds = [ x > get_systotal(source) ? x + get_systotal(arr) : x for x in  sourceinds]
+                drainadjinds = [ x > get_systotal(source) ? x + get_systotal(arr) : x for x in  draininds]
+
+                Usource = [ Ujk(source, 1, k ) for k in ks[sourceinds]]
+                Udrain = [ Ujk(drain, 1, k) for k in ks[draininds]]
+
+                @show sourceinds, draininds, sourceadjinds, drainadjinds
+
+                # the contacts has both the source and drain
+                for (_..., site) in source.ext_contacts[1]
+                    
+                    currentval = sum(Usource .* corr[ sourceadjinds, site])
+                    currentval = -2 * imag(currentval)
+                    append!(current, currentval)
+                end 
+
+                for (_..., site) in source.ext_contacts[2]
+
+                    currentval = sum(Udrain .* corr[ site, drainadjinds])
+                    currentval = -2 * imag(currentval)
+                    append!(current, currentval)
+                end 
+
             end 
-
-            for (_, site) in drain.ext_contact
-                contact = drain.contact + offset
-                @show contact, site
-                currentval = -2 * imag(corrs[ site, contact])
-                append!(current, currentval)
-
-            end 
-            # 
-
-        else
-            LR = vcat(source.LR, drain.LR)
-            ks = vcat(source.ks, drain.ks)
-
-            sourceinds = filter( x -> LR[x] > 0, 1:length(LR))
-            draininds = filter( x -> LR[x] < 0, 1:length(LR))
-
-            sourceadjinds = [ x > get_systotal(source) ? x + get_systotal(arr) : x for x in  sourceinds]
-            drainadjinds = [ x > get_systotal(source) ? x + get_systotal(arr) : x for x in  draininds]
-
-            Usource = [ Ujk(source, 1, k ) for k in ks[sourceinds]]
-            Udrain = [ Ujk(drain, 1, k) for k in ks[draininds]]
-
-            @show sourceinds, draininds, sourceadjinds, drainadjinds
-
-            # the contacts has both the source and drain
-            for (_, site) in source.ext_contacts[1]
-                
-                currentval = sum(Usource .* corrs[ sourceadjinds, site])
-                currentval = -2 * imag(currentval)
-                append!(current, currentval)
-            end 
-
-            for (_, site) in source.ext_contacts[2]
-
-                currentval = sum(Udrain .* corrs[ site, drainadjinds])
-                currentval = -2 * imag(currentval)
-                append!(current, currentval)
-            end 
-
         end 
 
         # check 

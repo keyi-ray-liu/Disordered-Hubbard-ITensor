@@ -43,13 +43,16 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
         if cur_ex == 1
             
 
-            energy, ψ = dmrg(H, ϕ, sweeps; eigsolve_krylovdim = krylovdim, observer=SizeObserver())
+            energy, ψ = dmrg(H, ϕ, sweeps; eigsolve_krylovdim = krylovdim, #observer=SizeObserver()
+            )
             cur_ex += 1
             
 
         else
 
-            energy, ψ = dmrg(H, prev_state, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim, observer=SizeObserver()) 
+            energy, ψ = dmrg(H, prev_state, ϕ, sweeps; weight=weight, eigsolve_krylovdim = krylovdim, 
+            #observer=SizeObserver()
+            ) 
 
             # check if cur energy is lower than previously achieved energy, if so, return to the point with lower energy (if not, start with current state as GS)
             if abs(energy - prev_energy[end]) > TOL && energy < prev_energy[end]

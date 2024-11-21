@@ -39,75 +39,58 @@ function LSR_SIAM_wrapper()
 end 
 
 
+function run_SD(::ProductStateDriver, energies, ks, LR,  fin, τ, obs;  biasA=0.0, biasS=0.0, biasD=0.0, kwargs... )
+    
+    @show init = nothing
+    @show sys = set_SD(; biasS = biasS, biasA = biasA, biasD=biasD, energies = energies, ks =ks, LR=LR, kwargs...)
+
+    run_gs_dyna(τ, fin, init, sys, obs; kwargs...)
+end 
+
+function run_SD(::BiasReleaseDriver, energies, ks, LR, fin, τ, obs;  biasA=0.0, biasS=0.0, biasD=0.0, biasAinit=0.0, kwargs... )
+    
+    @show init = set_SD(; biasS = biasS, biasA = biasAinit, biasD = biasD, energies = energies, ks =ks, LR=LR, s_coupling = 0.0, d_coupling = 0.0, kwargs...)
+    @show sys = set_SD(; biasS = 0.0, biasA = biasA, biasD=0.0, energies = energies, ks =ks, LR=LR, kwargs...)
+
+    run_gs_dyna(τ, fin, init, sys, obs; kwargs...)
+end 
+
+
+function run_SD(::BiasGSDriver, energies, ks, LR, fin, τ, obs;  biasA=0.0, biasS=0.0, biasD=0.0, biasAinit=0.0, kwargs... )
+    @assert biasS != biasD != 0
+
+    @show init = set_SD(; biasS = 0, biasA = biasAinit, biasD = 0, energies = energies, ks =ks, LR=LR,  kwargs...)
+    @show sys = set_SD(; biasS = biasS, biasA = biasA, biasD=biasD, energies = energies, ks =ks, LR=LR, kwargs...)
+
+    run_gs_dyna(τ, fin, init, sys, obs; kwargs...)
+end 
+
 
 """worker function that runs SD calculations"""
-function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, biasAinit = 500.0, manualmixprod=false, mode="productstate",  kwargs...)
+function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, biasAinit = 500.0, mode="productstate",  kwargs...)
  
     obs= [dyna_EE, dyna_occ, dyna_SDcurrent
     #dyna_SRDM, dyna_SDcurrent, dyna_corr,
     ]
 
-    # we first run a calculation with no bias on the LR, 
-    # sys = set_SD(;L=L, R=R, kwargs...)
-    # Static = set_Static(; output=EQINIT_STR)
-
-    #ψ = gen_state(sys)
-
-    # run_static_simulation(sys, Static, ψ)
-
     # now we switch on the bias in L/R
     energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed", get(kwargs, :Ls, 4), get(kwargs, :Ld, 4), biasS, biasD; couple_range=0 )
 
-    @show sys = set_SD(; biasA = biasA, biasS = biasS, biasD=biasD, energies = energies, ks =ks, LR =LR, kwargs...)
-
-    
-    # if ED
-    #     run_exact_diagonalization(sys, ψ)
-
-    last_time, last_state = prev_res()
-    @show last_time
-    start = last_time > -Inf ? last_time + τ : τ
-
     # else
     if mode == "productstate"
+        modedriver = ProductStateDriver()
 
-        ψ = gen_state(sys, manualmixprod=manualmixprod)
-        Stage1 = set_Dynamic(;τ=τ, start=start, fin=fin, kwargs...)
-        #ψ = load_ψ(EQINIT_STR)
+    elseif mode == "BiasRelease"
+        modedriver = BiasReleaseDriver()
 
-        _ = run_dynamic_simulation(sys, Stage1, ψ; save_every=false, obs=obs)
-    elseif mode == "leftGS"
+    elseif mode == "BiasGS"
+        modedriver = BiasGSDriver()
 
-        # we have a extremely strong bias on Left so we can load left
-        init = set_SD(; biasS = -1000, biasA = 0, biasD = 0, energies = energies, ks =ks, LR=LR, s_coupling = 0.0, d_coupling = 0.0, kwargs...)
-
-        Static = set_Static(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 64), ex=1, kwargs...)
-
-        ψ = gen_state(sys, manualmixprod=manualmixprod)
-        # GS calculation
-        ψ0 = last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ; message = "Init")[1]
-
-        Dynamic = set_Dynamic(;τ=τ, start=start, fin=fin, kwargs...)
-        _ = run_dynamic_simulation(sys, Dynamic, ψ0; save_every=false, obs=obs)
-
-    elseif mode == "LRbias"
-
-        @assert biasS != biasD != 0
-
-        ψ = gen_state(sys; manualmixprod=manualmixprod, random=true)
-        # we solve for the GS of the whole system at zero bias, we also bias the array so that nothing is occupied there
-        init = set_SD(; biasS = 0, biasA = biasAinit, biasD = 0, energies = energies, ks =ks, LR=LR, s_coupling = 0.0, d_coupling = 0.0, kwargs...)
-
-        Static = set_Static(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 64), sweepcnt=80, ex=1, kwargs...)
-
-        # GS calculation
-        ψ0 =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ; message = "Init")[1]
-
-        Dynamic = set_Dynamic(;τ=τ, start=start, fin=fin, kwargs...)
-        _ = run_dynamic_simulation(sys, Dynamic, ψ0; save_every=false, obs=obs)
-
+    else
+        error("Unrecognized Drive mode")
     end 
 
+    run_SD(modedriver, energies, ks, LR, fin, τ, obs;  biasA=biasA, biasS=biasS, biasD=biasD, biasAinit=biasAinit, kwargs... )
 
     # end 
 
@@ -115,6 +98,8 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, biasAinit = 500.
 
 
 end 
+
+
 
 
 function SD_wrapper()

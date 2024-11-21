@@ -13,18 +13,28 @@ ITensors.state(::StateName"A", ::SiteType"Fermion") = [sqrt(1 - A), sqrt(A)]
 
 
 abstract type Systems end 
-abstract type Simulations end
+abstract type SimulationParameters end
 abstract type Reservoir end
+abstract type ModeDriver end
 
 # """ Defines a Hubbard system """
 # struct Hubbard <: Systems
 #     U::Float64
 # end 
 
+struct BiasGSDriver <: ModeDriver
+end 
+
+struct BiasReleaseDriver <: ModeDriver
+end 
+
+struct ProductStateDriver <: ModeDriver
+end 
+
 # U(sys::Hubbard) = sys.U
 systype(sys::Systems) = "Fermion"
 
-struct Static <: Simulations
+struct Static <: SimulationParameters
 
     ex :: Int
     prev_state :: Vector{Any}
@@ -73,7 +83,7 @@ function set_Static(;
 
 end 
 
-struct Dynamic <: Simulations
+struct Dynamic <: SimulationParameters
 
     τ :: Float64
     start :: Float64
@@ -838,16 +848,16 @@ add_specific_int!(::Systems, res) = res
 
 
 
-mutable struct SizeObserver <: AbstractObserver
-end
+# mutable struct SizeObserver <: AbstractObserver
+# end
 
-function ITensors.measure!(o::SizeObserver; bond, sweep, half_sweep, psi, projected_operator, kwargs...)
-  if bond==1 && half_sweep==2
-    psi_size =  Base.format_bytes(Base.summarysize(psi))
-    PH_size =  Base.format_bytes(Base.summarysize(projected_operator))
-    println("After sweep $sweep, |psi| = $psi_size, |PH| = $PH_size")
-  end
-end
+# function ITensors.measure!(o::SizeObserver; bond, sweep, half_sweep, psi, projected_operator, kwargs...)
+#   if bond==1 && half_sweep==2
+#     psi_size =  Base.format_bytes(Base.summarysize(psi))
+#     PH_size =  Base.format_bytes(Base.summarysize(projected_operator))
+#     println("After sweep $sweep, |psi| = $psi_size, |PH| = $PH_size")
+#   end
+# end
 
 
 
