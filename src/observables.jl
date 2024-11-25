@@ -564,14 +564,14 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, kwarg
         for corr in corrs
             if typeof(source) == Reservoir_spatial
 
-                for (_, site) in source.ext_contact
+                for (_..., site) in source.ext_contact
                     contact = source.contact
                     @show contact, site
                     currentval = -2  * imag(corr[ contact, site])
                     append!(current, currentval)
                 end 
 
-                for (_, site) in drain.ext_contact
+                for (_..., site) in drain.ext_contact
                     contact = drain.contact + offset
                     @show contact, site
                     currentval = -2 * imag(corr[ site, contact])

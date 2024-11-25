@@ -69,8 +69,8 @@ end
 """worker function that runs SD calculations"""
 function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, biasAinit = 500.0, mode="productstate",  kwargs...)
  
-    obs= [dyna_EE, dyna_occ, dyna_SDcurrent
-    #dyna_SRDM, dyna_SDcurrent, dyna_corr,
+    obs= [dyna_EE, dyna_occ, dyna_SDcurrent, dyna_corr
+    #dyna_SRDM, 
     ]
 
     # now we switch on the bias in L/R
