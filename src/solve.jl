@@ -156,7 +156,7 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
 end 
 
 
-function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=Function[], init_obs = true, kwargs...)
+function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=Function[], corr_cutoff=Inf, init_obs = true, kwargs...)
 
     τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
 
@@ -164,7 +164,7 @@ function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=
 
     if init_obs
         for ob in obs
-            ob(;ψ=ψ, t=0, kwargs...)
+            ob(;ψ=ψ, t=0, corr_cutoff = corr_cutoff, kwargs...)
         end 
 
         open(getworkdir() * "times", "a" ) do io
@@ -202,7 +202,7 @@ function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=
 
         # we might need to calculate observables on the go
         for ob in obs
-            ob(;ψ=ψ, t=dt, kwargs...)
+            ob(;ψ=ψ, t=dt, corr_cutoff = corr_cutoff, kwargs...)
         end 
 
         if save_every

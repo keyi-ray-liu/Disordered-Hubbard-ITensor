@@ -17,7 +17,7 @@ end
 
 """we completely decoupled the code logic of dynamic SimulationParameters, it is required that one provides an initial state"""
 
-function run_dynamic_simulation(sys::Systems, simulation::Dynamic, ψ::MPS; message = "Dynamic", save_every=true, obs=Function[], init_obs=true)
+function run_dynamic_simulation(sys::Systems, simulation::Dynamic, ψ::MPS; message = "Dynamic", save_every=true, obs=Function[], init_obs=true, kwargs...)
 
     @info message
     h = gen_hamiltonian(sys)
@@ -27,7 +27,7 @@ function run_dynamic_simulation(sys::Systems, simulation::Dynamic, ψ::MPS; mess
 
     saveham(message, h)
 
-    ψ = time_evolve(H, ψ, simulation; save_every=save_every, obs=obs, sys=sys, init_obs=init_obs)
+    ψ = time_evolve(H, ψ, simulation; save_every=save_every, obs=obs, sys=sys, init_obs=init_obs, kwargs...)
 
     return ψ
 
@@ -53,7 +53,7 @@ function run_gs_dyna(τ, fin, init::Union{Nothing, Systems}, sys::Systems, obs; 
     end 
 
     Dynamic = set_Dynamic(;τ=τ, start=start, fin=fin, kwargs...)
-    _ = run_dynamic_simulation(sys, Dynamic, ψ0; save_every=false, obs=obs)
+    _ = run_dynamic_simulation(sys, Dynamic, ψ0; save_every=false, obs=obs, kwargs...)
 end 
 
 

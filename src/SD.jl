@@ -69,7 +69,7 @@ end
 """worker function that runs SD calculations"""
 function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, biasAinit = 500.0, mode="productstate",  kwargs...)
  
-    obs= [dyna_EE, dyna_occ, dyna_SDcurrent, dyna_corr
+    obs= [dyna_EE, dyna_occ, dyna_SDcurrent,
     #dyna_SRDM, 
     ]
 
@@ -90,7 +90,7 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, biasAinit = 500.
         error("Unrecognized Drive mode")
     end 
 
-    run_SD(modedriver, energies, ks, LR, fin, τ, obs;  biasA=biasA, biasS=biasS, biasD=biasD, biasAinit=biasAinit, kwargs... )
+    run_SD(modedriver, energies, ks, LR, fin, τ, obs;  biasA=biasA, biasS=biasS, biasD=biasD, biasAinit=biasAinit, corr_cutoff=4.0, kwargs... )
 
     # end 
 

@@ -543,7 +543,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=set_DPT_mixed(), kwargs...)
 
 end 
 
-function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, kwargs...)
+function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, corr_cutoff=Inf, kwargs...)
     function work(ψ, sys)
         
         if  sys.systype == "Fermion" 
@@ -552,7 +552,7 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, kwarg
             ops = [["Cdagup", "Cup"], ["Cdagdn", "Cdn"]]
         end 
         
-        corrs = corr_work(ψ, ops, t)
+        corrs = corr_work(ψ, ops, t; corr_cutoff=corr_cutoff)
         current = []
 
         source = sys.source
@@ -652,7 +652,7 @@ end
 
 
 
-function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t)
+function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t; corr_cutoff=Inf)
 
     workdir = getworkdir()
     corrs = []
@@ -660,15 +660,20 @@ function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t)
     for (op1, op2) in ops
         corr = correlation_matrix(ψ, op1, op2)
         #@show corr
-        outfile = workdir * "corr" * op1 * op2 * ".h5"
-        h5open(outfile, isfile( outfile) ? "r+" : "w") do io
 
-            if !haskey(io, string(t))
-                write(io, string(t), corr)
-            else
-                @warn "duplicate key found, not write"
+        if t < corr_cutoff
+            outfile = workdir * "corr" * op1 * op2 * ".h5"
+            h5open(outfile, isfile( outfile) ? "r+" : "w") do io
+
+                if !haskey(io, string(t))
+                    write(io, string(t), corr)
+                else
+                    @warn "duplicate key found, not write"
+                end 
+                
             end 
-            
+        else
+            @warn "t greater than correlation cutoff time, do not write to file"
         end 
         
         append!(corrs, [corr])
@@ -679,7 +684,7 @@ function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t)
 end 
 
 
-function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...) 
+function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, corr_cutoff=Inf, kwargs...) 
 
     workdir = getworkdir()
     ops = ops_determiner(sys)
@@ -692,17 +697,19 @@ function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, kwargs...)
 
             ψ = load_ψ(file)
             t = get_time(file)
-            println("Calculating corr, $t")
-            _ = corr_work(ψ, ops, t)
 
+            println("Calculating corr, $t")
+            _ = corr_work(ψ, ops, t; corr_cutoff=corr_cutoff)
             append!(T, t)
+
         end 
 
         writedlm(workdir* "times", T)
 
     else
-        
-        _ = corr_work(ψ, ops, t)
+
+        _ = corr_work(ψ, ops, t; corr_cutoff=corr_cutoff)
+
     end 
 
     return nothing
