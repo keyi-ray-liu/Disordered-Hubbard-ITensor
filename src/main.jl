@@ -93,7 +93,7 @@ end
 
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
-    rm(getworkdir(), force=true, recursive=true)
+    #rm(getworkdir(), force=true, recursive=true)
     #corr_test2()
     #init_test()
     SD_wrapper()

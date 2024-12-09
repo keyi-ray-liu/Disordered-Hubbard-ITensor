@@ -42,6 +42,9 @@ function cal_TCD(ψ1, ψ2; start_off = 0, end_off = 0
 end 
 
 
+
+
+
 """calculate reduced density matrix of one site"""
 function RDM(ψ::MPS, b::Int)
 
@@ -166,6 +169,28 @@ function dyna_SRDM(; ψ=nothing, kwargs...)
 
 end 
 
+function dyna_product_state_overlap(; ψ=nothing, sys=nothing, kwargs...)
+
+    workdir = getworkdir()
+    
+
+    if isnothing(ψ)
+        error("No supported")
+    else
+
+        if typeof(sys.source) == Reservoir_momentum
+            sites = siteinds(ψ)
+            ϕ = fermilevel(sys, sites)
+            overlap = abs2(inner(ϕ, ψ))
+
+            open( workdir * "productstateoverlap", "a") do io
+                writedlm(io, overlap)
+            end 
+        end 
+
+    end 
+    
+end 
 
 
 function dyna_EE(; max_order=3, ψ=nothing, kwargs...)

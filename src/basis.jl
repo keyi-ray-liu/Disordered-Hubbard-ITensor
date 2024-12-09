@@ -1,3 +1,6 @@
+
+shift_basis(left_len, arr_len, vals) = map( x -> x > left_len ? x + arr_len : x , vals)
+
 gen_mixed(mixed, args...; kwargs...) =  mixed ? gen_mixed(args...;kwargs...) : ([], [], [])
 
 function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, couple_range=2)
@@ -78,5 +81,42 @@ function Ujk(sys::Reservoir_momentum)
 
     L = length(sys.ks)
     return vectomat( [[ Ujk(sys, j, k) for j in 1:L] for k in 1:L])
+
+end 
+
+
+"""generate a product state across LR, representing the 0k fermi level, with all given parameters, at zero bias"""
+function fermilevel(sys :: SD_array, sites)
+
+    source = sys.source
+    array = sys.array
+    drain = sys.drain
+
+    empty = ["Emp" for _ in 1:get_systotal(sys)]
+
+    left_len = get_systotal(source)
+    arr_len = get_systotal(array)
+
+    LR = vcat(source.LR, drain.LR)
+
+    # the last occupied sites
+    
+    sourceinds = findall( x-> x>0, LR)[source.N[1] + 1:end]
+    sourceinds = shift_basis(left_len, arr_len, sourceinds)
+
+    draininds = findall( x-> x<0, LR)[drain.N[1] + 1:end]
+    draininds = shift_basis(left_len, arr_len, draininds)
+
+    # we assume no mixture of up and dn, for example
+    fillstr = systype(sys) == "Fermion" ? "Occ" : "UpDn"
+
+    empty[ draininds ] .= fillstr
+    empty[ sourceinds ] .= fillstr
+
+    @show empty
+    ϕ = random_mps(sites, empty)
+
+    return ϕ
+    
 
 end 
