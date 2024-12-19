@@ -40,7 +40,7 @@ function run_gs_dyna(τ, fin, init::Union{Nothing, Systems}, sys::Systems, obs; 
     @show last_time
     start = last_time > -Inf ? last_time + τ : τ
 
-    ψ = gen_state(sys; random=random)
+    ψ = gen_state(sys; random=random, kwargs...)
     # we solve for the GS of the whole system at zero bias, we also bias the array so that nothing is occupied there
 
     if isnothing(init)

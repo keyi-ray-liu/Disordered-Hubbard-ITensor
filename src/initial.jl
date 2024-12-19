@@ -71,12 +71,19 @@ gen_state_str(sys::Reservoir; kwargs...) = reverse!([ get_type_dict(sys.systype)
 
 
 
-function gen_state_str(sys::SD_array; random=false, kwargs...) 
+function gen_state_str(sys::SD_array; fermi=true, random=false, kwargs...) 
 
-    source = shuffler(gen_state_str(sys.source), random)
-    drain = shuffler(gen_state_str(sys.drain), random)
+    if fermi
+        state_str = fermilevel(sys)
 
-    return vcat( source, gen_state_str(sys.array), drain)
+    else
+        source = shuffler(gen_state_str(sys.source), random)
+        drain = shuffler(gen_state_str(sys.drain), random)
+
+        state_str = vcat( source, gen_state_str(sys.array), drain)
+    end 
+    
+    return state_str
 end 
 
 

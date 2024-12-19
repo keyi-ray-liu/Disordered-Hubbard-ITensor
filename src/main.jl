@@ -7,6 +7,26 @@ keyi.liu@nist.gov
 ALL RIGHTS RESERVED
 """
 
+
+for strs in ["Lazy", 
+    "DelimitedFiles",
+    "Glob",
+    "ITensors",
+    "ITensorsMPS",
+    "JSON3",
+    "StatsBase",
+    "KrylovKit",
+    "Suppressor",
+    "ITensorGaussianMPS",
+    "HDF5",
+    "Observers",
+    "StableRNGs",
+    "ITensorUnicodePlots"
+    ]
+
+    Pkg.add(strs)
+end 
+
 using Lazy
 using DelimitedFiles
 using Glob

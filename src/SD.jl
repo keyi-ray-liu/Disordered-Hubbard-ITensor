@@ -71,7 +71,7 @@ function run_SD(fin; τ=0.125, biasS=0.0, biasA=0.0, biasD=0.0, biasAinit = 500.
  
     obs= [dyna_EE, dyna_occ, dyna_SDcurrent,
     #dyna_SRDM, 
-    dyna_product_state_overlap
+    #dyna_product_state_overlap
     ]
 
     # now we switch on the bias in L/R

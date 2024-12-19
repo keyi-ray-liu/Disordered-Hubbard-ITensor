@@ -85,8 +85,11 @@ function Ujk(sys::Reservoir_momentum)
 end 
 
 
+
+
+
 """generate a product state across LR, representing the 0k fermi level, with all given parameters, at zero bias"""
-function fermilevel(sys :: SD_array, sites)
+function fermilevel(sys :: SD_array)
 
     source = sys.source
     array = sys.array
@@ -107,16 +110,22 @@ function fermilevel(sys :: SD_array, sites)
     draininds = findall( x-> x<0, LR)[drain.N[1] + 1:end]
     draininds = shift_basis(left_len, arr_len, draininds)
 
+    arrayinds = left_len + 1 : left_len + arr_len
+
     # we assume no mixture of up and dn, for example
     fillstr = systype(sys) == "Fermion" ? "Occ" : "UpDn"
 
     empty[ draininds ] .= fillstr
     empty[ sourceinds ] .= fillstr
 
-    @show empty
-    ϕ = random_mps(sites, empty)
+    empty[arrayinds] = gen_state_str(array)
 
-    return ϕ
+    @show "fermi:", empty
+    @show length(empty)
+
+    return empty
     
 
 end 
+
+fermilevel(sys::SD_array, sites)  = random_mps(sites, fermilevel(sys); linkdims=10)
