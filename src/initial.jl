@@ -73,7 +73,7 @@ gen_state_str(sys::Reservoir; kwargs...) = reverse!([ get_type_dict(sys.systype)
 
 function gen_state_str(sys::SD_array; fermi=true, random=false, kwargs...) 
 
-    if fermi
+    if fermi && typeof(sys.source) != Reservoir_spatial
         state_str = fermilevel(sys)
 
     else
