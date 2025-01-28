@@ -130,7 +130,7 @@ end
 vectomat( vec ) = mapreduce( permutedims, vcat, vec)
 
 
-load_JSON(location) = JSON3.read(location, Dict{String, Any} )
+load_JSON(location) = @show JSON3.read(read(location))
 
 """Wrapper function for the evaluation of the std of Hamiltonian"""
 function variance(H::MPO, psi::MPS)
@@ -558,4 +558,27 @@ function ops_determiner(sys)
 
   return ops
 
+end 
+
+
+function get_time_control()
+
+  timepara = load_JSON( pwd() * "/timepara.json")
+
+  if haskey(timepara, "t1")
+    τ1 = get(timepara, "t1", 0.25)
+    τ2 = get(timepara, "t2", 2)
+    fin1 = get(timepara, "fin1", 2.0)
+    fin2 = get(timepara, "fin2", 100.0)
+
+    timecontrol = TwoStage(τ1, τ2, fin1, fin2)
+  else
+
+    τ = get(timepara, "t", 0.25)
+    fin = get(timepara, "fin", 100.0)
+
+    timecontrol = OneStage(τ, fin)
+  end 
+
+  return timecontrol
 end 

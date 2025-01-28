@@ -1,9 +1,10 @@
 
 shift_basis(left_len, arr_len, vals) = map( x -> x > left_len ? x + arr_len : x , vals)
 
-gen_mixed(mixed, args...; kwargs...) =  mixed ? gen_mixed(args...;kwargs...) : ([], [], [])
 
-function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, couple_range=2)
+gen_mixed(mixed :: Bool; kwargs...) =  mixed ? gen_mixed(;kwargs...) : ([], [], [])
+
+function gen_mixed(;L = 4, R =4 , bias_L = 0.0, bias_R=0.0, ω = 1.0,  ordering="SORTED", includeU=true, couple_range=2)
     @info "Set mixed basis, $ordering"
     unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 
@@ -17,8 +18,8 @@ function gen_mixed(L, R, bias_L, bias_R; ordering="SORTED", includeU=true, coupl
     # we test individual version
 
 
-    L_val = [ (2 *  cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
-    R_val = [ (2 *  cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
+    L_val = [ (2 * ω * cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
+    R_val = [ (2 * ω * cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
 
 
     if ordering == "RNG"

@@ -193,7 +193,7 @@ function dyna_product_state_overlap(; ψ=nothing, sys=nothing, kwargs...)
 end 
 
 
-function dyna_EE(; max_order=3, ψ=nothing, kwargs...)
+function dyna_EE(; max_order=1, ψ=nothing, kwargs...)
 
 
     #sites = []
@@ -241,7 +241,7 @@ function dyna_EE(; max_order=3, ψ=nothing, kwargs...)
         ee, bond = scan_ee(ψ, max_order)
 
         open(workdir * "SvN", "a") do io
-            writedlm(io, [ee[:,1]])
+            writedlm(io, [round.(ee[:,1], sigdigits=6)])
         end 
 
         for order in 2:max_order
@@ -251,7 +251,7 @@ function dyna_EE(; max_order=3, ψ=nothing, kwargs...)
         end 
 
         open(workdir * "bonds", "a") do io
-            writedlm(io, [bond])
+            writedlm(io, [round.(bond, sigdigits=6)])
         end 
 
     end 
@@ -390,11 +390,11 @@ function dyna_occ(; sys=set_Chain(), ψ=nothing, kwargs...)
         end 
 
         if systype(sys) == "Electron"
-            writedlm(workdir * "occup", occup)   
-            writedlm(workdir * "occdn", occdn)   
+            writedlm(workdir * "occup", round.(occup, digits=6))   
+            writedlm(workdir * "occdn", round.(occdn, digits=6))   
     
         else
-            writedlm(workdir * "occ", occs)   
+            writedlm(workdir * "occ", round.(occs, digits=6))   
         end 
 
         writedlm(workdir* "times", T)
@@ -403,16 +403,16 @@ function dyna_occ(; sys=set_Chain(), ψ=nothing, kwargs...)
 
         if systype(sys) == "Fermion"
             open(workdir * "occ", "a") do io
-                writedlm( io, [expect(ψ, "N")])
+                writedlm( io, [round.(expect(ψ, "N"), sigdigits=6)])
             end 
 
         else
             open(workdir * "occup", "a") do io
-                writedlm( io, [expect(ψ, "Nup")])
+                writedlm( io, [round.(expect(ψ, "Nup"), sigdigits=6)])
             end 
 
             open(workdir * "occdn", "a") do io
-                writedlm( io, [expect(ψ, "Ndn")])
+                writedlm( io, [round.(expect(ψ, "Ndn"), sigdigits=6)])
             end 
 
         end 
@@ -667,7 +667,7 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, corr_
 
         current = work(ψ, sys)
         open( workdir * "currentSD", "a") do io
-            writedlm(io, [current])
+            writedlm(io, [round.(current, sigdigits=6)])
         end 
 
     end 

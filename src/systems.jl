@@ -16,6 +16,7 @@ abstract type Systems end
 abstract type SimulationParameters end
 abstract type Reservoir end
 abstract type ModeDriver end
+abstract type TimeControl end
 
 # """ Defines a Hubbard system """
 # struct Hubbard <: Systems
@@ -29,6 +30,18 @@ struct BiasReleaseDriver <: ModeDriver
 end 
 
 struct ProductStateDriver <: ModeDriver
+end 
+
+struct OneStage <: TimeControl
+    τ :: Float64
+    fin :: Float64
+end 
+
+struct TwoStage <: TimeControl
+    τ1 :: Float64
+    τ2 :: Float64
+    fin1 :: Float64
+    fin2 :: Float64
 end 
 
 # U(sys::Hubbard) = sys.U
