@@ -104,30 +104,18 @@ struct Dynamic <: SimulationParameters
     TEcutoff :: Float64
     TEdim :: Int
     nsite :: Int
-
-
+    function Dynamic(    
+        τ = 0.1,
+        start = 0.1,
+        fin=20.0,
+        TEcutoff=1E-12,
+        TEdim=64,
+        nsite=2,
+        kwargs...)
+        new(τ, start, fin, TEcutoff, TEdim, nsite)
+    end 
 end 
 
-function set_Dynamic(;
-    τ = 0.1,
-    start = 0.1,
-    fin=20.0,
-    TEcutoff=1E-12,
-    TEdim=64,
-    nsite=2,
-    kwargs...
-    )
-
-    return Dynamic(
-        τ,
-        start,
-        fin,
-        TEcutoff,
-        TEdim,
-        nsite
-    )
-
-end 
 
 """ Defines a Coulomb system """
 struct Coulombic <: Systems
@@ -758,8 +746,11 @@ function set_SD(
     @show s_contacts, d_contacts
     source, drain = set_reservoir(; Ls=Ls, Ld=Ld, Ns=Ns, Nd=Nd, contacts = [Ls, 1], systype=systype, s_contacts=s_contacts, d_contacts = d_contacts, kwargs...)
 
-
-    array = set_Rectangular(; Lx=Lx, Ly=Ly, N=Na, systype=systype, kwargs...)
+    if contains(config, "ring")
+        array = Ring()
+    else
+        array = set_Rectangular(; Lx=Lx, Ly=Ly, N=Na, systype=systype, kwargs...)
+    end 
 
     SD = SD_array(
         source, 

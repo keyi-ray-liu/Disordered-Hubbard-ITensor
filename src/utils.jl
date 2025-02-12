@@ -90,6 +90,11 @@ function set_SD_parameters(s_coupling, d_coupling, contact_scaling, L::Int, conf
       s_contacts = [ (s_coupling..., L + 1)]
       d_contacts = [ (s_coupling..., L + 4)]
 
+  elseif config == "3x3-ring"
+
+
+      
+
 
   else
       error("Unrecognized config")

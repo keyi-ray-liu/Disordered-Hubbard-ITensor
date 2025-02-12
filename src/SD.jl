@@ -97,7 +97,7 @@ function run_SD(; biasS=0.0, biasA=0.0, biasD=0.0, biasAinit = 500.0, mode="prod
     
     timecontrol = get_time_control()
 
-    run_SD(modedriver, timecontrol, energies, ks, LR, obs;  biasA=biasA, biasS=biasS, biasD=biasD, biasAinit=biasAinit, corr_cutoff=8.0, kwargs... )
+    run_SD(modedriver, timecontrol, energies, ks, LR, obs;  biasA=biasA, biasS=biasS, biasD=biasD, biasAinit=biasAinit, corr_cutoff=0.0, kwargs... )
 
     # end 
 
