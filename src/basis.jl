@@ -103,6 +103,7 @@ function fermilevel(sys :: SD_array)
 
     LR = vcat(source.LR, drain.LR)
 
+
     # the last occupied sites
     
     sourceinds = findall( x-> x>0, LR)[source.N[1] + 1:end]

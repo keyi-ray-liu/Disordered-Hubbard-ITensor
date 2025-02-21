@@ -70,18 +70,15 @@ function init_test()
     N = 40
     L = 20
     
-    s = siteinds("Fermion", N;
-    conserve_qns=true
-    )
-    
-
     @show state = [  "Emp" for _ in 1:N]
-    ref = [ n <= L ? "Emp" : "Occ" for n in 1:N]
+
+    s = siteinds("Electron", N; conserve_qns=true)
+    
+    #ref = [ n <= L ? "Emp" : "Occ" for n in 1:N]
 
     M = randomMPS(s, state)
-    reference = randomMPS(s, ref)
 
-    for j in 1:L
+    for j in L:1
 
         # operator = ITensor(1.0)
         # for k in 1:N
@@ -90,8 +87,13 @@ function init_test()
         #     operator *= U * op("Cdag", s[k])
             
         # end 
-        operator = op("Cdag", s[j])
+        operator = op("Cdagup", s[j])
+        M = apply(operator, M)
+        operator = op("Cdagdn", s[j])
+        M = apply(operator, M)
 
+        @show j
+        operator = op("Cdagdn", s[j])
         M = apply(operator, M)
     end 
 
@@ -101,7 +103,7 @@ function init_test()
 
     # M = add(M, reference)
 
-    @show expect(M, "N")
+    @show expect(M, "Ntot")
     return nothing
 
 
@@ -127,7 +129,7 @@ end
 
 function typetest()
 
-    sys = set_Chain()
+    sys = Chain()
     @show  dis(0, 1, sys)
     res = []
     @show add_specific_int!(sys, res)

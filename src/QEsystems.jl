@@ -68,7 +68,7 @@ function set_QE_two(;
     end 
 
     if mode == "regular"
-        chain = set_Chain(;L=L, N=N, kwargs...)
+        chain = Chain(;L=L, N=N, kwargs...)
     elseif mode == "SSH"
         chain = set_SSH_chain(; L=L, N=N, v=v, w=w, kwargs...)
     end 

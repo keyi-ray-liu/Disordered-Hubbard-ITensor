@@ -9,7 +9,7 @@ function QE_static(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, statice
     ψ = !product ? load_ψ(output) : gen_state(sys)
 
     sys = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, kwargs...)
-    static = set_Static(; ex=staticex, sweepdim=TEdim, kwargs...)
+    static = StaticSimulation(; ex=staticex, sweepdim=TEdim, kwargs...)
     run_static_simulation(sys, static, ψ)
 
 end 
@@ -36,7 +36,7 @@ function QE_dyna_regular(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  
 
             temp_sys = QE_determiner(key; QEen=QEen, dp=temp_dp, center_parameter = center_parameter, kwargs...)
             # we only run it for 1 step
-            temp_dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=t, fin=t, kwargs..., )
+            temp_dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=t, fin=t, kwargs..., )
             ψ = run_dynamic_simulation(temp_sys, temp_dynamic, ψ; message="QEdyna_temp", save_every=save_every, obs=obs)
 
         end 
@@ -45,7 +45,7 @@ function QE_dyna_regular(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  
     end 
 
     sys = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, kwargs...)
-    dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=start, fin=fin, kwargs...)
+    dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=start, fin=fin, kwargs...)
     run_dynamic_simulation(sys, dynamic, ψ; message="QEdyna", save_every=save_every, obs=obs)
 
     
@@ -75,7 +75,7 @@ function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul
     if start < tswitch
         @info "Stage 1"
         Stage1 = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, confine_parameters=confine_parameters, kwargs...)
-        dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=start, fin=tswitch, kwargs...)
+        dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=start, fin=tswitch, kwargs...)
         ψ = run_dynamic_simulation(Stage1, dynamic, ψ; message="QEStage1", save_every=save_every, obs=obs)
 
     else
@@ -87,7 +87,7 @@ function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul
 
     @info "Stage 2"
     Stage2= QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, confine_parameters=s2, kwargs...)
-    dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=tswitch + τ, fin=fin, kwargs...)
+    dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=tswitch + τ, fin=fin, kwargs...)
     run_dynamic_simulation(Stage2, dynamic, ψ; message="QEStage2", save_every=save_every, obs=obs)
 
 end 
@@ -107,7 +107,7 @@ function QE_SSH(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0
     if start < tswitch
         @info "Stage 1"
         Stage1 = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, mode=mode, kwargs...)
-        dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=start, fin=tswitch, kwargs...)
+        dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=start, fin=tswitch, kwargs...)
         ψ = run_dynamic_simulation(Stage1, dynamic, ψ; message="QEStage1", save_every=save_every, obs=obs)
 
     else
@@ -119,7 +119,7 @@ function QE_SSH(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0
 
     @info "Stage 2"
     Stage2= QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, mode="regular", kwargs...)
-    dynamic = set_Dynamic(; TEdim=TEdim, τ=τ, start=tswitch + τ, fin=fin, kwargs...)
+    dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=tswitch + τ, fin=fin, kwargs...)
     run_dynamic_simulation(Stage2, dynamic, ψ; message="QEStage2", save_every=save_every, obs=obs, init_obs = tswitch <= start ? true : false)
 
 end 
@@ -199,14 +199,14 @@ function QE_gaussian_wrapper()
 
 
     if mode == "biasedchain"
-        sys= set_Chain(; L=full_size, N = full_N )
+        sys= Chain(; L=full_size, N = full_N )
     elseif mode == "QE_two"
 
         QEen = get_QEen(0.0, "QE_two", "genericPl", 256, 1.0, false; L=full_size, N=full_size)
         sys = set_QE_two(; L=L, N= full_N, QEen=QEen)
     end 
 
-    dynamic = set_Dynamic(; τ=τ, TEdim=TEdim, start=τ, fin=fin)
+    dynamic = DynamicSimulation(; τ=τ, TEdim=TEdim, start=τ, fin=fin)
     run_dynamic_simulation(sys, dynamic, ψ; message="QE_gaussian_chain_only", save_every=save_every, obs=obs)
 
     return nothing

@@ -55,7 +55,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
         if !check_ψ(EQINIT_STR)
             
-            Static = set_Static(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 64) , kwargs...)
+            Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 64) , kwargs...)
 
             # GS calculation
             ψ = gen_state(eq; initdd = initdd)
@@ -66,7 +66,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
         # Stage1, no bias, GS, start negative time
 
-        Stage1 = set_Dynamic(;τ=τ, start= s1begin + τ, fin=0, kwargs...)
+        Stage1 = DynamicSimulation(;τ=τ, start= s1begin + τ, fin=0, kwargs...)
         ψ1 = run_dynamic_simulation(eq, Stage1, ψ0; message="Stage1", save_every=save_every, obs=obs)
     else
 
@@ -83,7 +83,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
         noneq = DPT_setter(mixed, avg; U=U, L=L, R=R, t_doubledot=1e-15, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
-        Stage2 = set_Dynamic(;τ=τ, start= s2begin + τ, fin=t_switch , kwargs...)
+        Stage2 = DynamicSimulation(;τ=τ, start= s2begin + τ, fin=t_switch , kwargs...)
         ψ2 = run_dynamic_simulation(noneq, Stage2, ψ1; message="Stage2", save_every=save_every, obs=obs, init_obs=false)
 
     else
@@ -106,7 +106,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
             noneqtuninterval = DPT_setter(mixed, avg; U=U, L=L, R=R, t_doubledot=tempt_doubledot, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
-            Stage3interval = set_Dynamic(;τ=τ0, start=t_switch + t, fin=t_switch + t, kwargs...)
+            Stage3interval = DynamicSimulation(;τ=τ0, start=t_switch + t, fin=t_switch + t, kwargs...)
 
             ψ2 = run_dynamic_simulation(noneqtuninterval, Stage3interval, ψ2; message="Stage3interval",  save_every=save_every, obs=obs, init_obs=false)
 
@@ -117,7 +117,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
         s3begin = max(t_switch + τ, last_time)
         noneqtun = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, t_doubledot=t_doubledot, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
-        Stage3 = set_Dynamic(;τ=τ, start=s3begin + τ, fin=t_fin, kwargs...)
+        Stage3 = DynamicSimulation(;τ=τ, start=s3begin + τ, fin=t_fin, kwargs...)
 
         #ψ = load_ψ(t_switch)
 

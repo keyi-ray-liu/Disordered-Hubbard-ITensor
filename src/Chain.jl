@@ -1,7 +1,7 @@
 function run_GQS(L, N; τ=1.0, fin=1000.0, kwargs...)
 
     sys = set_GQS(; L=L, N=N, kwargs...)
-    simulation = set_Dynamic(;start=τ, fin=fin, τ=τ, kwargs...)
+    simulation = DynamicSimulation(;start=τ, fin=fin, τ=τ, kwargs...)
     ψ = gen_state(sys)
 
     run_dynamic_simulation(sys, simulation, ψ)
@@ -13,10 +13,10 @@ end
 
 function run_chain( L, N, ex; dim=64, kwargs...)
 
-    sys = set_Chain(;  L=L, N=N, kwargs...)
+    sys = Chain(;  L=L, N=N, kwargs...)
 
     @show sys
-    static = set_Static(; ex=ex, sweepdim=dim, kwargs...)
+    static = StaticSimulation(; ex=ex, sweepdim=dim, kwargs...)
     ψ = gen_state(sys)
     ψ = run_static_simulation(sys, static, ψ)
 
@@ -30,7 +30,7 @@ function run_biased_chain(fullsize, L, N, ex; dim=64, sweepcnt=40, kwargs...)
     sys = set_biased_chain(; biaswindow = [1, L], L=fullsize, N=N, kwargs...)
 
     @show sys
-    static = set_Static(; ex=ex, sweepdim=dim, sweepcnt=sweepcnt, kwargs...)
+    static = StaticSimulation(; ex=ex, sweepdim=dim, sweepcnt=sweepcnt, kwargs...)
     ψ = gen_state(sys; sites=get(kwargs, :sites, nothing))
     ψ = run_static_simulation(sys, static, ψ)
 
@@ -40,23 +40,23 @@ end
 
 function biased_quench(L, N; biaswindow=[1, 10], bias=500, dim=64, τ=0.5,  tswitch=50, fin=100, kwargs...)
 
-    sys = set_Chain(;  L=L, N=N, kwargs...)
+    sys = Chain(;  L=L, N=N, kwargs...)
     obs = [dyna_EE, dyna_occ, dyna_corr]
 
     @show sys
     @info "Solve GS"
-    static = set_Static(; ex=1, sweepdim=dim, sweepcnt=10, kwargs...)
+    static = StaticSimulation(; ex=1, sweepdim=dim, sweepcnt=10, kwargs...)
     ψ = gen_state(sys)
     ψ = run_static_simulation(sys, static, ψ)[1]
 
     @info "Quench"
     biased_sys = set_biased_chain(; L=L, N=N, biaswindow=biaswindow, bias=bias)
     @show biased_sys
-    Quench =  set_Dynamic(; TEdim=dim, τ=τ, start= τ, fin=tswitch, kwargs...)
+    Quench =  Dynamic(; TEdim=dim, τ=τ, start= τ, fin=tswitch, kwargs...)
     ψ = run_dynamic_simulation(biased_sys, Quench, ψ; message="Quench", save_every=false, obs=obs)
     
     @info "Relaxation"
-    Relaxation = set_Dynamic(; TEdim=dim, τ=τ, start= tswitch + τ, fin=fin, kwargs...)
+    Relaxation = DynamicSimulation(; TEdim=dim, τ=τ, start= tswitch + τ, fin=fin, kwargs...)
     _ = run_dynamic_simulation(sys, Relaxation, ψ; message="Relaxation", save_every=false, obs=obs)
 
 
@@ -68,12 +68,12 @@ end
 
 function run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin,  kwargs...)
 
-    sys = set_Chain(;  L=L, N=N, kwargs...)
+    sys = Chain(;  L=L, N=N, kwargs...)
     obs = [dyna_EE, dyna_occ, dyna_corr]
 
     @show sys
     @info "Solve GS"
-    static = set_Static(; ex=1, sweepdim=dim, sweepcnt=10, kwargs...)
+    static = StaticSimulation(; ex=1, sweepdim=dim, sweepcnt=10, kwargs...)
     ψ = gen_state(sys)
     ψ = run_static_simulation(sys, static, ψ)[1]
 
@@ -86,7 +86,7 @@ function run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin,  kwargs...
         normalize!(ψ)
     end 
 
-    Perturbation = set_Dynamic(; TEdim=dim, τ=τ, start=τ, fin=fin, kwargs...)
+    Perturbation = DynamicSimulation(; TEdim=dim, τ=τ, start=τ, fin=fin, kwargs...)
     _ = run_dynamic_simulation(sys, Perturbation, ψ; message="Perturbation", save_every=false, obs=obs)
 
     return nothing

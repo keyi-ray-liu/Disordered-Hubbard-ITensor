@@ -4,7 +4,7 @@ function run_LSR(L, R, fin; bias_L = biasLR, bias_R = -biasLR, τ=0.125, kwargs.
 
     # we first run a calculation with no bias on the LR, 
     sys = set_LSR_SIAM(;L=L, R=R)
-    Static = set_Static(; output=EQINIT_STR)
+    Static = StaticSimulation(; output=EQINIT_STR)
 
     ψ = gen_state(sys)
 
@@ -13,7 +13,7 @@ function run_LSR(L, R, fin; bias_L = biasLR, bias_R = -biasLR, τ=0.125, kwargs.
     # now we switch on the bias in L/R
     noneq = set_LSR_SIAM(;L=L, R=R, bias_L=bias_L, bias_R=bias_R)
 
-    Stage1 = set_Dynamic(;τ=τ, start=τ, fin=fin)
+    Stage1 = DynamicSimulation(;τ=τ, start=τ, fin=fin)
     ψ = load_ψ(EQINIT_STR)
 
     run_dynamic_simulation(noneq, Stage1, ψ)
@@ -42,25 +42,34 @@ end
 function run_SD(::ProductStateDriver, timecontrol::TimeControl, energies, ks, LR, obs;  biasA=0.0, biasS=0.0, biasD=0.0, kwargs... )
     
     @show init = nothing
-    @show sys = set_SD(; biasS = biasS, biasA = biasA, biasD=biasD, energies = energies, ks =ks, LR=LR, kwargs...)
+    @show sys = SD_array(; biasS = biasS, biasA = biasA, biasD=biasD, energies = energies, ks =ks, LR=LR, kwargs...)
 
     run_gs_dyna(timecontrol, init, sys, obs; kwargs...)
 end 
 
-function run_SD(::BiasReleaseDriver, timecontrol::TimeControl, energies, ks, LR, obs;  biasA=0.0, biasS=0.0, biasD=0.0, biasAinit=0.0, kwargs... )
+function run_SD(::BiasReleaseDriver, timecontrol::TimeControl, energies, ks, LR, obs;  Ns = 0, Nd = 0, s_coupling = 0.0, d_coupling =0.0, kwargs... )
     
-    @show init = set_SD(; biasS = biasS, biasA = biasAinit, biasD = biasD, energies = energies, ks =ks, LR=LR, s_coupling = 0.0, d_coupling = 0.0, kwargs...)
-    @show sys = set_SD(; biasS = 0.0, biasA = biasA, biasD=0.0, energies = energies, ks =ks, LR=LR, kwargs...)
+    init = SD_array(;  energies = energies, ks =ks, LR=LR, s_coupling = 0.0, d_coupling = 0.0, kwargs..., biasS = 1e5, biasA = 0.0, biasD = 1e5, Ns = 0, Nd = 0)
+    sys = SD_array(; energies = energies, ks =ks, LR=LR, s_coupling = s_coupling, d_coupling = d_coupling, kwargs..., biasS = 0.0, biasA = 0.0, biasD=0.0)
 
-    run_gs_dyna(timecontrol, init, sys, obs; kwargs...)
+    process = LoadSource(Ns)
+    run_gs_dyna(timecontrol, init, sys, obs; process = process, kwargs...)
 end 
+
+# function run_SD(::BiasReleaseDriver, timecontrol::TimeControl, energies, ks, LR, obs; s_coupling = 0.0, d_coupling =0.0, biasA=0.0, biasS=0.0, biasD=0.0, biasAinit=0.0, kwargs... )
+    
+#     @show init = SD_array(; biasS = biasS, biasA = biasAinit, biasD = biasD, energies = energies, ks =ks, LR=LR, s_coupling = 0.0, d_coupling = 0.0, kwargs...)
+#     @show sys = SD_array(; biasS = 0.0, biasA = biasA, biasD=0.0, energies = energies, ks =ks, LR=LR, s_coupling = s_coupling, d_coupling = d_coupling, kwargs...)
+
+#     run_gs_dyna(timecontrol, init, sys, obs; kwargs...)
+# end 
 
 
 function run_SD(::BiasGSDriver, timecontrol::TimeControl, energies, ks, LR, obs;  biasA=0.0, biasS=0.0, biasD=0.0, biasAinit=0.0, kwargs... )
     @assert biasS != biasD != 0
 
-    @show init = set_SD(; biasS = 0, biasA = biasAinit, biasD = 0, energies = energies, ks =ks, LR=LR,  kwargs...)
-    @show sys = set_SD(; biasS = biasS, biasA = biasA, biasD=biasD, energies = energies, ks =ks, LR=LR, kwargs...)
+    @show init = SD_array(; biasS = 0, biasA = biasAinit, biasD = 0, energies = energies, ks =ks, LR=LR,  kwargs...)
+    @show sys = SD_array(; biasS = biasS, biasA = biasA, biasD=biasD, energies = energies, ks =ks, LR=LR, kwargs...)
 
     run_gs_dyna(timecontrol, init, sys, obs; kwargs...)
 end 

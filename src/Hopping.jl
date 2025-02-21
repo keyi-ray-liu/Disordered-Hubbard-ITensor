@@ -136,6 +136,8 @@ function HoppingNeighbor(sys::Rectangular, j::Int; left_offset=0)
 
 end 
 
+HoppingNeighbor(sys:: Ring, j::Int; left_offset=0) = HoppingNeighbor(sys.array, j; left_offset=left_offset)
+
 function HoppingNeighbor(sys::DPT, j::Int)
 
     # # if L or R, no contact

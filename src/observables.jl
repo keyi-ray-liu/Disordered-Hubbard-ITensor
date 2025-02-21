@@ -356,7 +356,7 @@ end
 
 
 
-function dyna_occ(; sys=set_Chain(), ψ=nothing, kwargs...)
+function dyna_occ(; sys=Chain(), ψ=nothing, kwargs...)
 
     workdir = getworkdir()
 
@@ -568,7 +568,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=set_DPT_mixed(), kwargs...)
 
 end 
 
-function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=set_SD(), t=nothing, corr_cutoff=Inf, kwargs...)
+function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=SD_array(), t=nothing, corr_cutoff=Inf, kwargs...)
     function work(ψ, sys)
         
         if  sys.systype == "Fermion" 
@@ -709,7 +709,7 @@ function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t; corr_cutoff=Inf)
 end 
 
 
-function dyna_corr(; ψ=nothing, sys=set_Chain(), t=nothing, corr_cutoff=Inf, kwargs...) 
+function dyna_corr(; ψ=nothing, sys=Chain(), t=nothing, corr_cutoff=Inf, kwargs...) 
 
     workdir = getworkdir()
     ops = ops_determiner(sys)

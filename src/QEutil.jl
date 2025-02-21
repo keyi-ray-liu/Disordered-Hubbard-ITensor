@@ -19,7 +19,7 @@ function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
         decoupled = QE_determiner(key; QEen=0.0, dp=0.0, center_parameter = EMPTY_CENTER, kwargs...)
     
         # get plasmon energy
-        static = set_Static(; ex=ex, output=output, sweepdim=TEdim, kwargs...)
+        static = StaticSimulation(; ex=ex, output=output, sweepdim=TEdim, kwargs...)
     
         ϕ = gen_state(decoupled)
         run_static_simulation(decoupled, static, ϕ; message="QEinit")
@@ -46,7 +46,7 @@ function get_QEinit(init_key, key, TEdim; kwargs...)
         decoupled = QE_determiner(key; QEen=0.0, dp=0.0, center_parameter = EMPTY_CENTER, kwargs...)
     
         # get plasmon energy
-        static = set_Static(; ex=ex, output=init_key, sweepdim=TEdim, kwargs...)
+        static = StaticSimulation(; ex=ex, output=init_key, sweepdim=TEdim, kwargs...)
     
         ϕ = gen_state(decoupled)
         run_static_simulation(decoupled, static, ϕ; message="QEinit")
@@ -211,7 +211,7 @@ function solve_QE(; para_in = nothing, mode="Biased_chain", output=get_static_st
     elseif mode == "QE_two"
 
         sys = set_QE_two(; dp=0.0, L=L, N=N)
-        static = set_Static(; ex=ex, sweepcnt=sweepcnt, sweepdim=dim, output=output)
+        static = StaticSimulation(; ex=ex, sweepcnt=sweepcnt, sweepdim=dim, output=output)
         ψ = gen_state(sys)
 
         @show sys
@@ -274,7 +274,7 @@ function test_embedding_wrapper()
     end 
 
     ori = set_QE_two(;L=12, N=6, dp=0.0)
-    static = set_Static(; ex=1, sweepcnt=5)
+    static = StaticSimulation(; ex=1, sweepcnt=5)
     ψ = gen_state(ori)
     ψori = run_static_simulation(ori, static, ψ)
 
@@ -288,7 +288,7 @@ function test_embedding_wrapper()
     ψn =  QE_embedding(sys, ψ)
 
     save(ψn, "embed")
-    dynamic = set_Dynamic()
+    dynamic = DynamicSimulation()
 
     #compare(ψori[1], ψn[1])
 

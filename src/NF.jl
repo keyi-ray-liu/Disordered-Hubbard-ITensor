@@ -2,9 +2,9 @@
 function run_NF(L, Nup, Ndn, t;  U=4.0, bias=0.0, kwargs...)
 
 
-    sys = set_NF_square(; L=L, Nup=Nup, Ndn=Ndn, t=t, U=U, bias=bias, kwargs...)
+    sys = NF_square(; L=L, Nup=Nup, Ndn=Ndn, t=t, U=U, bias=bias, kwargs...)
 
-    simulation = set_Static(; sweepcnt=100, sweepdim = 300, kwargs...)
+    simulation = StaticSimulation(; sweepcnt=100, sweepdim = 300, kwargs...)
     ψ = gen_state(sys)
 
     run_static_simulation(sys, simulation, ψ)

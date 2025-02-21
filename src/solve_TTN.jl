@@ -1,6 +1,6 @@
 
 
-function solve(H::ITensorNetworks.TreeTensorNetwork{Any}, ϕ::ITensorNetworks.TreeTensorNetwork{Any}, simulation::Static) 
+function solve(H::ITensorNetworks.TreeTensorNetwork{Any}, ϕ::ITensorNetworks.TreeTensorNetwork{Any}, simulation::StaticSimulation) 
 
     ex, prev_state, prev_energy, prev_var, sweepcnt, sweepdim, noise, TEcutoff, krylovdim, weight = SimulationParameters(simulation)
 
@@ -122,7 +122,7 @@ function solve(H::ITensorNetworks.TreeTensorNetwork{Any}, ϕ::ITensorNetworks.Tr
 end 
 
 
-function time_evolve(H::ITensorNetworks.TreeTensorNetwork{Any}, ψ::ITensorNetworks.TreeTensorNetwork{Any}, simulation::Dynamic; save_every=true, obs=Function[], kwargs...)
+function time_evolve(H::ITensorNetworks.TreeTensorNetwork{Any}, ψ::ITensorNetworks.TreeTensorNetwork{Any}, simulation::DynamicSimulation; save_every=true, obs=Function[], kwargs...)
 
     τ, start, fin, TEcutoff, TEdim, nsites = SimulationParameters(simulation)
 

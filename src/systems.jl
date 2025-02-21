@@ -17,6 +17,7 @@ abstract type SimulationParameters end
 abstract type Reservoir end
 abstract type ModeDriver end
 abstract type TimeControl end
+abstract type StateModifier end
 
 # """ Defines a Hubbard system """
 # struct Hubbard <: Systems
@@ -30,6 +31,13 @@ struct BiasReleaseDriver <: ModeDriver
 end 
 
 struct ProductStateDriver <: ModeDriver
+end 
+
+struct Identity <: StateModifier
+end 
+
+struct LoadSource <: StateModifier
+    N :: Int
 end 
 
 struct OneStage <: TimeControl
@@ -47,7 +55,7 @@ end
 # U(sys::Hubbard) = sys.U
 systype(sys::Systems) = "Fermion"
 
-struct Static <: SimulationParameters
+struct StaticSimulation <: SimulationParameters
 
     ex :: Int
     prev_state :: Vector{Any}
@@ -60,27 +68,22 @@ struct Static <: SimulationParameters
     krylovdim :: Int
     weight :: Float64
     output :: String
-    
-end 
 
-output(simulation::Static) = simulation.output
-
-function set_Static(;
-    ex =1,
-    prev_state =MPS[], 
-    prev_energy =Float64[], 
-    prev_var =Float64[], 
-    sweepcnt= 60,
-    sweepdim =64, 
-    noise=true, 
-    cutoff=1e-12, 
-    krylovdim=8, 
-    weight=10,
-    output ="wf",
-    kwargs...
+    function StaticSimulation(;
+        ex =1,
+        prev_state =MPS[], 
+        prev_energy =Float64[], 
+        prev_var =Float64[], 
+        sweepcnt= 20,
+        sweepdim =64, 
+        noise=true, 
+        cutoff=1e-16, 
+        krylovdim=8, 
+        weight=10,
+        output ="wf",
+        kwargs...
     )
-    
-    return Static(
+    new(
         ex,
         prev_state,
         prev_energy,
@@ -93,10 +96,14 @@ function set_Static(;
         weight,
         output
     )
-
+    end
+    
 end 
 
-struct Dynamic <: SimulationParameters
+output(simulation::StaticSimulation) = simulation.output
+
+
+struct DynamicSimulation <: SimulationParameters
 
     τ :: Float64
     start :: Float64
@@ -104,11 +111,11 @@ struct Dynamic <: SimulationParameters
     TEcutoff :: Float64
     TEdim :: Int
     nsite :: Int
-    function Dynamic(    
+    function DynamicSimulation(;  
         τ = 0.1,
         start = 0.1,
         fin=20.0,
-        TEcutoff=1E-12,
+        TEcutoff=1E-16,
         TEdim=64,
         nsite=2,
         kwargs...)
@@ -151,13 +158,37 @@ function set_Coulombic(;
 
 end 
 
-struct Chain{T} <: Systems where T <: Number
+struct Chain <: Systems
 
     L :: Int
     N :: Vector{Int}
     systype :: String
-    t :: Vector{T}
+    t :: Vector{Number}
     coulomb :: Coulombic
+    function Chain(;
+        L =2,
+        N =1,
+        systype="Fermion",
+        t=-1,
+        kwargs...
+        )
+    
+        t = FermionCondition(systype, t)
+        coulomb = set_Coulombic(;kwargs...)
+    
+        if typeof(N) == Int
+            N = systype == "Electron" ? [L - N, 0, 0, N] : [L - N, N, 0, 0]
+        end 
+    
+        new(
+            L,
+            N,
+            systype,
+            t,
+            coulomb
+        )
+
+    end 
 end 
 
 L(sys::Chain) = sys.L
@@ -167,30 +198,9 @@ t(sys::Chain) = sys.t
 ζ(sys::Chain) = sys.coulomb.ζ
 get_systotal(sys::Chain) = sys.L
 
-function set_Chain(;
-    L =2,
-    N =1,
-    systype="Fermion",
-    t=-1,
-    kwargs...
-    )
 
-    t = FermionCondition(systype, t)
-    coulomb = set_Coulombic(;kwargs...)
 
-    if typeof(N) == Int
-        N = [L - N, N, 0, 0]
-    end 
 
-    return Chain(
-        L,
-        N,
-        systype,
-        t,
-        coulomb
-    )
-
-end 
 
 
 struct SSH_chain <: Systems
@@ -212,7 +222,7 @@ systype(sys::SSH_chain) = systype(sys.chain)
 get_systotal(sys::SSH_chain) = get_systotal(sys.chain)
 t(sys::SSH_chain, j::Int) = t(sys.chain) .* (isodd(j) ? sys.v : sys.w)
 
-set_SSH_chain(; v=0.0, w=1.0, kwargs...) = SSH_chain( set_Chain(; kwargs...), v, w)
+set_SSH_chain(; v=0.0, w=1.0, kwargs...) = SSH_chain( Chain(; kwargs...), v, w)
 
 struct Biased_chain <: Systems
 
@@ -225,14 +235,14 @@ end
 systype(sys::Biased_chain) = systype(sys.chain)
 get_systotal(sys::Biased_chain) = get_systotal(sys.chain)
 
-set_biased_chain(; biaswindow=[1, 2], bias=-500, kwargs...) = Biased_chain( set_Chain(;kwargs...), biaswindow, bias)
+set_biased_chain(; biaswindow=[1, 2], bias=-500, kwargs...) = Biased_chain( Chain(;kwargs...), biaswindow, bias)
 
 struct GQS <: Systems
     chain :: Chain
     init :: Int
 end 
 
-set_GQS(;init=1, kwargs...) = GQS( set_Chain(;kwargs...), init)
+set_GQS(;init=1, kwargs...) = GQS( Chain(;kwargs...), init)
 
 init(sys::GQS) = sys.init
 N(sys::GQS) = N(sys.chain)
@@ -241,17 +251,52 @@ systype(sys::GQS) = systype(sys.chain)
 get_systotal(sys::GQS) = get_systotal(sys.chain)
 
 
-struct Rectangular{T} <: Systems where T <: Number
+struct Rectangular <: Systems 
 
     Lx :: Int
     Ly :: Int
     N :: Vector{Int}
     systype :: String
-    t :: Vector{T}
+    t :: Vector{Number}
     coulomb :: Coulombic
-    U :: Union{Float64, Int}
+    U :: Number
+
+    function Rectangular(;
+        Lx =3,
+        Ly = 3,
+        N =1,
+        systype="Fermion",
+        t=-1,
+        U=4.0,
+        kwargs...
+        )
+    
+        t = FermionCondition(systype, t)
+        coulomb = set_Coulombic(;kwargs...)
+        L = Lx * Ly
+    
+        if typeof(N) == Int
+            N = systype == "Electron" ? [L - N, 0, 0, N] : [L - N, N, 0, 0]
+        end 
+
+        @show N
+    
+        new(
+            Lx,
+            Ly,
+            N,
+            systype,
+            t,
+            coulomb,
+            U
+        )
+    
+    end 
 
 end 
+
+
+
 
 Lx(sys::Rectangular) = sys.Lx
 systype(sys::Rectangular) = sys.systype
@@ -260,43 +305,64 @@ t(sys::Rectangular) = sys.t
 get_systotal(sys::Rectangular) = sys.Lx * sys.Ly
 U(sys::Rectangular) = sys.U
 
-function set_Rectangular(;
-    Lx =3,
-    Ly = 3,
-    N =1,
-    systype="Fermion",
-    t=-1,
-    U=4.0,
-    kwargs...
+
+struct Ring  <: Systems
+
+    central_potential :: Number
+    array :: Rectangular
+
+    function Ring(;
+        central_potential = 1000.0,
+        kwargs...
     )
-
-    t = FermionCondition(systype, t)
-    coulomb = set_Coulombic(;kwargs...)
-    L = Lx * Ly
-
-    if typeof(N) == Int
-        N = [L - N, N, 0, 0]
+        array = Rectangular(;kwargs...)
+        new(
+            central_potential,
+            array
+        )
     end 
-
-    return Rectangular(
-        Lx,
-        Ly,
-        N,
-        systype,
-        t,
-        coulomb,
-        U
-    )
 
 end 
 
-struct NF_square{T} <: Systems where T <: Union{Float64, Int}
+get_systotal(sys::Ring) = get_systotal(sys.array)
+N(sys::Ring) = N(sys.array)
+U(sys::Ring) = U(sys.array)
+systype(sys::Ring) = systype(sys.array)
+
+
+struct NF_square <: Systems
 
     L :: Int
     N :: Vector{Int}
     U :: Float64
-    t :: Vector{T}
+    t :: Vector{Number}
     bias :: Union{Float64, Int}
+
+    function NF_square(;
+        L = 3,
+        Nup = 4,
+        Ndn = 4,
+        U = 4.0,
+        t = 0.001,
+        bias = 0.0,
+        kwargs...
+        )
+    
+        t = FermionCondition("Electron", t)
+        if L^2 - Nup - Ndn != 1
+            @warn "NF electron (hole) number !=1, is this expected behavior?"
+        end 
+    
+        new(
+            L,
+            [L^2 - Nup - Ndn, Nup, Ndn, 0],
+            U,
+            t,
+            bias
+        )
+    
+    
+    end 
 
 end 
 
@@ -308,31 +374,6 @@ bias(sys::NF_square) = sys.bias
 N(sys::NF_square) = sys.N
 systype(sys::NF_square) = "Electron"
 
-function set_NF_square(;
-    L = 3,
-    Nup = 4,
-    Ndn = 4,
-    U = 4.0,
-    t = 0.001,
-    bias = 0.0,
-    kwargs...
-    )
-
-    t = FermionCondition("Electron", t)
-    if L^2 - Nup - Ndn != 1
-        @warn "NF electron (hole) number !=1, is this expected behavior?"
-    end 
-
-    return NF_square(
-        L,
-        [L^2 - Nup - Ndn, Nup, Ndn, 0],
-        U,
-        t,
-        bias
-    )
-
-
-end 
 
 
 struct DPT <: Systems
@@ -664,6 +705,49 @@ struct SD_array{T, U} <: Systems where {T <: Reservoir, U <: Systems}
     systype :: String
     biasA :: Union{Float64, Int}
 
+    function SD_array(
+        ;
+        Ls :: Int= 12,
+        Ld :: Int= 12,
+        Ns = 1,
+        Na = 0,
+        Nd  = 0,
+        contact_scaling = 2.0,
+        s_coupling = -0.01,
+        d_coupling = -0.01,
+        systype = "Fermion",
+        biasA = 0.0,
+        config = "3x3",
+        kwargs...
+        )
+
+        
+        s_coupling = FermionCondition(systype, s_coupling)
+        d_coupling = FermionCondition(systype, d_coupling)
+    
+        s_contacts, d_contacts, Lx, Ly = set_SD_parameters(s_coupling, d_coupling, contact_scaling, Ls, config)
+    
+        @show s_contacts, d_contacts
+        @show Ns, Nd
+        source, drain = set_reservoir(; Ls=Ls, Ld=Ld, Ns=Ns, Nd=Nd, contacts = [Ls, 1], systype=systype, s_contacts=s_contacts, d_contacts = d_contacts, kwargs...)
+    
+        if contains(config, "ring")
+            #@assert systype == "Electron"
+            array = Ring(; Lx=Lx, Ly=Ly, N=Na, systype=systype, kwargs...)
+        else
+            array = Rectangular(; Lx=Lx, Ly=Ly, N=Na, systype=systype, kwargs...)
+        end 
+    
+        new{Reservoir, Systems}(
+            source, 
+            drain, 
+            array, 
+            systype, 
+            biasA
+        )
+    
+    end 
+
 end 
 
 get_systotal(sys::SD_array) = sum( [get_systotal(subsys) for subsys in [sys.source, sys.array, sys.drain]])
@@ -703,6 +787,8 @@ function set_reservoir(;
         Nd = systype == "Electron" ? [Ld - Nd, 0, 0, Nd] : [Ld - Nd, Nd, 0, 0]
     end 
 
+    #@show Ns, Nd
+
     if reservoir_type == "spatial"
         source = Reservoir_spatial(Ls, systype, t, Ns, contacts[1], biasS, s_contacts)
         drain = Reservoir_spatial(Ld, systype, t, Nd, contacts[2], biasD, d_contacts)
@@ -722,48 +808,7 @@ function set_reservoir(;
 end 
 
 
-function set_SD(
-    ;
-    Ls :: Int= 12,
-    Ld :: Int= 12,
-    Ns = 1,
-    Na = 0,
-    Nd  = 0,
-    contact_scaling = 2.0,
-    s_coupling = -0.01,
-    d_coupling = -0.01,
-    systype = "Fermion",
-    biasA = 0.0,
-    config = "3x3",
-    kwargs...
-)
 
-    s_coupling = FermionCondition(systype, s_coupling)
-    d_coupling = FermionCondition(systype, d_coupling)
-
-    s_contacts, d_contacts, Lx, Ly = set_SD_parameters(s_coupling, d_coupling, contact_scaling, Ls, config)
-
-    @show s_contacts, d_contacts
-    source, drain = set_reservoir(; Ls=Ls, Ld=Ld, Ns=Ns, Nd=Nd, contacts = [Ls, 1], systype=systype, s_contacts=s_contacts, d_contacts = d_contacts, kwargs...)
-
-    if contains(config, "ring")
-        array = Ring()
-    else
-        array = set_Rectangular(; Lx=Lx, Ly=Ly, N=Na, systype=systype, kwargs...)
-    end 
-
-    SD = SD_array(
-        source, 
-        drain, 
-        array, 
-        systype, 
-        biasA
-    )
-
-
-    return SD
-
-end 
 
 
 
@@ -842,9 +887,9 @@ CoulombParameters(sys::Union{Chain, Rectangular}) = CoulombParameters(sys.coulom
 
 CoulombParameters(sys::Coulombic) = sys.λ_ee, sys.λ_ne, sys.exch, sys.scr, sys.range, sys.CN, sys.ζ
 
-SimulationParameters(sys::Static) = sys.ex, sys.prev_state, sys.prev_energy, sys.prev_var, sys.sweepcnt, sys.sweepdim, sys.noise, sys.cutoff,sys.krylovdim, sys.weight
+SimulationParameters(sys::StaticSimulation) = sys.ex, sys.prev_state, sys.prev_energy, sys.prev_var, sys.sweepcnt, sys.sweepdim, sys.noise, sys.cutoff,sys.krylovdim, sys.weight
 
-SimulationParameters(sys::Dynamic) = sys.τ, sys.start, sys.fin, sys.TEcutoff, sys.TEdim, sys.nsite
+SimulationParameters(sys::DynamicSimulation) = sys.τ, sys.start, sys.fin, sys.TEcutoff, sys.TEdim, sys.nsite
 
 add_specific_int!(::Systems, res) = res
 

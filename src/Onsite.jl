@@ -145,6 +145,26 @@ function Onsite(sys::Union{Rectangular, Chain}, j::Int; left_offset=0) :: Float6
 
 end 
 
+
+function Onsite(sys::Ring, j::Int; left_offset=0)
+
+    onsite = Onsite(sys.array, j; left_offset=left_offset)
+
+    Lx = sys.array.Lx
+    Ly = sys.array.Ly
+    adj_j = j - left_offset
+
+    row = div(adj_j - 1, Lx) + 1
+    col = adj_j % Lx
+
+    if 1 < row < Ly  && 1 < col < Lx
+        onsite += sys.central_potential
+    end 
+
+    return onsite
+
+end 
+
 # we biase everywhere else on the chain with a large positive potential
 Onsite(sys::Biased_chain, j::Int; left_offset=0) = Onsite(sys.chain, j; left_offset=left_offset)  + (sys.biaswindow[1] <= j - left_offset <= sys.biaswindow[2] ? sys.bias : 0)
 

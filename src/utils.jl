@@ -29,7 +29,7 @@ function FermionCondition(systype::String, t::Union{Number, Vector{T}}) where T 
   if typeof(t) <: Number
     t = [ t for _ in 1:FermionCondition(systype)]
   end 
-
+  @show t
   @assert length(t) == FermionCondition(systype) "t length does not match F/E systype"
 
   return t
@@ -65,6 +65,7 @@ end
 
 function set_SD_parameters(s_coupling, d_coupling, contact_scaling, L::Int, config) 
   
+
   if config == "3x3"
       Lx = Ly = 3
       s_contacts = [ (s_coupling..., L + 1), (contact_scaling .* s_coupling..., L + 4), (s_coupling..., L + 7)]
@@ -80,7 +81,7 @@ function set_SD_parameters(s_coupling, d_coupling, contact_scaling, L::Int, conf
       s_contacts = [(s_coupling..., L + 1)]
       d_contacts = [(s_coupling..., L + 1)]
 
-  elseif config == "3x3-single"
+  elseif config == "3x3-single" || config == "3x3-single-ring"
       Lx = Ly = 3
       s_contacts = [ (s_coupling..., L + 4)]
       d_contacts = [ (s_coupling..., L + 6)]
@@ -89,11 +90,6 @@ function set_SD_parameters(s_coupling, d_coupling, contact_scaling, L::Int, conf
       Lx = Ly = 2
       s_contacts = [ (s_coupling..., L + 1)]
       d_contacts = [ (s_coupling..., L + 4)]
-
-  elseif config == "3x3-ring"
-
-
-      
 
 
   else
@@ -237,7 +233,7 @@ end
 
 # end 
 
-sitemap(sys::Systems, j) = j
+sitemap(::Systems, j::Int) = j
 # sitemap(sys::Union{QE_G_SIAM, DPT_graph}, j) = sitemap(sys)[j]
 
 
@@ -586,4 +582,38 @@ function get_time_control()
   end 
 
   return timecontrol
+end 
+
+
+
+modifystate(ψ :: MPS, :: Identity, :: Systems) = ψ
+
+
+function modifystate(ψ:: MPS, process :: LoadSource, sys :: Systems)
+
+  leftinds, _ = reservoirmapping(sys)
+  @show expect(ψ, "Ntot")
+
+  s = siteinds(ψ)
+
+  ops = systype(sys) == "Fermion" ? ["Cdag"] : ["Cdagup", "Cdagdn"]
+
+  @show N = process.N
+
+  sites_to_add = leftinds[  end - N + 1 : end ]
+  reverse!(sites_to_add)
+  for i in sites_to_add
+
+    @show i, length(s), length(ψ)
+    for opstring in ops
+
+      operator = op(opstring, s[i])
+      ψ = apply(operator, ψ)
+    end 
+
+  end 
+
+  @show expect(ψ, "Ntot")
+  return ψ
+
 end 

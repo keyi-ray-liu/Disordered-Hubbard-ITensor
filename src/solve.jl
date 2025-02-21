@@ -2,7 +2,7 @@
 """ DMRG routine that solves for the states given H and initial guess.
 
 Returns: array of MPS's"""
-function solve(H::MPO, ϕ::MPS, simulation::Static) 
+function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation) 
 
     ex, prev_state, prev_energy, prev_var, sweepcnt, sweepdim, noise, TEcutoff, krylovdim, weight = SimulationParameters(simulation)
 
@@ -156,7 +156,7 @@ function solve(H::MPO, ϕ::MPS, simulation::Static)
 end 
 
 
-function time_evolve(H::MPO, ψ::MPS, simulation::Dynamic; save_every=true, obs=Function[], corr_cutoff=Inf, init_obs = true, kwargs...)
+function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation; save_every=true, obs=Function[], corr_cutoff=Inf, init_obs = true, kwargs...)
 
     τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
 

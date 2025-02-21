@@ -1,4 +1,4 @@
-HubbardRepulsion(sys::Systems, j::Int) = systype(sys) == "Fermion" ? 0.0 : U(sys)
+HubbardRepulsion(sys::Systems, ::Int) = systype(sys) == "Fermion" ? 0.0 : U(sys)
 
 function HubbardRepulsion(sys::SD_array, j::Int)
 
@@ -18,7 +18,7 @@ function add_HubbardRepulsion!(sys::Systems, res::OpSum)
     
     @info "Adding HubbardRepulsion"
     systotal = get_systotal(sys)
-
+    
     sys_type = systype(sys)
 
     if sys_type == "Fermion"
