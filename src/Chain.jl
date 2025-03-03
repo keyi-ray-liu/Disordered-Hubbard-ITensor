@@ -11,14 +11,27 @@ function run_GQS(L, N; τ=1.0, fin=1000.0, kwargs...)
 end 
 
 
-function run_chain( L, N, ex; dim=64, kwargs...)
+function run_chain( template::Union{Chain, Ring}, L, N, ex; dim=64, kwargs...)
+
+    sys = template(;  L=L, N=N, kwargs...)
+
+    @show sys
+    static = StaticSimulation(; ex=ex, sweepdim=dim, kwargs...)
+    ψ = gen_state(sys)
+    ψ = run_static_simulation(sys, static, ψ, Identity())
+
+    return ψ
+
+end 
+
+function run_ring( L, N, ex; dim=64, kwargs...)
 
     sys = Chain(;  L=L, N=N, kwargs...)
 
     @show sys
     static = StaticSimulation(; ex=ex, sweepdim=dim, kwargs...)
     ψ = gen_state(sys)
-    ψ = run_static_simulation(sys, static, ψ)
+    ψ = run_static_simulation(sys, static, ψ, Identity())
 
     return ψ
 
@@ -32,7 +45,7 @@ function run_biased_chain(fullsize, L, N, ex; dim=64, sweepcnt=40, kwargs...)
     @show sys
     static = StaticSimulation(; ex=ex, sweepdim=dim, sweepcnt=sweepcnt, kwargs...)
     ψ = gen_state(sys; sites=get(kwargs, :sites, nothing))
-    ψ = run_static_simulation(sys, static, ψ)
+    ψ = run_static_simulation(sys, static, ψ, Identity())
 
     return ψ
 
@@ -47,7 +60,7 @@ function biased_quench(L, N; biaswindow=[1, 10], bias=500, dim=64, τ=0.5,  tswi
     @info "Solve GS"
     static = StaticSimulation(; ex=1, sweepdim=dim, sweepcnt=10, kwargs...)
     ψ = gen_state(sys)
-    ψ = run_static_simulation(sys, static, ψ)[1]
+    ψ = run_static_simulation(sys, static, ψ, Identity())[1]
 
     @info "Quench"
     biased_sys = set_biased_chain(; L=L, N=N, biaswindow=biaswindow, bias=bias)
@@ -75,7 +88,7 @@ function run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin,  kwargs...
     @info "Solve GS"
     static = StaticSimulation(; ex=1, sweepdim=dim, sweepcnt=10, kwargs...)
     ψ = gen_state(sys)
-    ψ = run_static_simulation(sys, static, ψ)[1]
+    ψ = run_static_simulation(sys, static, ψ, Identity())[1]
 
     s = siteinds(ψ)
 
@@ -124,7 +137,7 @@ function chain_wrapper()
     dim = get(chain_in, "dim", 64)
     
 
-    run_chain(L, N, ex; sweepcnt=sweepcnt, dim=dim)
+    run_chain( Chain(), L, N, ex; sweepcnt=sweepcnt, dim=dim)
 
     return nothing
 end 
@@ -162,6 +175,25 @@ function perturbation_wrapper()
     range = get(chain_in, "range", 1000)
 
     run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin, range=range)
+
+    return nothing
+end 
+
+
+function ring_wrapper()
+
+    ring_in = load_JSON(pwd() * "/ring.json")
+
+    L = get(ring_in, "L", 12)
+    N = get(ring_in, "N", 6)
+    sweepcnt = get(ring_in, "sweepcnt", 20)
+    systype = get(ring_in, "systype", "Electron")
+    ex = get(ring_in, "ex", 1)
+    dim = get(ring_in, "dim", 128)
+    U = get(ring_in, "U", 4.0)
+    
+
+    run_chain(Ring(), L, N, ex; sweepcnt=sweepcnt, dim=dim, U=U, systype=systype)
 
     return nothing
 end 

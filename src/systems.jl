@@ -36,6 +36,11 @@ end
 struct Identity <: StateModifier
 end 
 
+struct PreLoadGS <: StateModifier
+    filestr :: String
+end 
+
+
 struct LoadSource <: StateModifier
     N :: Int
 end 
@@ -78,7 +83,7 @@ struct StaticSimulation <: SimulationParameters
         sweepdim =64, 
         noise=true, 
         cutoff=1e-16, 
-        krylovdim=8, 
+        krylovdim=10, 
         weight=10,
         output ="wf",
         kwargs...
@@ -164,12 +169,14 @@ struct Chain <: Systems
     N :: Vector{Int}
     systype :: String
     t :: Vector{Number}
+    U :: Number
     coulomb :: Coulombic
     function Chain(;
         L =2,
         N =1,
         systype="Fermion",
         t=-1,
+        U = 0.0,
         kwargs...
         )
     
@@ -185,6 +192,7 @@ struct Chain <: Systems
             N,
             systype,
             t,
+            U,
             coulomb
         )
 
@@ -197,6 +205,7 @@ N(sys::Chain) = sys.N
 t(sys::Chain) = sys.t
 ζ(sys::Chain) = sys.coulomb.ζ
 get_systotal(sys::Chain) = sys.L
+U(sys::Chain) = sys.U
 
 
 
@@ -307,27 +316,26 @@ U(sys::Rectangular) = sys.U
 
 
 struct Ring  <: Systems
-
-    central_potential :: Number
-    array :: Rectangular
-
+    array :: Chain
     function Ring(;
-        central_potential = 1000.0,
         kwargs...
     )
-        array = Rectangular(;kwargs...)
+        array = Chain(;kwargs...)
         new(
-            central_potential,
             array
         )
     end 
 
 end 
 
+
+(::Ring)(;kwargs...) = Ring(; kwargs...)
+
 get_systotal(sys::Ring) = get_systotal(sys.array)
 N(sys::Ring) = N(sys.array)
 U(sys::Ring) = U(sys.array)
 systype(sys::Ring) = systype(sys.array)
+t(sys::Ring) = t(sys.array)
 
 
 struct NF_square <: Systems

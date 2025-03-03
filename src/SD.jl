@@ -8,7 +8,7 @@ function run_LSR(L, R, fin; bias_L = biasLR, bias_R = -biasLR, τ=0.125, kwargs.
 
     ψ = gen_state(sys)
 
-    run_static_simulation(sys, Static, ψ)
+    run_static_simulation(sys, Static, ψ, Identity())
 
     # now we switch on the bias in L/R
     noneq = set_LSR_SIAM(;L=L, R=R, bias_L=bias_L, bias_R=bias_R)
@@ -47,10 +47,10 @@ function run_SD(::ProductStateDriver, timecontrol::TimeControl, energies, ks, LR
     run_gs_dyna(timecontrol, init, sys, obs; kwargs...)
 end 
 
-function run_SD(::BiasReleaseDriver, timecontrol::TimeControl, energies, ks, LR, obs;  Ns = 0, Nd = 0, s_coupling = 0.0, d_coupling =0.0, kwargs... )
+function run_SD(::BiasReleaseDriver, timecontrol::TimeControl, energies, ks, LR, obs;  Ns = 0, Nd = 0, kwargs... )
     
-    init = SD_array(;  energies = energies, ks =ks, LR=LR, s_coupling = 0.0, d_coupling = 0.0, kwargs..., biasS = 1e5, biasA = 0.0, biasD = 1e5, Ns = 0, Nd = 0)
-    sys = SD_array(; energies = energies, ks =ks, LR=LR, s_coupling = s_coupling, d_coupling = d_coupling, kwargs..., biasS = 0.0, biasA = 0.0, biasD=0.0)
+    init = SD_array(;  energies = energies, ks =ks, LR=LR,  kwargs..., biasS = 1e16, biasA = 0.0, biasD = 1e16, Ns = 0, Nd = 0, s_coupling = 0.0, d_coupling = 0.0,)
+    sys = SD_array(; energies = energies, ks =ks, LR=LR, kwargs..., biasS = 0.0, biasD=0.0)
 
     process = LoadSource(Ns)
     run_gs_dyna(timecontrol, init, sys, obs; process = process, kwargs...)

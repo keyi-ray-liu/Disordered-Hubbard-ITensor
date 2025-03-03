@@ -136,7 +136,20 @@ function HoppingNeighbor(sys::Rectangular, j::Int; left_offset=0)
 
 end 
 
-HoppingNeighbor(sys:: Ring, j::Int; left_offset=0) = HoppingNeighbor(sys.array, j; left_offset=left_offset)
+function HoppingNeighbor(sys:: Ring, j::Int; left_offset=0) 
+
+    adj_j = j - left_offset
+
+    if 0 < adj_j < L(sys.array)
+        hop = HoppingNeighbor(sys.array, j; left_offset=left_offset)
+    elseif adj_j == L(sys.array)
+        hop = [[t(sys)..., left_offset + 1] ]
+    else
+        hop = []
+    end 
+
+    return hop
+end 
 
 function HoppingNeighbor(sys::DPT, j::Int)
 

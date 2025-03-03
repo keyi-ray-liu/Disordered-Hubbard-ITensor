@@ -1,7 +1,7 @@
 """we completely decoupled the code logic of static SimulationParameters, it is required that one provides an initial state
 Returns: return of solve function. Array of MPS's
 """
-function run_static_simulation(sys::Systems, simulation::StaticSimulation, ψ::MPS; process :: StateModifier = Identity(), message = "Static")
+function run_static_simulation(sys::Systems, simulation::StaticSimulation, ψ::MPS, process :: StateModifier; message = "Static")
 
     @info message
     @show sys
@@ -17,6 +17,16 @@ function run_static_simulation(sys::Systems, simulation::StaticSimulation, ψ::M
     return state
 end 
 
+
+function run_static_simulation(::Systems, ::StaticSimulation, ::MPS, process :: PreLoadGS;  message="")
+
+    @info "Preloadinginit"
+    filestr = process.filestr
+    ψ = load_ψ(filestr)
+
+    return ψ
+
+end 
 
 """we completely decoupled the code logic of dynamic SimulationParameters, it is required that one provides an initial state"""
 
@@ -52,10 +62,10 @@ function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys
     if isnothing(init)
         ψ0 = ψ
     else
-        Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 256) * 2, sweepcnt=get(kwargs, :sweepcnt, 50), ex=1, kwargs...)
+        Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 256) * 4, sweepcnt=get(kwargs, :sweepcnt, 200), ex=1, kwargs...)
 
         # GS calculation
-        ψ0 :: MPS =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ; message = "Init", process = process)[1]
+        ψ0 :: MPS =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ, process; message = "Init")[1]
 
     end 
 
@@ -81,10 +91,10 @@ function run_gs_dyna(timecontrol::TwoStage, init::Union{Nothing, Systems}, sys::
     if isnothing(init)
         ψ0 = ψ
     else
-        Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 256) * 2, sweepcnt=get(kwargs, :sweepcnt, 50), ex=1, kwargs...)
+        Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 256) * 4, sweepcnt=get(kwargs, :sweepcnt, 200), ex=1, kwargs...)
 
         # GS calculation
-        ψ0 =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ; message = "Init", process = process)[1]
+        ψ0 =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ, process ; message = "Init")[1]
     end 
 
     if last_time < fin1

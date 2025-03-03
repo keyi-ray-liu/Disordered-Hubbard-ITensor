@@ -7,7 +7,7 @@ function run_NF(L, Nup, Ndn, t;  U=4.0, bias=0.0, kwargs...)
     simulation = StaticSimulation(; sweepcnt=100, sweepdim = 300, kwargs...)
     ψ = gen_state(sys)
 
-    run_static_simulation(sys, simulation, ψ)
+    run_static_simulation(sys, simulation, ψ, Identity())
 
 end 
 

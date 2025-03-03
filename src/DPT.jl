@@ -59,7 +59,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
             # GS calculation
             ψ = gen_state(eq; initdd = initdd)
-            ψ0 =  run_static_simulation(eq, Static, ψ; message = "Init")[1]
+            ψ0 =  run_static_simulation(eq, Static, ψ, Identity(); message = "Init")[1]
         else
             ψ0 = load_ψ(EQINIT_STR)
         end 

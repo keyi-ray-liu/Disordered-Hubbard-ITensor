@@ -10,7 +10,7 @@ function QE_static(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, statice
 
     sys = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, kwargs...)
     static = StaticSimulation(; ex=staticex, sweepdim=TEdim, kwargs...)
-    run_static_simulation(sys, static, ψ)
+    run_static_simulation(sys, static, ψ, Identity())
 
 end 
 

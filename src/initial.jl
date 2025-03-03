@@ -192,7 +192,7 @@ function gen_state(sys::SD_array; manualmixprod=false, random=false, kwargs...)
         sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=true)
 
         ψ = randomMPS(sites, state_str
-        ; linkdims=10
+        #; linkdims=10
         )
 
     else
@@ -271,7 +271,7 @@ function gen_state(sys::Systems; QN=true, sites=nothing, kwargs...)
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
     @show gen_state_str(sys; kwargs...)
     ψ = randomMPS(sites, gen_state_str(sys) 
-    #; linkdims=2
+    ; linkdims=10
     )
 
     return ψ

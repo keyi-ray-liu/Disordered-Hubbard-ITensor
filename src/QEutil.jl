@@ -22,7 +22,7 @@ function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
         static = StaticSimulation(; ex=ex, output=output, sweepdim=TEdim, kwargs...)
     
         ϕ = gen_state(decoupled)
-        run_static_simulation(decoupled, static, ϕ; message="QEinit")
+        run_static_simulation(decoupled, static, ϕ, Identity(); message="QEinit")
     
         QEen = load_plasmon(output) * QEmul
     end
@@ -49,7 +49,7 @@ function get_QEinit(init_key, key, TEdim; kwargs...)
         static = StaticSimulation(; ex=ex, output=init_key, sweepdim=TEdim, kwargs...)
     
         ϕ = gen_state(decoupled)
-        run_static_simulation(decoupled, static, ϕ; message="QEinit")
+        run_static_simulation(decoupled, static, ϕ, Identity(); message="QEinit")
     end
 
     ψ = load_ψ(init_key)
@@ -215,7 +215,7 @@ function solve_QE(; para_in = nothing, mode="Biased_chain", output=get_static_st
         ψ = gen_state(sys)
 
         @show sys
-        _ = run_static_simulation(sys, static, ψ)
+        _ = run_static_simulation(sys, static, ψ, Identity())
 
     else
         error("Unknown mode!")
@@ -276,7 +276,7 @@ function test_embedding_wrapper()
     ori = set_QE_two(;L=12, N=6, dp=0.0)
     static = StaticSimulation(; ex=1, sweepcnt=5)
     ψ = gen_state(ori)
-    ψori = run_static_simulation(ori, static, ψ)
+    ψori = run_static_simulation(ori, static, ψ, Identity())
 
     save(ψori, "native")
 

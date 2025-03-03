@@ -31,7 +31,7 @@ function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation)
         setmaxdim!(sweeps, sweepdim)
 
         if noise
-            setnoise!(sweeps, 1E-5)
+            setnoise!(sweeps, 1E-6)
         end 
 
         setcutoff!(sweeps, TEcutoff)

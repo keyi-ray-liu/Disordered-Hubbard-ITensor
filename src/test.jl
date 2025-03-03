@@ -117,12 +117,14 @@ end
 
 function corr_test2()
 
-    L = 5
-    s = siteinds("Fermion", L)
-    M = randomMPS(s)
+    L = 4
+    s = siteinds("Electron", L; conserve_qns = true)
 
-    ops = [["Cdag", "C"]]
-    @show corr_work(M, ops, 0)[1]
+    str = [ isodd(i) ? "Up" : "Dn" for i in 1:L]
+
+    M = randomMPS(s, str)
+
+    @show (correlation_matrix(M, "Sz", "Sz"))
 
 
 end 
