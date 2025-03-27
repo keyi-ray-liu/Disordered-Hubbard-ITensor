@@ -79,33 +79,6 @@ function biased_quench(L, N; biaswindow=[1, 10], bias=500, dim=64, τ=0.5,  tswi
 end 
 
 
-function run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin,  kwargs...)
-
-    sys = Chain(;  L=L, N=N, kwargs...)
-    obs = [dyna_EE, dyna_occ, dyna_corr]
-
-    @show sys
-    @info "Solve GS"
-    static = StaticSimulation(; ex=1, sweepdim=dim, sweepcnt=10, kwargs...)
-    ψ = gen_state(sys)
-    ψ = run_static_simulation(sys, static, ψ, Identity())[1]
-
-    s = siteinds(ψ)
-
-    @info "Introducing perturbation"
-    for site in sites
-        Op = op("Cdag", s[site])
-        ψ = apply(Op, ψ)
-        normalize!(ψ)
-    end 
-
-    Perturbation = DynamicSimulation(; TEdim=dim, τ=τ, start=τ, fin=fin, kwargs...)
-    _ = run_dynamic_simulation(sys, Perturbation, ψ; message="Perturbation", save_every=false, obs=obs)
-
-    return nothing
-
-
-end 
 
 function GQS_wrapper()
 
@@ -157,24 +130,6 @@ function quench_wrapper()
     bias = get(chain_in, "bias", 500)
 
     biased_quench(L, N; biaswindow = biaswindow,dim=dim, τ=τ, tswitch=tswitch, fin=fin, bias=bias)
-
-    return nothing
-end 
-
-function perturbation_wrapper()
-
-    chain_in = load_JSON(pwd() * "/chain.json")
-
-    L = get(chain_in, "L", 12)
-    N = get(chain_in, "N", 6)
-    
-    τ = get(chain_in, "timestep", 0.5)
-    fin = get(chain_in, "fin", 100)
-    dim = get(chain_in, "dim", 64)
-    sites = get(chain_in, "sites", [1])
-    range = get(chain_in, "range", 1000)
-
-    run_perturbation(L, N; dim=dim, τ=τ, sites=sites, fin=fin, range=range)
 
     return nothing
 end 

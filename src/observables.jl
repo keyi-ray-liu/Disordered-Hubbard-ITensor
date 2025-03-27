@@ -314,7 +314,7 @@ function dyna_tcd(; gs=get_tcd_gs(), ψ=nothing,  kwargs...)
 
     workdir = getworkdir()
 
-    sys = get(kwargs, :sys, set_QE_two())
+    sys = get(kwargs, :sys, QE_two())
 
     if typeof(sys) == QE_two
         start_off = end_off = 2
@@ -568,7 +568,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=set_DPT_mixed(), kwargs...)
 
 end 
 
-function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=SD_array(), t=nothing, corr_cutoff=Inf, kwargs...)
+function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, t=nothing, corr_cutoff=Inf, kwargs...)
     function work(ψ, sys)
         
         if  sys.systype == "Fermion" 
@@ -586,20 +586,25 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=SD_array(), t=nothing, cor
 
         offset = get_systotal(source) + get_systotal(arr)
 
-        for corr in corrs
+        for (ic, corr) in enumerate(corrs)
             if typeof(source) == Reservoir_spatial
 
-                for (_..., site) in source.ext_contact
+                for (couplings..., site) in source.ext_contact
+                        
+
+                    coupling = couplings[ic]
                     contact = source.contact
                     @show contact, site
-                    currentval = -2  * imag(corr[ contact, site])
+                    currentval = -2  * imag(corr[ contact, site]) * abs(coupling)
                     append!(current, currentval)
                 end 
 
-                for (_..., site) in drain.ext_contact
+                for (couplings..., site) in drain.ext_contact
+
+                    coupling = couplings[ic]
                     contact = drain.contact + offset
                     @show contact, site
-                    currentval = -2 * imag(corr[ site, contact])
+                    currentval = -2 * imag(corr[ site, contact]) * abs(coupling)
                     append!(current, currentval)
 
                 end 
@@ -618,20 +623,22 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=SD_array(), t=nothing, cor
                 Usource = [ Ujk(source, 1, k ) for k in ks[sourceinds]]
                 Udrain = [ Ujk(drain, 1, k) for k in ks[draininds]]
 
-                @show sourceinds, draininds, sourceadjinds, drainadjinds
+                #@show sourceinds, draininds, sourceadjinds, drainadjinds
 
                 # the contacts has both the source and drain
-                for (_..., site) in source.ext_contacts[1]
+                for (couplings..., site) in source.ext_contacts[1]
                     
+                    coupling = couplings[ic]
                     currentval = sum(Usource .* corr[ sourceadjinds, site])
-                    currentval = -2 * imag(currentval)
+                    currentval = -2 * imag(currentval) * abs(coupling)
                     append!(current, currentval)
                 end 
 
-                for (_..., site) in source.ext_contacts[2]
+                for (couplings..., site) in source.ext_contacts[2]
 
+                    coupling = couplings[ic]
                     currentval = sum(Udrain .* corr[ site, drainadjinds])
-                    currentval = -2 * imag(currentval)
+                    currentval = -2 * imag(currentval) * abs(coupling)
                     append!(current, currentval)
                 end 
 

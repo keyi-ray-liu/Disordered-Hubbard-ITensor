@@ -69,27 +69,32 @@ function set_SD_parameters(s_coupling, d_coupling, contact_scaling, L::Int, conf
   if config == "3x3"
       Lx = Ly = 3
       s_contacts = [ (s_coupling..., L + 1), (contact_scaling .* s_coupling..., L + 4), (s_coupling..., L + 7)]
-      d_contacts = [ (s_coupling..., L + 3), (contact_scaling .* s_coupling..., L + 6), (s_coupling..., L + 9)]
+      d_contacts = [ (d_coupling..., L + 3), (contact_scaling .* d_coupling..., L + 6), (d_coupling..., L + 9)]
 
   elseif config == "2x2"
       Lx = Ly = 2
       s_contacts = [ (s_coupling..., L + 1), (s_coupling..., L + 3)]
-      d_contacts = [ (s_coupling..., L + 2), (s_coupling..., L + 4)]
+      d_contacts = [ (d_coupling..., L + 2), (d_coupling..., L + 4)]
 
   elseif config == "1x1"
       Lx = Ly = 1
       s_contacts = [(s_coupling..., L + 1)]
-      d_contacts = [(s_coupling..., L + 1)]
+      d_contacts = [(d_coupling..., L + 1)]
 
   elseif config == "3x3-single" || config == "3x3-single-ring"
       Lx = Ly = 3
       s_contacts = [ (s_coupling..., L + 4)]
-      d_contacts = [ (s_coupling..., L + 6)]
+      d_contacts = [ (d_coupling..., L + 6)]
+
+  elseif config == "3x3-19" 
+      Lx = Ly = 3
+      s_contacts = [ (s_coupling..., L + 1)]
+      d_contacts = [ (d_coupling..., L + 9)]
 
   elseif config == "2x2-single"
       Lx = Ly = 2
       s_contacts = [ (s_coupling..., L + 1)]
-      d_contacts = [ (s_coupling..., L + 4)]
+      d_contacts = [ (d_coupling..., L + 4)]
 
 
   else
@@ -131,7 +136,8 @@ end
 vectomat( vec ) = mapreduce( permutedims, vcat, vec)
 
 
-load_JSON(location) = @show JSON3.read(read(location))
+#load_JSON(location) = @show JSON3.read(read(location, String))
+load_JSON(location) = JSON3.read(location)
 
 """Wrapper function for the evaluation of the std of Hamiltonian"""
 function variance(H::MPO, psi::MPS)
@@ -179,30 +185,30 @@ checkexist(output) = isfile( getworkdir() * output * ".h5")
 
 
 # returns the precise site number of the ex QE site, beginning of the subsystem and end of subsystem, corresponding to site j
-function get_sys_loc(sys::QE_flat_SIAM, j::Int) 
+# function get_sys_loc(sys::QE_flat_SIAM, j::Int) 
 
-  if j <= left(sys)
+#   if j <= left(sys)
 
-    mod = (j - 1) % (siteseach(sys) + QESITES)
-    qe_loc = j - mod 
-    chain_begin = qe_loc + QESITES
-    chain_end = chain_begin + siteseach(sys) - 1
+#     mod = (j - 1) % (siteseach(sys) + QESITES)
+#     qe_loc = j - mod 
+#     chain_begin = qe_loc + QESITES
+#     chain_end = chain_begin + siteseach(sys) - 1
 
-  elseif j > left(sys) + 1
+#   elseif j > left(sys) + 1
 
-    mod = (j - 2) % (siteseach(sys) + QESITES)
-    chain_begin = j - mod 
-    chain_end = chain_begin + siteseach(sys) - 1
-    qe_loc = chain_end + 1
+#     mod = (j - 2) % (siteseach(sys) + QESITES)
+#     chain_begin = j - mod 
+#     chain_end = chain_begin + siteseach(sys) - 1
+#     qe_loc = chain_end + 1
 
 
-  else
-    qe_loc = chain_begin = chain_end = -1
-  end 
+#   else
+#     qe_loc = chain_begin = chain_end = -1
+#   end 
 
-  return qe_loc, chain_begin, chain_end
+#   return qe_loc, chain_begin, chain_end
 
-end 
+# end 
 
 # function gen_graph(sys::QE_G_SIAM)
 
@@ -240,42 +246,42 @@ sitemap(::Systems, j::Int) = j
 """maps the flattened index to graph index"""
 
 
-function get_sitemap(sys::QE_flat_SIAM)
+# function get_sitemap(sys::QE_flat_SIAM)
 
-  d = Dict()
+#   d = Dict()
 
-  for j in 1:get_systotal(sys)
+#   for j in 1:get_systotal(sys)
 
-    full = QESITES + siteseach(sys)
+#     full = QESITES + siteseach(sys)
 
-    if j < left(sys) + 1
+#     if j < left(sys) + 1
   
-      leg = div(j - 1, full) + 1
-      idx = full - (j - 1) % full
+#       leg = div(j - 1, full) + 1
+#       idx = full - (j - 1) % full
   
-    elseif j == left(sys) + 1
+#     elseif j == left(sys) + 1
   
-      leg = legleft(sys) + legright(sys) + 1
-      idx = 1
+#       leg = legleft(sys) + legright(sys) + 1
+#       idx = 1
   
-    else
+#     else
   
-      j -= 1
-      leg = div(j - 1, full) + 1
-      idx = (j - 1) % full + 1
-      j += 1
+#       j -= 1
+#       leg = div(j - 1, full) + 1
+#       idx = (j - 1) % full + 1
+#       j += 1
   
-    end 
+#     end 
   
-    d[(leg, idx)] = j
-    d[j] = (leg, idx)
+#     d[(leg, idx)] = j
+#     d[j] = (leg, idx)
 
 
-  end 
+#   end 
 
-  @show d
-  return d
-end 
+#   @show d
+#   return d
+# end 
 
 
 function gen_graph(sys::DPT_graph)
@@ -591,8 +597,9 @@ modifystate(ψ :: MPS, :: Identity, :: Systems) = ψ
 
 function modifystate(ψ:: MPS, process :: LoadSource, sys :: Systems)
 
+  Nop = systype(sys) == "Electron" ? "Ntot" : "N"
   leftinds, _ = reservoirmapping(sys)
-  @show expect(ψ, "Ntot")
+  @show expect(ψ, Nop)
 
   s = siteinds(ψ)
 
@@ -600,8 +607,8 @@ function modifystate(ψ:: MPS, process :: LoadSource, sys :: Systems)
 
   @show N = process.N
 
-  sites_to_add = leftinds[  end - N + 1 : end ]
-  reverse!(sites_to_add)
+  sites_to_add = leftinds[  1 : N ]
+  #reverse!(sites_to_add)
   for i in sites_to_add
 
     @show i, length(s), length(ψ)
@@ -613,7 +620,26 @@ function modifystate(ψ:: MPS, process :: LoadSource, sys :: Systems)
 
   end 
 
-  @show expect(ψ, "Ntot")
+  @show expect(ψ, Nop)
   return ψ
 
+end 
+
+
+function modifystate(ψ::MPS, process:: Perturbation, sys::Systems)
+
+  ops = systype(sys) == "Fermion" ? ["Cdag"] : ["Cdagup", "Cdagdn"]
+  s = siteinds(ψ)
+
+
+  for i in process.sites
+
+    for opstring in ops
+      operator = op(opstring, s[i])
+      ψ = apply(operator, ψ)
+    end 
+
+  end 
+
+  return ψ
 end 

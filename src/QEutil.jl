@@ -210,7 +210,7 @@ function solve_QE(; para_in = nothing, mode="Biased_chain", output=get_static_st
 
     elseif mode == "QE_two"
 
-        sys = set_QE_two(; dp=0.0, L=L, N=N)
+        sys = QE_two(; dp=0.0, L=L, N=N)
         static = StaticSimulation(; ex=ex, sweepcnt=sweepcnt, sweepdim=dim, output=output)
         ψ = gen_state(sys)
 
@@ -273,7 +273,7 @@ function test_embedding_wrapper()
 
     end 
 
-    ori = set_QE_two(;L=12, N=6, dp=0.0)
+    ori = QE_two(;L=12, N=6, dp=0.0)
     static = StaticSimulation(; ex=1, sweepcnt=5)
     ψ = gen_state(ori)
     ψori = run_static_simulation(ori, static, ψ, Identity())
@@ -283,7 +283,7 @@ function test_embedding_wrapper()
     ψ = run_chain(12, 6, 1; sweepcnt=10)[1]
 
     #ψ = load_ψ("temp_plasmon1"; tag = "psi")
-    sys = set_QE_two(;L=12, N=6)
+    sys = QE_two(;L=12, N=6)
 
     ψn =  QE_embedding(sys, ψ)
 

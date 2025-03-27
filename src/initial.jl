@@ -225,7 +225,7 @@ function gen_state(sys::SD_array; manualmixprod=false, random=false, kwargs...)
         ψ = slater_determinant_to_mps(sites, ϕup, ϕdn; maxblocksize=4)
         
         
-        @show positiveind(expect(ψ, "Ntot"))
+        @show positiveind(expect(ψ, systype(sys) == "Electron" ? "Ntot" : "N"))
 
 
         #drain part LR
@@ -271,7 +271,7 @@ function gen_state(sys::Systems; QN=true, sites=nothing, kwargs...)
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
     @show gen_state_str(sys; kwargs...)
     ψ = randomMPS(sites, gen_state_str(sys) 
-    ; linkdims=10
+    #; linkdims=10
     )
 
     return ψ

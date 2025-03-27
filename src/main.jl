@@ -118,11 +118,11 @@ if test
     #corr_test2()
     #init_test()
     #SD_wrapper()
+    QE_wrapper(QE_HOM)
     #ring_wrapper()
-    NF_wrapper()
+    #NF_wrapper()
     #QE_wrapper("QE_two")
     #quench_wrapper()
-    #perturbation_wrapper()
     #argtest()
     #DPT_wrapper()
     return nothing
@@ -137,9 +137,6 @@ else
 
     elseif ARG == "Quench"
         quench_wrapper()
-
-    elseif ARG == "Perturbation"
-        perturbation_wrapper()
 
     elseif ARG == "occ"
         dyna_occ()
@@ -167,10 +164,10 @@ else
 
 
     elseif ARG == "QE_two"
-        QE_wrapper("QE_two")
+        QE_wrapper(QE_two)
 
     elseif ARG == "QE_parallel"
-        QE_wrapper("QE_HOM")
+        QE_wrapper(QE_HOM)
 
     elseif ARG == "QE_gaussian"
         QE_gaussian_wrapper()

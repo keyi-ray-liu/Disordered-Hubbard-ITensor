@@ -24,26 +24,26 @@ function QECoupling(sys::QE_two, j)
 
 end 
 
-function QECoupling(sys::QE_parallel, j)
+# function QECoupling(sys::QE_parallel, j)
 
-    uppertotal = get_uppertotal(sys)
-    systotal = get_systotal(sys)
-    center_lower = systotal - 1
+#     uppertotal = get_uppertotal(sys)
+#     systotal = get_systotal(sys)
+#     center_lower = systotal - 1
 
-    if j <= uppertotal
-        qe =  QECoupling(sys.upper, j)
+#     if j <= uppertotal
+#         qe =  QECoupling(sys.upper, j)
 
-    elseif j < center_lower
-        qe =  [ [U, k + uppertotal] for (U, k) in QECoupling(sys.lower, j - uppertotal)]
+#     elseif j < center_lower
+#         qe =  [ [U, k + uppertotal] for (U, k) in QECoupling(sys.lower, j - uppertotal)]
 
-    # no QE on contact
-    else
-        qe = []
-    end 
+#     # no QE on contact
+#     else
+#         qe = []
+#     end 
 
-    return qe
+#     return qe
 
-end 
+# end 
 
 
 function QECoupling(sys::QE_HOM, j)
@@ -66,31 +66,31 @@ function QECoupling(sys::QE_HOM, j)
 end 
 
 
-"""For the flat X QE, currently chain sites only couple to their respective QE"""
-function QECoupling(sys::QE_flat_SIAM, j) 
+# """For the flat X QE, currently chain sites only couple to their respective QE"""
+# function QECoupling(sys::QE_flat_SIAM, j) 
 
-    # no coupling for QE sites themselves, as they are not coupled to other QEs
-    qe_loc, chain_begin, chain_end = get_sys_loc(sys, j)
+#     # no coupling for QE sites themselves, as they are not coupled to other QEs
+#     qe_loc, chain_begin, chain_end = get_sys_loc(sys, j)
 
-    if chain_begin <= j <= chain_end
+#     if chain_begin <= j <= chain_end
 
-        if j > qe_loc 
-            r_qe = qedis(j, chain_begin, sys)
-        else
-            r_qe = qedis(j, chain_end, sys)
-        end 
+#         if j > qe_loc 
+#             r_qe = qedis(j, chain_begin, sys)
+#         else
+#             r_qe = qedis(j, chain_end, sys)
+#         end 
 
-        qe = dp(sys)  * r_qe / (r_qe^3 + ζ(sys))
-        res = [[qe, qe_loc]]
+#         qe = dp(sys)  * r_qe / (r_qe^3 + ζ(sys))
+#         res = [[qe, qe_loc]]
 
-    else
-        res = []
+#     else
+#         res = []
 
-    end 
+#     end 
 
-    return res
+#     return res
 
-end 
+# end 
 
 # QECoupling(sys::QE_G_SIAM, j) = QECoupling(sys.system, j)
 

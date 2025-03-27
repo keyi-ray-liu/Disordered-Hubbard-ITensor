@@ -30,6 +30,9 @@ end
 struct BiasReleaseDriver <: ModeDriver
 end 
 
+struct BiasReverseGS <: ModeDriver
+end 
+
 struct ProductStateDriver <: ModeDriver
 end 
 
@@ -726,6 +729,7 @@ struct SD_array{T, U} <: Systems where {T <: Reservoir, U <: Systems}
         systype = "Fermion",
         biasA = 0.0,
         config = "3x3",
+        ω = -1.0,  
         kwargs...
         )
 
@@ -737,7 +741,7 @@ struct SD_array{T, U} <: Systems where {T <: Reservoir, U <: Systems}
     
         @show s_contacts, d_contacts
         @show Ns, Nd
-        source, drain = set_reservoir(; Ls=Ls, Ld=Ld, Ns=Ns, Nd=Nd, contacts = [Ls, 1], systype=systype, s_contacts=s_contacts, d_contacts = d_contacts, kwargs...)
+        source, drain = set_reservoir(; Ls=Ls, Ld=Ld, Ns=Ns, Nd=Nd, contacts = [Ls, 1], systype=systype, s_contacts=s_contacts, d_contacts = d_contacts, ω = ω, kwargs...)
     
         if contains(config, "ring")
             #@assert systype == "Electron"
@@ -772,7 +776,7 @@ function set_reservoir(;
     Ld :: Int= Ls,
     Ns = 6,
     Nd = Ns,
-    t = -1.0,
+    ω = -1.0,
     systype = "Fermion",
     contacts = [Ls, 1],
     reservoir_type = "spatial",
@@ -785,7 +789,7 @@ function set_reservoir(;
     d_contacts = [],
     kwargs...)
 
-    t = FermionCondition(systype, t)
+    ω = FermionCondition(systype, ω)
 
     if typeof(Ns) == Int
         Ns = systype == "Electron" ? [Ls - Ns, 0, 0, Ns] : [Ls - Ns, Ns, 0, 0]
@@ -798,8 +802,8 @@ function set_reservoir(;
     #@show Ns, Nd
 
     if reservoir_type == "spatial"
-        source = Reservoir_spatial(Ls, systype, t, Ns, contacts[1], biasS, s_contacts)
-        drain = Reservoir_spatial(Ld, systype, t, Nd, contacts[2], biasD, d_contacts)
+        source = Reservoir_spatial(Ls, systype, ω, Ns, contacts[1], biasS, s_contacts)
+        drain = Reservoir_spatial(Ld, systype, ω, Nd, contacts[2], biasD, d_contacts)
 
     elseif reservoir_type == "mixed"
 

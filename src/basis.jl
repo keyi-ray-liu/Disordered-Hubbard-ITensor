@@ -4,7 +4,7 @@ shift_basis(left_len, arr_len, vals) = map( x -> x > left_len ? x + arr_len : x 
 
 gen_mixed(mixed :: Bool; kwargs...) =  mixed ? gen_mixed(;kwargs...) : ([], [], [])
 
-function gen_mixed(;L = 4, R =4 , bias_L = 0.0, bias_R=0.0, ω = 1.0,  ordering="SORTED", includeU=true, couple_range=2)
+function gen_mixed(;L = 4, R =4 , bias_L = 0.0, bias_R=0.0, ω = -1.0,  ordering="SORTED", includeU=true, couple_range=2)
     @info "Set mixed basis, $ordering"
     unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 
@@ -18,8 +18,8 @@ function gen_mixed(;L = 4, R =4 , bias_L = 0.0, bias_R=0.0, ω = 1.0,  ordering=
     # we test individual version
 
 
-    L_val = [ (2 * ω * cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
-    R_val = [ (2 * ω * cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
+    L_val = [ (2 *  ω * cos( k * pi / (L + 1) )+ bias_L, k, 1) for k in 1:L] 
+    R_val = [ (2 *  ω * cos( k * pi / (R + 1) ) + bias_R, k, -1) for k in 1:R] 
 
 
     if ordering == "RNG"
@@ -31,7 +31,7 @@ function gen_mixed(;L = 4, R =4 , bias_L = 0.0, bias_R=0.0, ω = 1.0,  ordering=
         result = shuffle( StableRNG(seed), vcat(L_val, R_val))
         
     elseif ordering == "SORTED"
-        result = sort( vcat(L_val, R_val), rev=true)
+        result = sort( vcat(L_val, R_val), rev=false)
 
     elseif ordering == "LRSORTED"
         result = vcat(sort(L_val, by= e -> abs(e[1]), rev=true), sort(R_val, by= e -> abs(e[1])))

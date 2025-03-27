@@ -62,7 +62,7 @@ function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys
     if isnothing(init)
         ψ0 = ψ
     else
-        Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 256) * 4, sweepcnt=get(kwargs, :sweepcnt, 200), ex=1, kwargs...)
+        Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 256) , sweepcnt=get(kwargs, :sweepcnt, 200), ex=1, kwargs...)
 
         # GS calculation
         ψ0 :: MPS =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ, process; message = "Init")[1]
@@ -91,7 +91,7 @@ function run_gs_dyna(timecontrol::TwoStage, init::Union{Nothing, Systems}, sys::
     if isnothing(init)
         ψ0 = ψ
     else
-        Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 256) * 4, sweepcnt=get(kwargs, :sweepcnt, 200), ex=1, kwargs...)
+        Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 256) , sweepcnt=get(kwargs, :sweepcnt, 200), ex=1, kwargs...)
 
         # GS calculation
         ψ0 =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR) ? load_ψ(EQINIT_STR) : run_static_simulation(init, Static, ψ, process ; message = "Init")[1]
