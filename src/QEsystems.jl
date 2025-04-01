@@ -24,6 +24,11 @@ end
 
 struct Perturbation <: StateModifier 
     sites :: Array{Int}
+    function Perturbation(; perturbsites = [], kwargs...)
+        new(
+            perturbsites
+        )
+    end 
 end 
 
 
@@ -37,7 +42,7 @@ struct QE_two <: Systems
     dp :: Float64
     init :: String
     product :: Bool
-    confine_parameter :: Dict
+    confineparameter :: Dict
     chain :: Union{Chain, SSH_chain}
 
 
@@ -48,7 +53,7 @@ struct QE_two <: Systems
         dp=1.0,
         init ="Left",
         product=false,
-        confine_parameters=EMPTY_CONFINES,
+        confineparameters=EMPTY_CONFINES,
         L=10,
         N=5,
         mode ="regular",
@@ -56,14 +61,13 @@ struct QE_two <: Systems
         w= 1.0,
         kwargs...
         )
-    
-        confine_parameter = confine_parameters[1]
         
-        if confine_parameter["confine_range"] < L
-            N = div(confine_parameter["confine_range"], 2)
-            @info "overriding N for confinement, N = $N"
-        end 
-    
+        # if confineparameter["confine_range"] < L
+        #     N = div(confineparameter["confine_range"], 2)
+        #     @info "overriding N for confinement, N = $N"
+        # end 
+        confineparameter = confineparameters[1]
+
         if mode == "regular"
             chain = Chain(;L=L, N=N, kwargs...)
         elseif mode == "SSH"
@@ -77,7 +81,7 @@ struct QE_two <: Systems
             dp,
             init,
             product,
-            confine_parameter,
+            confineparameter,
             chain
         )
     end 
@@ -91,9 +95,9 @@ t(sys::QE_two) = t(sys.chain)
 ζ(sys::QE_two) = ζ(sys.chain)
 L(sys::QE_two) = L(sys.chain)
 N(sys::QE_two) = N(sys.chain)
-confine_range(sys::QE_two) = sys.confine_parameter["confine_range"]
-confine_potential(sys::QE_two) = sys.confine_parameter["confine_potential"]
-confine_start(sys::QE_two) = sys.confine_parameter["confine_start"]
+confine_range(sys::QE_two) = sys.confineparameter["confine_range"]
+confine_potential(sys::QE_two) = sys.confineparameter["confine_potential"]
+confine_start(sys::QE_two) = sys.confineparameter["confine_start"]
 
 
 
@@ -102,9 +106,9 @@ confine_start(sys::QE_two) = sys.confine_parameter["confine_start"]
 
 #     upper :: QE_two
 #     lower :: QE_two
-#     center_parameter :: Dict
+#     centerparameter :: Dict
 #     function QE_parallel(;
-#         center_parameter = EMPTY_CENTER,
+#         centerparameter = EMPTY_CENTER,
 #         inits = "1",
 #         kwargs...
 #     )   
@@ -121,7 +125,7 @@ confine_start(sys::QE_two) = sys.confine_parameter["confine_start"]
 #         new(
 #             upper,
 #             lower,
-#             center_parameter
+#             centerparameter
 #         )
 #     end 
 
@@ -156,7 +160,7 @@ confine_start(sys::QE_two) = sys.confine_parameter["confine_start"]
 #     dp :: Float64
 #     ζ:: Float64
 #     init :: String
-#     center_parameter :: Dict
+#     centerparameter :: Dict
 #     coulomb::Coulombic
 
 # end 
@@ -199,7 +203,7 @@ offset_scale(sys::QE_two) = sys.offset_scale
 #     ζ=0.5,
 #     init="1",
 #     TTN = false,
-#     center_parameter = EMPTY_CENTER,
+#     centerparameter = EMPTY_CENTER,
 #     coulomb=set_Coulombic(),
 #     kwargs...
 #     )
@@ -221,7 +225,7 @@ offset_scale(sys::QE_two) = sys.offset_scale
 #         dp,
 #         ζ,
 #         init,
-#         center_parameter,
+#         centerparameter,
 #         coulomb
 #     )
 
@@ -268,11 +272,11 @@ struct QE_HOM <: Systems
 
     upper :: QE_two
     lower :: QE_two
-    center_parameter :: Dict
+    centerparameter :: Dict
 
     function QE_HOM(;
-        center_parameter::Dict = EMPTY_CENTER,
-        confine_parameters::Vector= EMPTY_CONFINES,
+        centerparameter::Dict = EMPTY_CENTER,
+        confineparameters::Vector= EMPTY_CONFINES,
         inits ::String= "1",
         kwargs...
     )   
@@ -282,14 +286,16 @@ struct QE_HOM <: Systems
         else
             initstr = ["Left", "Left"]
         end 
+
+        @show confineparameters
     
-        upper = QE_two(; init=initstr[1], confine_parameter=confine_parameters[1], kwargs...)
-        lower = QE_two(; init=initstr[2], confine_parameter=confine_parameters[2], kwargs...)
+        upper = QE_two(; init=initstr[1], confineparameters=[confineparameters[1]], kwargs...)
+        lower = QE_two(; init=initstr[2], confineparameters=[confineparameters[2]], kwargs...)
     
         new(
             upper,
             lower,
-            center_parameter
+            centerparameter
         )
 
     end 
@@ -306,21 +312,21 @@ offset_scale(sys::QE_HOM) = offset_scale(sys.upper)
 
 
 
-# center_ee(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.center_parameter["center_ee"]
-# center_ne(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.center_parameter["center_ne"]
-# center_t(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.center_parameter["center_t"]
-# center_internal_t(sys::QE_parallel) = sys.center_parameter["center_internal_t"]
+# center_ee(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.centerparameter["center_ee"]
+# center_ne(sys::Union{QE_parallel, QE_flat_SIAM, QE_HOM}) = sys.centerparameter["center_ne"]
+# center_t(sys::Union{QE_parallel, QE_flat_SIAM}) = sys.centerparameter["center_t"]
+# center_internal_t(sys::QE_parallel) = sys.centerparameter["center_internal_t"]
 
-# center_range(sys::Union{QE_parallel, QE_HOM}) = sys.center_parameter["center_range"]
-# center_dis(sys::Union{QE_parallel, QE_HOM}) = sys.center_parameter["center_dis"]
+# center_range(sys::Union{QE_parallel, QE_HOM}) = sys.centerparameter["center_range"]
+# center_dis(sys::Union{QE_parallel, QE_HOM}) = sys.centerparameter["center_dis"]
 
-# center_slope(sys::QE_HOM) = sys.center_parameter["center_slope"]
+# center_slope(sys::QE_HOM) = sys.centerparameter["center_slope"]
 
-center_ee(sys::QE_HOM) = sys.center_parameter["center_ee"]
-center_ne(sys::QE_HOM) = sys.center_parameter["center_ne"]
-center_range(sys::QE_HOM) = sys.center_parameter["center_range"]
-center_dis(sys::QE_HOM) = sys.center_parameter["center_dis"]
-center_slope(sys::QE_HOM) = sys.center_parameter["center_slope"]
+center_ee(sys::QE_HOM) = sys.centerparameter["center_ee"]
+center_ne(sys::QE_HOM) = sys.centerparameter["center_ne"]
+center_range(sys::QE_HOM) = sys.centerparameter["center_range"]
+center_dis(sys::QE_HOM) = sys.centerparameter["center_dis"]
+center_slope(sys::QE_HOM) = sys.centerparameter["center_slope"]
 
 
 

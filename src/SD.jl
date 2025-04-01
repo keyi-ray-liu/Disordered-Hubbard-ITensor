@@ -47,7 +47,7 @@ function run_SD(::ProductStateDriver, timecontrol::TimeControl, energies, ks, LR
     run_gs_dyna(timecontrol, init, sys, obs; kwargs...)
 end 
 
-function run_SD(::BiasReleaseDriver, timecontrol::TimeControl, energies, ks, LR, obs;  Ns = 0, Nd = 0, reservoir_type = "mixed", ω = -1.0, kwargs... )
+function run_SD(::ProdReservoirDriver, timecontrol::TimeControl, energies, ks, LR, obs;  Ns = 0, Nd = 0, reservoir_type = "mixed", ω = -1.0, kwargs... )
     
     if reservoir_type == "mixed"
         init = SD_array(;  energies = energies, ks =ks, LR=LR,  kwargs..., biasS = 1e16, biasA = 0.0, biasD = 1e16, Ns = 0, Nd = 0, ω = ω,  s_coupling = 0.0, d_coupling = 0.0, reservoir_type = "mixed")
@@ -100,9 +100,9 @@ function run_SD(; biasS=0.0, biasA=0.0, biasD=0.0, initbiasA = 500.0, mode="prod
         energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = biasS, bias_R = biasD, couple_range=0, ω = ω )
         modedriver = ProductStateDriver()
 
-    elseif mode == "BiasRelease"
+    elseif mode == "ProdReservoir"
         energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = 0.0, bias_R = 0.0, couple_range=0, ω = ω )
-        modedriver = BiasReleaseDriver()
+        modedriver = ProdReservoirDriver()
 
     elseif mode == "BiasReverseGS"
         energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = 0.0, bias_R = 0.0, couple_range=0, ω = ω )

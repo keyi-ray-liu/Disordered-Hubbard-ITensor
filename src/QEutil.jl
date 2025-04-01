@@ -16,7 +16,7 @@ function get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
         println("Calculating plasmon state")
         ex = (QEen == 0) ? 2 : 1
         # we set up the decoupled sys from the QE
-        decoupled = QE_determiner(key; QEen=0.0, dp=0.0, center_parameter = EMPTY_CENTER, kwargs...)
+        decoupled = QE_determiner(key; QEen=0.0, dp=0.0, centerparameter = EMPTY_CENTER, kwargs...)
     
         # get plasmon energy
         static = StaticSimulation(; ex=ex, output=output, sweepdim=TEdim, kwargs...)
@@ -43,7 +43,7 @@ function get_QEinit(init_key, key, TEdim; kwargs...)
         @info "calculating separate init state for QE"
         ex = 1
         # we set up the decoupled sys from the QE
-        decoupled = QE_determiner(key; QEen=0.0, dp=0.0, center_parameter = EMPTY_CENTER, kwargs...)
+        decoupled = QE_determiner(key; QEen=0.0, dp=0.0, centerparameter = EMPTY_CENTER, kwargs...)
     
         # get plasmon energy
         static = StaticSimulation(; ex=ex, output=init_key, sweepdim=TEdim, kwargs...)

@@ -118,6 +118,7 @@ if test
     #corr_test2()
     #init_test()
     #SD_wrapper()
+    #chain_wrapper()
     QE_wrapper(QE_HOM)
     #ring_wrapper()
     #NF_wrapper()

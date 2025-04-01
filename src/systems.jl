@@ -24,10 +24,13 @@ abstract type StateModifier end
 #     U::Float64
 # end 
 
+struct RegularDriver <: ModeDriver
+end 
+
 struct BiasGSDriver <: ModeDriver
 end 
 
-struct BiasReleaseDriver <: ModeDriver
+struct ProdReservoirDriver <: ModeDriver
 end 
 
 struct BiasReverseGS <: ModeDriver

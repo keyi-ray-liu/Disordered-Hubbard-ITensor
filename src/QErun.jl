@@ -1,6 +1,6 @@
 
 
-# function QE_static(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 1, QEmul=1.0, center_parameter = EMPTY_CENTER, kwargs...)
+# function QE_static(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0, staticex= 1, QEmul=1.0, centerparameter = EMPTY_CENTER, kwargs...)
 
 #     @info "Begin. QEen = $QEen"
 #     QEen = get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
@@ -8,13 +8,13 @@
 
 #     ψ = !product ? load_ψ(output) : gen_state(sys)
 
-#     sys = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, kwargs...)
+#     sys = QE_determiner(key; QEen=QEen, dp=dp, centerparameter = centerparameter, kwargs...)
 #     static = StaticSimulation(; ex=staticex, sweepdim=TEdim, kwargs...)
 #     run_static_simulation(sys, static, ψ, Identity())
 
 # end 
 
-# function QE_dyna_regular(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, center_parameter = EMPTY_CENTER, save_every=false, adiabatic=0.0, kwargs...)
+# function QE_dyna_regular(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, centerparameter = EMPTY_CENTER, save_every=false, adiabatic=0.0, kwargs...)
 
 #     @info "Begin. QEen = $QEen"
 #     QEen = get_QEen(QEen, key, output, TEdim, QEmul, product; kwargs...)
@@ -34,7 +34,7 @@
 
 #             @show temp_dp = dp * t / adiabatic
 
-#             temp_sys = QE_determiner(key; QEen=QEen, dp=temp_dp, center_parameter = center_parameter, kwargs...)
+#             temp_sys = QE_determiner(key; QEen=QEen, dp=temp_dp, centerparameter = centerparameter, kwargs...)
 #             # we only run it for 1 step
 #             temp_dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=t, fin=t, kwargs..., )
 #             ψ = run_dynamic_simulation(temp_sys, temp_dynamic, ψ; message="QEdyna_temp", save_every=save_every, obs=obs)
@@ -44,7 +44,7 @@
 #         start = adiabatic + τ
 #     end 
 
-#     sys = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, kwargs...)
+#     sys = QE_determiner(key; QEen=QEen, dp=dp, centerparameter = centerparameter, kwargs...)
 #     dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=start, fin=fin, kwargs...)
 #     run_dynamic_simulation(sys, dynamic, ψ; message="QEdyna", save_every=save_every, obs=obs)
 
@@ -52,19 +52,19 @@
 # end 
 
 
-# function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, center_parameter = EMPTY_CENTER, save_every=false, tswitch=0.0, confine_parameters = EMPTY_CONFINES, reverse=true, kwargs...)
+# function QE_confine(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, centerparameter = EMPTY_CENTER, save_every=false, tswitch=0.0, confineparameters = EMPTY_CONFINES, reverse=true, kwargs...)
 
 #     if reverse
 #         s1 = EMPTY_CONFINES
-#         s2 = confine_parameters
+#         s2 = confineparameters
 
 #     else
-#         s1 = confine_parameters
+#         s1 = confineparameters
 #         s2 = EMPTY_CONFINES
 #     end 
 
 #     # set initial state
-#     QEen = get_QEen(QEen, key, output, TEdim, QEmul, product; confine_parameters=s1, mode=mode, kwargs...)
+#     QEen = get_QEen(QEen, key, output, TEdim, QEmul, product; confineparameters=s1, mode=mode, kwargs...)
     
 
 #     obs = [dyna_EE, dyna_occ]
@@ -74,7 +74,7 @@
 
 #     if start < tswitch
 #         @info "Stage 1"
-#         Stage1 = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, confine_parameters=confine_parameters, kwargs...)
+#         Stage1 = QE_determiner(key; QEen=QEen, dp=dp, centerparameter = centerparameter, confineparameters=confineparameters, kwargs...)
 #         dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=start, fin=tswitch, kwargs...)
 #         ψ = run_dynamic_simulation(Stage1, dynamic, ψ; message="QEStage1", save_every=save_every, obs=obs)
 
@@ -86,13 +86,13 @@
 #     #Stage 2 we release the potential
 
 #     @info "Stage 2"
-#     Stage2= QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, confine_parameters=s2, kwargs...)
+#     Stage2= QE_determiner(key; QEen=QEen, dp=dp, centerparameter = centerparameter, confineparameters=s2, kwargs...)
 #     dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=tswitch + τ, fin=fin, kwargs...)
 #     run_dynamic_simulation(Stage2, dynamic, ψ; message="QEStage2", save_every=save_every, obs=obs)
 
 # end 
 
-# function QE_SSH(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, center_parameter = EMPTY_CENTER, save_every=false, tswitch=0.0, mode="regular",  kwargs...)
+# function QE_SSH(key, QEen, output, product; TEdim=64, τ=1.0, dp=1.0,  QEmul=1.0, start=τ ,fin=200.0, centerparameter = EMPTY_CENTER, save_every=false, tswitch=0.0, mode="regular",  kwargs...)
 
 #     # set initial state
 #     QEen = get_QEen(QEen, key, "QEenergycal", TEdim, QEmul, product; mode="regular", kwargs...)
@@ -106,7 +106,7 @@
 
 #     if start < tswitch
 #         @info "Stage 1"
-#         Stage1 = QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, mode=mode, kwargs...)
+#         Stage1 = QE_determiner(key; QEen=QEen, dp=dp, centerparameter = centerparameter, mode=mode, kwargs...)
 #         dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=start, fin=tswitch, kwargs...)
 #         ψ = run_dynamic_simulation(Stage1, dynamic, ψ; message="QEStage1", save_every=save_every, obs=obs)
 
@@ -118,7 +118,7 @@
 #     #Stage 2 we release the potential
 
 #     @info "Stage 2"
-#     Stage2= QE_determiner(key; QEen=QEen, dp=dp, center_parameter = center_parameter, mode="regular", kwargs...)
+#     Stage2= QE_determiner(key; QEen=QEen, dp=dp, centerparameter = centerparameter, mode="regular", kwargs...)
 #     dynamic = DynamicSimulation(; TEdim=TEdim, τ=τ, start=tswitch + τ, fin=fin, kwargs...)
 #     run_dynamic_simulation(Stage2, dynamic, ψ; message="QEStage2", save_every=save_every, obs=obs, init_obs = tswitch <= start ? true : false)
 
@@ -126,16 +126,31 @@
 
 
 
-function run_QE( ::typeof(QE_HOM), ::PerturbedDriver, timecontrol::TimeControl;  kwargs... ) 
-    
+function run_QE(  QE_sys, ::PerturbedDriver, timecontrol::TimeControl;  kwargs... ) 
+
     # override center and dp
-    init = QE_HOM(;   kwargs..., dp = 0.0, QEen = 0.0, center_parameter = EMPTY_CENTER )
-    sys = QE_HOM(; kwargs...)
+    init = QE_sys(;   kwargs..., dp = 0.0, QEen = 0.0, centerparameter = EMPTY_CENTER )
+    sys = QE_sys(; kwargs..., confineparameters = EMPTY_CONFINES)
 
     obs= [dyna_EE, dyna_occ
     ]
 
-    process = Perturbation([3])
+    process = Perturbation(;kwargs...)
+
+    run_gs_dyna(timecontrol, init, sys, obs; process = process, kwargs...)
+
+end 
+
+function run_QE(  QE_sys, ::RegularDriver, timecontrol::TimeControl;  kwargs... ) 
+
+    # override center and dp
+    init = QE_sys(;   kwargs..., dp = 0.0, QEen = 0.0, centerparameter = EMPTY_CENTER )
+    sys = QE_sys(; kwargs..., confineparameters = EMPTY_CONFINES)
+
+    obs= [dyna_EE, dyna_occ
+    ]
+
+    process = Identity()
 
     run_gs_dyna(timecontrol, init, sys, obs; process = process, kwargs...)
 
@@ -144,7 +159,8 @@ end
 
 
 
-function QE_wrapper(QE_sys)
+
+function QE_wrapper(QE_sys) 
 
     qe_in = load_JSON( pwd() * "/qepara.json")
 
@@ -157,32 +173,40 @@ function QE_wrapper(QE_sys)
 
     #τ = get(qe_two_in, "timestep", 0.125)
     TEdim = get(qe_in, "TEdim", 64)
-    center_parameter = get(qe_in, "center_parameter", EMPTY_CENTER)
-    confine_parameters = get(qe_in, "confine_parameters", EMPTY_CONFINES)
+    centerparameter = get(qe_in, "centerparameter", EMPTY_CENTER)
+    confineparameters = get(qe_in, "confineparameters", EMPTY_CONFINES)
+    perturbsites = get(qe_in, "perturbsites", [])
 
+    #@show confineparameters
     #tswitch = get(qe_in, "tswitch", 50.0)
     #adiabatic = get(qe_in, "adiabatic", 0.0)
 
     inits = get(qe_in, "inits", "1")
     #reverse = get(qe_in, "reverse", true)
     mode = get(qe_in, "mode", "regular")
-    driver = PerturbedDriver()
+    statemod = get(qe_in, "statemod", "none")
+
+    if statemod == "none"
+        driver = RegularDriver()
+    elseif statemod == "perturbation"
+        driver = PerturbedDriver()
+    end 
 
     timecontrol = get_time_control()
 
 
 
 
-    run_QE(QE_sys, driver, timecontrol; QEen = QEen, L = L,  N =N, QEmul = QEmul, dp = dp, TEdim = TEdim, center_parameter = center_parameter, confine_parameters = confine_parameters, inits = inits, mode = mode, sweepcnt = sweepcnt)
+    run_QE(QE_sys, driver, timecontrol; QEen = QEen, L = L,  N =N, QEmul = QEmul, dp = dp, TEdim = TEdim, centerparameter = centerparameter, confineparameters = confineparameters, inits = inits, mode = mode, sweepcnt = sweepcnt, perturbsites = perturbsites)
     
     #run_QE_two(QEen, L, N, product; staticex= 0, dp=1.0, QEmul=QEmul, TEdim=TEdim)
-    # QE_dyna_regular("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, dp=dp, inits=inits, adiabatic=adiabatic)
-    # QE_confine(key, QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, confine_parameters=confine_parameters, dp=dp, inits=inits, tswitch=tswitch, reverse=reverse, mode=mode)
+    # QE_dyna_regular("QE_HOM", QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, centerparameter=centerparameter, dp=dp, inits=inits, adiabatic=adiabatic)
+    # QE_confine(key, QEen, "initialqeparallelstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, centerparameter=centerparameter, confineparameters=confineparameters, dp=dp, inits=inits, tswitch=tswitch, reverse=reverse, mode=mode)
 
     # 
     # v = get(qe_in, "v", 0.1)
     # w = get(qe_in, "w", 1.0)
-    # QE_SSH(key, QEen, "initialSSHstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, center_parameter=center_parameter, mode=mode, v=v, w=w, dp=dp, inits=inits, tswitch=tswitch)
+    # QE_SSH(key, QEen, "initialSSHstate", product; QEmul=QEmul, TEdim=TEdim, L=L, N=N, τ=τ,  start = start, fin=fin, centerparameter=centerparameter, mode=mode, v=v, w=w, dp=dp, inits=inits, tswitch=tswitch)
 
 end 
 
@@ -249,14 +273,14 @@ end
 #     QEmul = get(qe_siam_in, "QEmul", 1.0)
 #     init = get(qe_siam_in, "init", "1")
 #     TTN = get(qe_siam_in, "TTN", false)
-#     center_parameter = get(qe_siam_in, "center_parameter", EMPTY_CENTER)
+#     centerparameter = get(qe_siam_in, "centerparameter", EMPTY_CENTER)
 
 
 #     #τ = get(qe_siam_in, "timestep", 0.125)
 #     TEdim = get(qe_siam_in, "TEdim", 64)
 #     timestep = get(qe_siam_in, "timestep", 1.0)
 
-#     run_QE_SIAM("QE_SIAM", QEen, "initialqesiamstate", prod; siteseach=siteseach, N=N,  TTN=TTN, init= init, legleft=legleft, legright=legright, τ=timestep, QEmul=QEmul, TEdim = TEdim, center_parameter=center_parameter)
+#     run_QE_SIAM("QE_SIAM", QEen, "initialqesiamstate", prod; siteseach=siteseach, N=N,  TTN=TTN, init= init, legleft=legleft, legright=legright, τ=timestep, QEmul=QEmul, TEdim = TEdim, centerparameter=centerparameter)
 
 #     dyna_occ()
 #     dyna_EE()

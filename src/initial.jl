@@ -2,18 +2,9 @@ gen_state_str(sys::Systems; kwargs...) = shuffle([ get_type_dict(systype(sys))[i
 
 function gen_state_str(sys::QE_two; kwargs...) 
 
+
     #state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain), QE_str(sys)[2])
-
-    if confine_range(sys) >= L(sys)
-        state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain), QE_str(sys)[2])
-    else
-
-        empty_before = ["Emp" for i in 1:(confine_start(sys) - 1)]
-        mid = shuffle(vcat(["Emp" for i in 1:N(sys)[2]], ["Occ" for i in 1:N(sys)[2]] ))
-        empty_after = ["Emp" for i in (confine_range(sys) + confine_start(sys)):L(sys)]
-
-        state_str = vcat(QE_str(sys)[1], empty_before, mid, empty_after, QE_str(sys)[2])
-    end 
+    state_str = vcat(QE_str(sys)[1], gen_state_str(sys.chain), QE_str(sys)[2])
 
     return state_str
 

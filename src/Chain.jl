@@ -110,7 +110,7 @@ function chain_wrapper()
     dim = get(chain_in, "dim", 64)
     
 
-    run_chain( Chain(), L, N, ex; sweepcnt=sweepcnt, dim=dim)
+    run_chain( Chain, L, N, ex; sweepcnt=sweepcnt, dim=dim)
 
     return nothing
 end 

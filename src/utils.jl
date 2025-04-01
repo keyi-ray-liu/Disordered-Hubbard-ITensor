@@ -137,7 +137,7 @@ vectomat( vec ) = mapreduce( permutedims, vcat, vec)
 
 
 #load_JSON(location) = @show JSON3.read(read(location, String))
-load_JSON(location) = JSON3.read(location)
+load_JSON(location) = JSON3.read(location,Union{Dict{String,Any},Array{Dict{String,Any}}})#JSON3.read(location, )
 
 """Wrapper function for the evaluation of the std of Hamiltonian"""
 function variance(H::MPO, psi::MPS)
@@ -631,6 +631,7 @@ function modifystate(ψ::MPS, process:: Perturbation, sys::Systems)
   ops = systype(sys) == "Fermion" ? ["Cdag"] : ["Cdagup", "Cdagdn"]
   s = siteinds(ψ)
 
+  @show process
 
   for i in process.sites
 
