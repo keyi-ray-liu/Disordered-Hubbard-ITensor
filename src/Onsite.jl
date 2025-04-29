@@ -333,17 +333,20 @@ function Onsite(sys::Reservoir_momentum, j:: Int; left_offset=0)
 end 
 
 
+
+Onsite(pl::Plunger, j; left_offset) =  pl.onsites[ j - left_offset]
+
+
 function Onsite(sys::SD_array, j::Int)
 
     source = get_systotal(sys.source)
     array = get_systotal(sys.array)
-    biasA = sys.biasA
 
     if j <= source
         return Onsite(sys.source, j)
 
     elseif j <= source + array
-        return Onsite(sys.array, j; left_offset=source) + biasA
+        return Onsite(sys.array, j; left_offset=source) + Onsite(sys.plunger, j ; left_offset = source)
 
     else
         return Onsite(sys.drain, j; left_offset= source + array)

@@ -144,3 +144,106 @@ function argtest(; kwargs...)
 
 
 end 
+
+
+
+
+
+
+function lapacktest()
+
+    N = 128
+    bias = -1e3
+    sys = 9
+    total = N * 2 + sys
+
+    s = siteinds("Electron", total; conserve_qns = true)
+    state = [ i<= N ? "UpDn" : "Emp" for i in 1:total]
+
+    M = randomMPS(s, state)
+
+    H = OpSum()
+
+    for i in 1:N - 1
+        H += -1.0, "Cdagup", i, "Cup", i + 1
+        H += -1.0, "Cdagup", i + 1, "Cup", i
+        H += -1.0, "Cdagdn", i, "Cdn", i + 1
+        H += -1.0, "Cdagdn", i + 1, "Cdn", i
+    end 
+
+    for i in N + sys + 1: total - 1
+        H += -1.0, "Cdagup", i, "Cup", i + 1
+        H += -1.0, "Cdagup", i + 1, "Cup", i
+        H += -1.0, "Cdagdn", i, "Cdn", i + 1
+        H += -1.0, "Cdagdn", i + 1, "Cdn", i
+    end 
+
+
+    sc = -0.25
+    H += sc, "Cdagup", N, "Cup", N + 1
+    H += sc, "Cdagup", N + 1, "Cup", N
+    H += sc, "Cdagdn", N, "Cdn", N + 1
+    H += sc, "Cdagdn", N + 1, "Cdn", N
+
+    d = -0.25
+    H += d, "Cdagup", N + sys, "Cup", N + sys + 1
+    H += d, "Cdagup", N + sys + 1, "Cup", N + sys
+    H += d, "Cdagdn", N + sys, "Cdn", N + sys + 1
+    H += d, "Cdagdn", N + sys + 1, "Cdn", N + sys
+
+    for i in N + 1:N+ sys
+
+        r = (i - N - 1) ÷ 3 + 1
+        c = (i - N - 1) % 3 + 1
+        tos = []
+
+        if r < 3
+            append!(tos, [i + 3])
+        end 
+
+        if c < 3
+            append!(tos, [i + 1])
+        end 
+
+        @show i, tos
+
+        for to in tos
+            H += -1, "Cdagup", i, "Cup", to
+            H += -1, "Cdagup", to, "Cup", i
+            H += -1, "Cdagdn", i, "Cdn", to
+            H += -1, "Cdagdn", to, "Cdn", i
+        end 
+
+        sumval = 0
+        for j in (i + 1) : (N + sys)
+
+            rj = (j - N - 1) ÷ 3 + 1
+            cj = (j - N - 1) % 3 + 1
+
+            H += 1/( sqrt( (rj - r) ^2 + (cj - c)^2) + 0.5), "Ntot", i, "Ntot", j
+
+            sumval += -1/( sqrt( (rj - r) ^2 + (cj - c)^2) + 0.5)
+        end 
+
+
+        H += 4.0, "Nupdn", i
+        H += sumval, "Ntot", i
+    end 
+
+
+    for i in 1:N
+        H += bias, "Ntot", i 
+    end 
+
+    for i in N + sys + 1: total
+        H += - bias, "Ntot", i 
+    end 
+
+
+    H = MPO(H, s)
+
+    sweep = Sweeps(20)
+    setnoise!(sweep, 1E-6)
+    setmaxdim!(sweep, 128)
+    dmrg(H, M, sweep)
+end 

@@ -11,7 +11,7 @@ A = rand()
 ITensors.state(::StateName"A", ::SiteType"Fermion") = [sqrt(1 - A), sqrt(A)]
 
 
-
+abstract type Subsystem end 
 abstract type Systems end 
 abstract type SimulationParameters end
 abstract type Reservoir end
@@ -87,8 +87,8 @@ struct StaticSimulation <: SimulationParameters
         prev_var =Float64[], 
         sweepcnt= 20,
         sweepdim =64, 
-        noise=true, 
-        cutoff=1e-16, 
+        noise=false, 
+        cutoff=1e-12, 
         krylovdim=10, 
         weight=10,
         output ="wf",
@@ -126,7 +126,7 @@ struct DynamicSimulation <: SimulationParameters
         τ = 0.1,
         start = 0.1,
         fin=20.0,
-        TEcutoff=1E-16,
+        TEcutoff=1E-12,
         TEdim=64,
         nsite=2,
         kwargs...)
@@ -681,6 +681,11 @@ end
 
 
 
+
+
+
+
+
 struct Reservoir_spatial <: Reservoir
 
     L :: Int
@@ -711,13 +716,44 @@ get_systotal(res::Reservoir_spatial) = res.L
 get_systotal(res::Reservoir_momentum) = length(res.energies)
 
 
+struct Plunger <: Subsystem
+    onsites :: Array{Number}
+    function Plunger( pltype ;G1 = 0.0, G2 = 0.0, Lx = 3, Ly = 3, biasA = 0.0)
+        onsites = biasA .* ones(Lx * Ly)
+
+        if pltype == "side"
+            onsites[1:Lx] .= G1
+            onsites[end - Lx + 1:end] .= G2
+        elseif pltype == "diagonal"
+            
+            if Lx != Ly
+                error("Diagonal plunger only supports when Lx = Ly")
+            end 
+            
+            onsites = reshape(onsites, (Lx, Ly))
+            for l in 1:Lx - 1
+
+                onsites[ diagind(onsites, l)] .= G1 / (Lx - l)
+                onsites[ diagind(onsites, -l)] .= G2 / (Lx - l)
+            end 
+
+            onsites = reshape(onsites', Lx * Ly)
+        end 
+        @show onsites
+        new(onsites)
+
+    end 
+end 
+
+
+
 struct SD_array{T, U} <: Systems where {T <: Reservoir, U <: Systems}
 
     source :: T 
     drain :: T 
     array :: U
     systype :: String
-    biasA :: Union{Float64, Int}
+    plunger :: Plunger
 
     function SD_array(
         ;
@@ -730,9 +766,12 @@ struct SD_array{T, U} <: Systems where {T <: Reservoir, U <: Systems}
         s_coupling = -0.01,
         d_coupling = -0.01,
         systype = "Fermion",
-        biasA = 0.0,
         config = "3x3",
         ω = -1.0,  
+        G1 = 0.0,
+        G2 = 0.0,
+        biasA = 0.0,
+        pltype = "diagonal",
         kwargs...
         )
 
@@ -750,6 +789,7 @@ struct SD_array{T, U} <: Systems where {T <: Reservoir, U <: Systems}
             #@assert systype == "Electron"
             array = Ring(; Lx=Lx, Ly=Ly, N=Na, systype=systype, kwargs...)
         else
+            plunger = Plunger(pltype ; G1 = G1, G2 = G2, Lx = Lx, Ly = Ly, biasA = biasA)
             array = Rectangular(; Lx=Lx, Ly=Ly, N=Na, systype=systype, kwargs...)
         end 
     
@@ -758,7 +798,7 @@ struct SD_array{T, U} <: Systems where {T <: Reservoir, U <: Systems}
             drain, 
             array, 
             systype, 
-            biasA
+            plunger
         )
     
     end 
@@ -941,3 +981,5 @@ function reservoirmapping(sys::SD_array)
 
 
 end 
+
+

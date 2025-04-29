@@ -149,6 +149,8 @@ function SD_wrapper()
     Na = get(sd_in, "Na", 0)
     biasS = get(sd_in, "biasS", 0.0)
     biasA = get(sd_in, "biasA", 0.0)
+    G1 = get(sd_in, "G1", 0.0)
+    G2 = get(sd_in, "G2", 0.0)
     biasD = get(sd_in, "biasD", 0.0)
     initbiasA = get(sd_in, "initbiasA", 500)
     systype = get(sd_in, "systype", "Electron")
@@ -161,6 +163,6 @@ function SD_wrapper()
     ω = get(sd_in, "reservoirspacing", -1.0)
     sweepcnt = get(sd_in, "sweepcnt", 200)
 
-    run_SD(; s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, biasD = biasD, reservoir_type=reservoir_type, manualmixprod=manualmixprod, mode=mode, config=config, initbiasA = initbiasA, ω=ω, sweepcnt = sweepcnt)
+    run_SD(; s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, G1 = G1, G2 = G2, biasD = biasD, reservoir_type=reservoir_type, manualmixprod=manualmixprod, mode=mode, config=config, initbiasA = initbiasA, ω=ω, sweepcnt = sweepcnt)
 
 end 

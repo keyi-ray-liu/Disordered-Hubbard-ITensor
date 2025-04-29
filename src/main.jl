@@ -99,7 +99,8 @@ include("test.jl")
 #include("ed.jl")
 
 
-const DISABLE_BLAS = true
+const DISABLE_BLAS = false
+
 
 if DISABLE_BLAS
   BLAS.set_num_threads(1)
@@ -117,9 +118,10 @@ if test
     rm(getworkdir(), force=true, recursive=true)
     #corr_test2()
     #init_test()
-    #SD_wrapper()
+    SD_wrapper()
+    #lapacktest()
     #chain_wrapper()
-    QE_wrapper(QE_HOM)
+    #QE_wrapper(QE_HOM)
     #ring_wrapper()
     #NF_wrapper()
     #QE_wrapper("QE_two")

@@ -136,8 +136,8 @@ end
 vectomat( vec ) = mapreduce( permutedims, vcat, vec)
 
 
-#load_JSON(location) = @show JSON3.read(read(location, String))
-load_JSON(location) = JSON3.read(location,Union{Dict{String,Any},Array{Dict{String,Any}}})#JSON3.read(location, )
+load_JSON(location) = JSON3.read(read(location, String))
+#load_JSON(location) = JSON3.read(location,Union{Dict{String,Any},Array{Dict{String,Any}}})#JSON3.read(location, )
 
 """Wrapper function for the evaluation of the std of Hamiltonian"""
 function variance(H::MPO, psi::MPS)
