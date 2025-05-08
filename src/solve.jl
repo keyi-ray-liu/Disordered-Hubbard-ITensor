@@ -109,11 +109,11 @@ function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation)
         println("As of end of search, systype of prev_state", typeof(prev_state))
         var = variance(H, ψ)
 
-        append!(allenergy, energy)
-        append!(prev_energy, energy)
+        append!(allenergy, real(energy))
+        append!(prev_energy, real(energy))
         append!(prev_state, [ψ])
-        append!(allvars, var)
-        append!(prev_var, var)
+        append!(allvars, real(var))
+        append!(prev_var, real(var))
 
     end 
     

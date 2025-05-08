@@ -162,7 +162,7 @@ function Onsite(sys::NF_square, j::Int) :: Float64
     row = div(j - 1, L(sys)) + 1
     col = j % L(sys)
 
-    println("row ", row)
+    # println("row ", row)
     if 1 < row < L(sys)  && 1 < col < L(sys)
         onsite = bias(sys)
 
@@ -173,6 +173,30 @@ function Onsite(sys::NF_square, j::Int) :: Float64
     return onsite
 end 
 
+# """For NF NxN, we add a linear shift as a plunger gate would """
+# function Onsite(sys::NF_square, j::Int) :: Float64
+
+#     col = (j - 1) % L(sys) + 1
+#     values = range(bias(sys), -bias(sys), length=L(sys))
+#     onsite = values[col]
+#     return onsite
+# end
+
+
+# """For NF NxN, we add onsite energy for one site: corner, center, edge, center edge """
+# function Onsite(sys::NF_square, j::Int) :: Float64
+
+#     row = div(j - 1, L(sys)) + 1
+#     col = (j - 1) % L(sys) + 1
+
+#     if row == 1 && col == 1
+#         onsite = bias(sys)
+#     else
+#         onsite = 0.0
+#     end
+
+#     return onsite
+# end
 
 
 

@@ -101,6 +101,13 @@ function HoppingNeighbor(sys::NF_square, j::Int; left_offset=0)
 
     adj_j = j - left_offset
 
+    # column and row number 
+    col = (j - 1) % L(sys) + 1
+
+    flux = 0.1
+    # calculate Peierls phase, default is Landau Gauge, only exist on vertical bond
+    phase = exp(1im * 2 * π * flux * col )
+
     # not at end of col
     if adj_j % L(sys) != 0
         append!(hop, [[t(sys)..., j + 1]])
@@ -108,7 +115,7 @@ function HoppingNeighbor(sys::NF_square, j::Int; left_offset=0)
 
     # not at end of row
     if adj_j <= get_systotal(sys) - L(sys)
-        append!(hop, [[t(sys)..., j + L(sys)]])
+        append!(hop, [[t(sys)*phase..., j + L(sys)]])
     end 
 
 
@@ -116,10 +123,19 @@ function HoppingNeighbor(sys::NF_square, j::Int; left_offset=0)
 
 end 
 
+
+
 function HoppingNeighbor(sys::Rectangular, j::Int; left_offset=0)
 
     hop = []
     adj_j = j - left_offset
+    
+    # column and row number 
+    col = (j - 1) % L(sys) + 1
+
+    flux = 0.1
+    # calculate Peierls phase, default is Landau Gauge, only exist on vertical bond
+    phase = exp(1im * 2 * π * flux * col )
 
     # not at end of col
     if adj_j % Lx(sys) != 0
@@ -128,7 +144,7 @@ function HoppingNeighbor(sys::Rectangular, j::Int; left_offset=0)
 
     # not at end of row
     if adj_j <= get_systotal(sys) - Lx(sys)
-        append!(hop, [[t(sys)..., j + Lx(sys) ]])
+        append!(hop, [[t(sys)*phase..., j + Lx(sys) ]])
     end 
 
 
@@ -337,18 +353,18 @@ function add_hop!(sys::Systems, res::OpSum)
     end 
 
     for j in 1:systotal
-
+        # println("j", j)
         for (v..., k) in HoppingNeighbor(sys, j)
-
-            k = trunc(Int, k)
+            k = trunc(Int, real(k))
+            println("j ", j, " v ", v, "k ", k)
             for (i, operator) in enumerate(operators)
 
                 if v[i] != 0
                     op1, op2 = operator
                     
-
+                    
                     res += v[i], op1, sitemap(sys, j), op2, sitemap(sys, k)
-                    res += v[i], op1, sitemap(sys, k), op2, sitemap(sys, j)
+                    res += conj(v[i]), op1, sitemap(sys, k), op2, sitemap(sys, j)
                 end 
             end 
 
