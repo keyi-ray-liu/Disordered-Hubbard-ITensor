@@ -102,20 +102,32 @@ function HoppingNeighbor(sys::NF_square, j::Int; left_offset=0)
     adj_j = j - left_offset
 
     # column and row number 
-    col = (j - 1) % L(sys) + 1
+    # col = (j - 1) % L(sys) + 1
+    row = div(j - 1, L(sys)) + 1
 
     flux = 0.1
     # calculate Peierls phase, default is Landau Gauge, only exist on vertical bond
-    phase = exp(1im * 2 * π * flux * col )
+    # phase = exp(1im * 2 * π * flux * col )
+    phase = exp(-1im * 2 * π * flux * row )
+
+    # # not at end of col
+    # if adj_j % L(sys) != 0
+    #     append!(hop, [[t(sys)..., j + 1]])
+    # end 
+
+    # # not at end of row
+    # if adj_j <= get_systotal(sys) - L(sys)
+    #     append!(hop, [[t(sys)*phase..., j + L(sys)]])
+    # end 
 
     # not at end of col
     if adj_j % L(sys) != 0
-        append!(hop, [[t(sys)..., j + 1]])
+        append!(hop, [[t(sys)*phase..., j + 1]])
     end 
 
     # not at end of row
     if adj_j <= get_systotal(sys) - L(sys)
-        append!(hop, [[t(sys)*phase..., j + L(sys)]])
+        append!(hop, [[t(sys)..., j + L(sys)]])
     end 
 
 
@@ -356,13 +368,13 @@ function add_hop!(sys::Systems, res::OpSum)
         # println("j", j)
         for (v..., k) in HoppingNeighbor(sys, j)
             k = trunc(Int, real(k))
-            println("j ", j, " v ", v, "k ", k)
+            # println("j ", j, " v ", v, "k ", k)
             for (i, operator) in enumerate(operators)
-
+                # println("v [i] == ", v[i]) 
                 if v[i] != 0
                     op1, op2 = operator
                     
-                    
+                
                     res += v[i], op1, sitemap(sys, j), op2, sitemap(sys, k)
                     res += conj(v[i]), op1, sitemap(sys, k), op2, sitemap(sys, j)
                 end 
