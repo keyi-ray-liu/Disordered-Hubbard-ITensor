@@ -94,6 +94,32 @@ function HoppingNeighbor(sys::QE_HOM, j::Int)
 end 
 
 
+function HoppingNeighbor(sys::Sq_chain, j::Int;)
+
+    hop = []
+    
+    # find the location of the site
+    loc = (j - 1) % 3
+    
+    if loc == 0 # site A
+        # Aₖ: has Bₖ = j+1  and  Cₖ = j+2
+        if j+1 <= get_systotal(sys); append!(hop, [[t(sys)..., j + 1]]); end
+        if j+2 <= get_systotal(sys); append!(hop, [[t(sys)..., j + 2]]); end
+
+    elseif loc == 1 # site B
+        # Bₖ: has Dₖ = j+2
+        if j+2 <= get_systotal(sys); append!(hop, [[t(sys)..., j + 2]]); end
+
+    elseif loc == 2 # site C
+        # Cₖ: has Dₖ = j+1
+        if j+1 <= get_systotal(sys); append!(hop, [[t(sys)..., j + 1]]); end
+    end
+
+    return hop
+
+end 
+
+
 
 function HoppingNeighbor(sys::NF_square, j::Int; left_offset=0)
 
@@ -365,12 +391,12 @@ function add_hop!(sys::Systems, res::OpSum)
     end 
 
     for j in 1:systotal
-        # println("j", j)
+
         for (v..., k) in HoppingNeighbor(sys, j)
             k = trunc(Int, real(k))
-            # println("j ", j, " v ", v, "k ", k)
+
             for (i, operator) in enumerate(operators)
-                # println("v [i] == ", v[i]) 
+
                 if v[i] != 0
                     op1, op2 = operator
                     

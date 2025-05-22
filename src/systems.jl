@@ -384,6 +384,52 @@ systype(sys::NF_square) = "Electron"
 
 
 
+struct Sq_chain <: Systems
+
+    L :: Int
+    N :: Vector{Int}
+    U :: Float64
+    t :: Vector{Number}
+    bias :: Union{Float64, Int}
+
+    function Sq_chain(;
+        L = 3,
+        Nup = 4,
+        Ndn = 4,
+        U = 4.0,
+        t = 0.001,
+        bias = 0.0,
+        kwargs...
+        )
+    
+        t = FermionCondition("Electron", t)
+        # if L^2 - Nup - Ndn != 1
+        #     @warn "NF electron (hole) number !=1, is this expected behavior?"
+        # end 
+    
+        new(
+            L,
+            [3*L+1 - Nup - Ndn, Nup, Ndn, 0],
+            U,
+            t,
+            bias
+        )
+    
+    
+    end 
+
+end 
+
+get_systotal(sys::Sq_chain) = 3*sys.L + 1
+L(sys::Sq_chain) = sys.L
+t(sys::Sq_chain) = sys.t
+U(sys::Sq_chain) = sys.U
+bias(sys::Sq_chain) = sys.bias
+N(sys::Sq_chain) = sys.N
+systype(sys::Sq_chain) = "Electron"
+
+
+
 struct DPT <: Systems
 
     U :: Float64

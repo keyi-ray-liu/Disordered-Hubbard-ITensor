@@ -96,6 +96,7 @@ include("specific.jl")
 include("basis.jl")
 include("QEutil.jl")
 include("test.jl")
+include("SqChain.jl")
 #include("ed.jl")
 
 
@@ -161,7 +162,9 @@ else
 
     elseif ARG == "NF_square"
         NF_wrapper()
-
+    
+    elseif ARG == "SQ_chain"
+        SQ_wrapper()
     # elseif ARG == "QE_SIAM"
     #     QE_SIAM_wrapper()
 
