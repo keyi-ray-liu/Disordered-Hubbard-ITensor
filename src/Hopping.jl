@@ -190,7 +190,7 @@ function HoppingNeighbor(sys::DPT_mixed, j::Int)
 
     else
         # we connect within the spatial region
-        if !includeU(sys) 
+        if !QPCmixed(sys) 
             
             # we connect within L
             if L_end(sys) - couple_range(sys) < j < L_end(sys)
@@ -329,10 +329,10 @@ function add_hop!(sys::Systems, res::OpSum)
     systotal = get_systotal(sys)
 
     if sys_type == "Fermion"
-        operators = [ ["C", "Cdag"]]
+        operators = [ ["Cdag", "C"]]
 
     elseif sys_type == "Electron"
-        operators = [ ["Cup", "Cdagup"], ["Cdn", "Cdagdn"]]
+        operators = [ ["Cdagup", "Cup"], ["Cdagdn", "Cdn"]]
 
     end 
 

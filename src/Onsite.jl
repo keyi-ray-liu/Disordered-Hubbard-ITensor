@@ -198,6 +198,7 @@ function Onsite(sys::DPT, j ::Int) :: Float64
         # left_offset from int
         if j >= L_contact(sys)
             onsite -= 1/2 * U(sys)
+            @show onsite +=  sys.μ1
         end 
 
     else
@@ -206,6 +207,7 @@ function Onsite(sys::DPT, j ::Int) :: Float64
         # left_offset from int
         if j <= R_contact(sys)
             onsite -= 1/2 * U(sys) 
+            @show onsite +=  sys.μ1
         end 
 
     end
@@ -241,8 +243,8 @@ function Onsite(sys::DPT_mixed, j::Int)
     # left contact region
     elseif j <= L_end(sys)
 
-        if !includeU(sys)
-            onsite = bias_L(sys) - 1/2 * U(sys)
+        if !QPCmixed(sys)
+            onsite = bias_L(sys) - 1/2 * U(sys) + sys.dpt.μ1
 
         else
             j_mix = j - L_begin(sys) + 1
@@ -252,8 +254,8 @@ function Onsite(sys::DPT_mixed, j::Int)
     # right contact region
     elseif j <= R_contact(sys)
 
-        if !includeU(sys)
-            onsite = bias_R(sys) - 1/2 * U(sys)
+        if !QPCmixed(sys)
+            onsite = bias_R(sys) - 1/2 * U(sys) +  + sys.dpt.μ1
 
         else
             j_mix = j - L_begin(sys) + 1 - (R_begin(sys) - L_end(sys)  - 1)
@@ -263,7 +265,7 @@ function Onsite(sys::DPT_mixed, j::Int)
     # right no contact
     else
         
-        if !includeU(sys)
+        if !QPCmixed(sys)
             j_mix = j - L_begin(sys) + 1 - (R_begin(sys) - L_end(sys) - 1) - 2 * couple_range(sys)
         else
             j_mix = j - L_begin(sys) + 1 - (R_begin(sys) - L_end(sys) - 1) 
@@ -370,7 +372,9 @@ function add_onsite!(sys::Systems, res::OpSum)
 
         for (i, op) in enumerate(onsiteoperators(sys))
 
-            res += onsite[i], op, sitemap(sys, j)
+            if onsite[i] != 0
+                res += onsite[i], op, sitemap(sys, j)
+            end 
 
         end 
 

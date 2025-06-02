@@ -11,9 +11,11 @@ function gen_state_str(sys::QE_two; kwargs...)
 end 
 
 
-function gen_state_str(sys::DPT; initdd="LOWER", kwargs...) 
-    Lres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
-    Rres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+function gen_state_str(sys::DPT; initdd="LOWER", ifshuffle = false, kwargs...) 
+
+    f(x) = ifshuffle ? shuffle(x) : reverse(x)
+    Lres = f([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+    Rres = f([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
     L = []
     M = []

@@ -11,7 +11,28 @@ function run_GQS(L, N; τ=1.0, fin=1000.0, kwargs...)
 end 
 
 
-function run_chain( template::Union{Chain, Ring}, L, N, ex; dim=64, kwargs...)
+function run_rectangular()
+
+    sys = Rectangular(; Lx = 3, Ly = 3, 
+    N = 4, systype = "Fermion", 
+    #N = [2, 3, 4, 0], systype = "Electron", 
+    U = 4.0, 
+    )
+
+    static = StaticSimulation(; ex=1, sweepdim=400)
+    ψ = gen_state(sys)
+    ψ = run_static_simulation(sys, static, ψ, Identity())
+
+    return ψ
+    
+
+end 
+
+
+
+
+
+function run_chain( template::Union{typeof(Chain), typeof(Ring)}, L, N, ex; dim=64, kwargs...)
 
     sys = template(;  L=L, N=N, kwargs...)
 
@@ -114,6 +135,28 @@ function chain_wrapper()
 
     return nothing
 end 
+
+
+
+# function rectangular_wrapper()
+
+
+#     rect_in = load_JSON(pwd() * "/rectagular.json")
+
+#     Lx = get(rect_in, "Lx", 3)
+#     Ly = get(rect_in, "Ly", 3)
+#     N = get(rect_in, "N", 0)
+#     sweepcnt = get(rect_in, "sweepcnt", 20)
+#     ex = get(rect_in, "ex", 1)
+#     dim = get(rect_in, "dim", 64)
+    
+
+#     run_chain( Chain, L, N, ex; sweepcnt=sweepcnt, dim=dim)
+
+#     return nothing
+# end 
+
+
 
 function quench_wrapper()
 

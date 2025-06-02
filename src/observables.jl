@@ -421,7 +421,7 @@ function dyna_occ(; sys=Chain(), ψ=nothing, kwargs...)
 
 end 
 
-function dyna_coherence(; ψ=nothing, sys=set_DPT(), kwargs...)
+function dyna_coherence(; ψ=nothing, sys=DPT(), kwargs...)
 
     function work(ψ, sys)
         
@@ -432,6 +432,8 @@ function dyna_coherence(; ψ=nothing, sys=set_DPT(), kwargs...)
         end 
         
         coh = correlation_matrix(ψ, op1, op2; sites= get_systotal(sys) -1 : get_systotal(sys))
+
+        @show coh
         return coh[1, 2]
     end 
 
@@ -468,7 +470,7 @@ function dyna_coherence(; ψ=nothing, sys=set_DPT(), kwargs...)
 
 end 
 
-function dyna_dptcurrent(; ψ=nothing, sys=set_DPT(), kwargs...)
+function dyna_dptcurrent(; ψ=nothing, sys=DPT(), kwargs...)
 
     function work(ψ, sys)
         
@@ -515,7 +517,7 @@ function dyna_dptcurrent(; ψ=nothing, sys=set_DPT(), kwargs...)
 
 end 
 
-function dyna_dptcurrent_mix(; ψ=nothing, sys=set_DPT_mixed(), kwargs...)
+function dyna_dptcurrent_mix(; ψ=nothing, sys=DPT_mixed(), kwargs...)
 
     function work(ψ, ULR, sys)
         # except the DD sites

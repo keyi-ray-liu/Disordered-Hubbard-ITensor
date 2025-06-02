@@ -4,12 +4,12 @@ shift_basis(left_len, arr_len, vals) = map( x -> x > left_len ? x + arr_len : x 
 
 gen_mixed(mixed :: Bool; kwargs...) =  mixed ? gen_mixed(;kwargs...) : ([], [], [])
 
-function gen_mixed(;L = 4, R =4 , bias_L = 0.0, bias_R=0.0, ω = -1.0,  ordering="SORTED", includeU=true, couple_range=2)
+function gen_mixed(;L = 4, R =4 , bias_L = 0.0, bias_R=0.0, ω = -1.0,  ordering="SORTED", QPCmixed=true, couple_range=2)
     @info "Set mixed basis, $ordering"
     unzip(a) = map(x->getfield.(a, x), fieldnames(eltype(a)))
 
 
-    if !includeU
+    if !QPCmixed
         L -= couple_range
         R -= couple_range
     end 

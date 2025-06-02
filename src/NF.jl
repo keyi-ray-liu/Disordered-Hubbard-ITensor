@@ -19,9 +19,9 @@ function NF_wrapper()
 
     U = get(NF_in, "U", 4.0)
     L = get(NF_in, "L", 3)
-    Nup = get(NF_in, "Nup", 4)
+    Nup = get(NF_in, "Nup", 3)
     Ndn = get(NF_in, "Ndn", 4)
-    t = get(NF_in, "t", 0.001)
+    t = get(NF_in, "t", -1.0)
     bias = get(NF_in, "bias", 0.0)
     
     

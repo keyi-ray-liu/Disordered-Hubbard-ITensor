@@ -9,24 +9,24 @@ ALL RIGHTS RESERVED
 
 using Pkg
 
-# for strs in ["Lazy", 
-#     "DelimitedFiles",
-#     "Glob",
-#     "ITensors",
-#     "ITensorMPS",
-#     "JSON3",
-#     "StatsBase",
-#     "KrylovKit",
-#     "Suppressor",
-#     "ITensorGaussianMPS",
-#     "HDF5",
-#     "Observers",
-#     "StableRNGs",
-#     "ITensorUnicodePlots"
-#     ]
+for strs in ["Lazy", 
+    "DelimitedFiles",
+    "Glob",
+    "ITensors",
+    "ITensorMPS",
+    "JSON3",
+    "StatsBase",
+    "KrylovKit",
+    "Suppressor",
+    "ITensorGaussianMPS",
+    "HDF5",
+    "Observers",
+    "StableRNGs",
+    "ITensorUnicodePlots"
+    ]
 
-#     Pkg.add(strs)
-# end 
+    Pkg.add(strs)
+end 
 
 using Lazy
 using DelimitedFiles
@@ -118,16 +118,19 @@ if test
     rm(getworkdir(), force=true, recursive=true)
     #corr_test2()
     #init_test()
-    SD_wrapper()
+    #SD_wrapper()
     #lapacktest()
     #chain_wrapper()
     #QE_wrapper(QE_HOM)
     #ring_wrapper()
     #NF_wrapper()
     #QE_wrapper("QE_two")
+    #chain_wrapper()
+    #run_rectangular()
+    #toytwolevel()
+    DPT_wrapper()
     #quench_wrapper()
     #argtest()
-    #DPT_wrapper()
     return nothing
 
 
@@ -189,6 +192,9 @@ else
 
     elseif ARG == "chain"
         chain_wrapper()
+
+    elseif ARG == "toy"
+        toytwolevel()
 
     else
         error("Unrecognized option")

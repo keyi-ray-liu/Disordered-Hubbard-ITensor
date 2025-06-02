@@ -168,9 +168,9 @@ end
 function DenDenNeighbor(sys::DPT_mixed, j::Int)
 
     # if center region is not under mixed basis, they are still interacting spatially 
-    if !includeU(sys)
+    if !QPCmixed(sys)
         den = DenDenNeighbor(sys.dpt, j)
-    else
+    else    
         den = []
     end 
 
@@ -223,9 +223,10 @@ function add_DensityDensity!(sys::Systems, res::OpSum)
             k = trunc(Int, k)
             for (i, operators) in enumerate( ddoperators(sys))
                 
-                op1, op2 = operators
-                res += U[i], op1, sitemap(sys, j), op2, sitemap(sys, k)
-
+                if U[i] != 0
+                    op1, op2 = operators
+                    res += U[i], op1, sitemap(sys, j), op2, sitemap(sys, k)
+                end 
             end 
 
         end

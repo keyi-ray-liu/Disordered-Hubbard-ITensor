@@ -247,3 +247,51 @@ function lapacktest()
     setmaxdim!(sweep, 128)
     dmrg(H, M, sweep)
 end 
+
+
+function toytwolevel()
+
+    L = 32
+    total = L * 2 + 2
+    μC = -1.23
+    vs = 0.25
+
+    dd = 1.3
+    s = siteinds("Fermion", total; conserve_qns = true)
+
+    ifshuffle = false
+    f(x) = ifshuffle ? shuffle(x) : x
+    state = f([ isodd(i) ? "Occ" : "Emp" for i in 1:total])
+
+    M = randomMPS(s, state)
+
+    H = OpSum()
+
+    for i in L - 1: L + 2
+        H += dd, "N", i
+    end 
+
+    for i in 1:total - 2 - 1
+        H += 1, "Cdag", i, "C", i + 1
+        H += 1, "Cdag", i + 1, "C", i
+    end 
+
+    H += μC, "N", total - 1
+    H += vs, "Cdag", total - 1, "C", total
+    H += vs, "Cdag", total, "C", total - 1
+
+
+    saveham("toy", H)
+    H = MPO(H, s)
+
+    
+
+    sweep = Sweeps(20)
+    setnoise!(sweep, 1E-6)
+    setmaxdim!(sweep, 64)
+    w, ψ =  dmrg(H, M, sweep)
+
+    @show correlation_matrix(ψ, "Cdag", "C", sites= total - 1 : total)
+
+
+end 

@@ -1,7 +1,41 @@
 """get mixed basis Reservoir parameters, the energies returned are at 0 bias, however the order is done at finite bias"""
 
 
-gen_obs(mixed, includeU) = [dyna_EE, dyna_occ, dyna_coherence, (mixed && includeU) ? dyna_dptcurrent_mix : dyna_dptcurrent, dyna_corr, dyna_SRDM]
+gen_obs(mixed, QPCmixed) = [dyna_EE, dyna_occ, dyna_coherence, (mixed && QPCmixed) ? dyna_dptcurrent_mix : dyna_dptcurrent, dyna_corr, dyna_SRDM]
+
+
+
+
+"""worker function that runs DPT calculations"""
+function run_DPT_many_body(U, L, R, t_fin :: Float64; bias_L = BIASLR/2, bias_R  = - BIASLR/2, τ=0.25, mixed=false,  ddposition="R", graph=false, avg=false,  dd_init = 0.963, μC = -1.24767363, kwargs...)
+
+
+    DPT_INIT_BIAS = [μC, 0]
+    @show μ1 = U * (dd_init - 1/2)
+    
+
+    QPCmixed = get(kwargs, :QPCmixed, false)
+    couple_range = get(kwargs, :couple_range, 2)
+    #ordering = get(kwargs, :ordering, "SORTED")
+    t_doubledot = get(kwargs, :t_doubledot, 0.25 )
+
+    # we first run a calculation with no bias on the LR, 
+
+    energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "mixed")=="mixed"; L = L, R = R, bias_L = bias_L, bias_R = bias_R, couple_range=couple_range, ω = 1.0)
+    obs = gen_obs(mixed, QPCmixed)
+
+    @show obs
+
+    # init we solve the decoupled system
+    init = DPT_setter(mixed, avg; U=0.0, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=t_doubledot, energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph, μ1 = μ1)
+
+    sys = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, t_doubledot=t_doubledot, bias_R=bias_R, energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
+
+    timecontrol = OneStage( τ, t_fin)
+    run_gs_dyna(timecontrol, init, sys, obs;  kwargs...)
+
+    return nothing
+end 
 
 
 
@@ -21,15 +55,15 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
     end 
 
 
-    includeU = get(kwargs, :includeU, true)
+    QPCmixed = get(kwargs, :QPCmixed, true)
     couple_range = get(kwargs, :couple_range, 2)
     ordering = get(kwargs, :ordering, "SORTED")
     t_doubledot = get(kwargs, :t_doubledot, 0.125 )
 
     # we first run a calculation with no bias on the LR, 
 
-    energies, ks, LR = gen_mixed(mixed, L, R, bias_L, bias_R; ordering=ordering, includeU=includeU, couple_range = couple_range)
-    obs = gen_obs(mixed, includeU)
+    energies, ks, LR = gen_mixed(mixed, L, R, bias_L, bias_R; ordering=ordering, QPCmixed=QPCmixed, couple_range = couple_range)
+    obs = gen_obs(mixed, QPCmixed)
     
     if L > 100
         filter!( e->e ∉ [dyna_corr], obs)
@@ -49,7 +83,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
         s1begin = max(-1.0, last_time)
 
-        eq = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=1e-15, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
+        eq = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_doubledot=DPT_INIT_BIAS, t_doubledot=1e-15, energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
         # if not present, we calculate the initial state
 
@@ -81,7 +115,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
     # now we switch on the bias in L/R, 0 time
 
-        noneq = DPT_setter(mixed, avg; U=U, L=L, R=R, t_doubledot=1e-15, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
+        noneq = DPT_setter(mixed, avg; U=U, L=L, R=R, t_doubledot=1e-15, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
         Stage2 = DynamicSimulation(;τ=τ, start= s2begin + τ, fin=t_switch , kwargs...)
         ψ2 = run_dynamic_simulation(noneq, Stage2, ψ1; message="Stage2", save_every=save_every, obs=obs, init_obs=false)
@@ -104,7 +138,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
             @show tempt_doubledot =  t_doubledot* t/τ 
 
-            noneqtuninterval = DPT_setter(mixed, avg; U=U, L=L, R=R, t_doubledot=tempt_doubledot, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
+            noneqtuninterval = DPT_setter(mixed, avg; U=U, L=L, R=R, t_doubledot=tempt_doubledot, bias_L=bias_L, bias_R=bias_R, energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
             Stage3interval = DynamicSimulation(;τ=τ0, start=t_switch + t, fin=t_switch + t, kwargs...)
 
@@ -115,7 +149,7 @@ function run_DPT(U, L, R, t_switch::Float64, t_fin :: Float64; bias_L = BIASLR/2
 
     if last_time < t_fin
         s3begin = max(t_switch + τ, last_time)
-        noneqtun = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, t_doubledot=t_doubledot, bias_R=bias_R, energies=energies, ks=ks, LR=LR, includeU=includeU, couple_range=couple_range, ddposition=ddposition, graph=graph)
+        noneqtun = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, t_doubledot=t_doubledot, bias_R=bias_R, energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
         Stage3 = DynamicSimulation(;τ=τ, start=s3begin + τ, fin=t_fin, kwargs...)
 
@@ -145,7 +179,7 @@ function DPT_wrapper()
     biasLR = get(dpt_in, "biasLR", BIASLR)
     mixed = get(dpt_in, "mixed", false)
     ordering = get(dpt_in, "ordering", "SORTED")
-    includeU = get(dpt_in, "includeU", true)
+    QPCmixed = get(dpt_in, "QPCmixed", true)
     ddposition = get(dpt_in, "ddposition", "R")
     avg = get(dpt_in, "avg", false)
     switchinterval = get(dpt_in, "switchinterval", 20)
@@ -153,7 +187,7 @@ function DPT_wrapper()
     t_doubledot = get(dpt_in, "tdoubledot", 0.125)
     initdd = get(dpt_in, "initdd", "LOWER")
 
-    if DISABLE_BLAS && TEdim > 128
+    if DISABLE_BLAS && TEdim > 128  
         @show ITensors.enable_threaded_blocksparse()
         @show ITensors.enable_threaded_blocksparse()
     else
@@ -161,8 +195,9 @@ function DPT_wrapper()
         @show ITensors.disable_threaded_blocksparse()
     end 
 
-    run_DPT(U, L, R, t_switch, t_fin; τ=τ, TEdim=TEdim, bias_L = biasLR/2, bias_R  = -biasLR/2, mixed=mixed, ordering=ordering, includeU=includeU, ddposition=ddposition, avg=avg, switchinterval=switchinterval, sweepcnt=sweepcnt, initdd = initdd, t_doubledot=t_doubledot)
+    #run_DPT(U, L, R, t_switch, t_fin; τ=τ, TEdim=TEdim, bias_L = biasLR/2, bias_R  = -biasLR/2, mixed=mixed, ordering=ordering, QPCmixed=QPCmixed, ddposition=ddposition, avg=avg, switchinterval=switchinterval, sweepcnt=sweepcnt, initdd = initdd, t_doubledot=t_doubledot)
 
+    run_DPT_many_body(U, L, R,  t_fin; bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition="R",  avg=avg,  dd_init = 0.963, TEdim = TEdim, sweepcnt = sweepcnt)
     # dyna_occ()
     # dyna_EE()
 
@@ -177,8 +212,8 @@ end
 
 function plot_mix()
 
-    #sys = set_DPT_mixed(; L =8, R=8, graph=true )
-    # sys = set_DPT(; L =6, R=6, graph=true )
+    #sys = DPT_mixed(; L =8, R=8, graph=true )
+    # sys = DPT(; L =6, R=6, graph=true )
 
     # ψ = gen_state(sys)
     L = 128

@@ -23,7 +23,7 @@ function add_specific_int!(sys:: Union{DPT_mixed, DPT_graph}, res)
 
     @info "Adding mixed int"
 
-    if includeU(sys)
+    if QPCmixed(sys)
 
         #LR connection 
         UL, UR = Uk(1, sys)

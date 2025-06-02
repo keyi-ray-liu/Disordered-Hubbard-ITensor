@@ -87,7 +87,7 @@ struct StaticSimulation <: SimulationParameters
         prev_var =Float64[], 
         sweepcnt= 20,
         sweepdim =64, 
-        noise=false, 
+        noise=true, 
         cutoff=1e-12, 
         krylovdim=10, 
         weight=10,
@@ -405,6 +405,55 @@ struct DPT <: Systems
     bias_L :: Float64
     bias_R :: Float64
     lattice_info :: Dict
+    μ1 :: Float64
+
+    function DPT(;
+    U = 2.0,
+    t_reservoir = 1.0,
+    t_doubledot = 1.0,
+    L = 6,
+    R = 6,
+    systype = "Fermion",
+    couple_range=2,
+    contact = true,
+    contact_t = 1.0,
+    bias_doubledot = [0.0, 0.0], 
+    bias_L = 0.0,
+    bias_R = 0.0,
+    ddposition = "R",
+    graph=false,
+    μ1 = 0.0,
+    kwargs...
+    )
+
+    if graph
+        ddposition = "M"
+    end 
+
+    lattice_info = set_lattice(ddposition, L, R, couple_range)
+
+    new(
+    U,
+    t_reservoir,
+    t_doubledot,
+    L,
+    R,
+    systype,
+    contact,
+    contact_t,
+    couple_range,
+    bias_doubledot,
+    bias_L,
+    bias_R,
+    lattice_info,
+    μ1 
+    )
+
+    # if graph
+    #     sys = DPT_graph(sys)
+    # end 
+
+end 
 
 end 
 
@@ -460,52 +509,7 @@ function set_lattice(ddposition, L, R, couple_range)
 end 
 
 
-function set_DPT(;
-    U = 2.0,
-    t_reservoir = 1.0,
-    t_doubledot = 1.0,
-    L = 6,
-    R = 6,
-    systype = "Fermion",
-    couple_range=2,
-    contact = true,
-    contact_t = 1.0,
-    bias_doubledot = [0.0, 0.0], 
-    bias_L = 0.0,
-    bias_R = 0.0,
-    ddposition = "R",
-    graph=false,
-    kwargs...
-    )
 
-    if graph
-        ddposition = "M"
-    end 
-
-    lattice_info = set_lattice(ddposition, L, R, couple_range)
-
-    sys = DPT(
-    U,
-    t_reservoir,
-    t_doubledot,
-    L,
-    R,
-    systype,
-    contact,
-    contact_t,
-    couple_range,
-    bias_doubledot,
-    bias_L,
-    bias_R,
-    lattice_info
-    )
-
-    if graph
-        sys = set_DPT_graph(sys)
-    end 
-
-    return sys
-end 
 
 systype(sys::DPT) = sys.systype
 U(sys::DPT) = sys.U
@@ -535,16 +539,14 @@ struct DPT_mixed <: Systems
     energies :: Vector
     ks :: Vector
     LR :: Vector
-    includeU :: Bool
+    QPCmixed :: Bool
     #U :: Matrix
    # w :: Vector
-end 
-
-function set_DPT_mixed(;
+   function DPT_mixed(;
     energies = [],
     ks = [],
     LR = [],
-    includeU = false,
+    QPCmixed = false,
     ddposition = "R",
     graph = false,
     kwargs...
@@ -552,30 +554,30 @@ function set_DPT_mixed(;
 
     if graph
         ddposition="M"
-        includeU = false
+        QPCmixed = false
     end 
 
-    dpt = set_DPT(;graph=false, ddposition=ddposition, kwargs...)
+    dpt = DPT(;graph=false, ddposition=ddposition, kwargs...)
 
-
-    sys= DPT_mixed(
+    
+    new(
         dpt,
         energies,
         ks,
         LR,
-        includeU
+        QPCmixed
        # U,
        # w
     )
 
-    if graph
-        sys = set_DPT_graph(sys)
-    end 
+    # if graph
+    #     sys = set_DPT_graph(sys)
+    # end 
     
-    return sys
-
-
+    end 
 end 
+
+
 
 
 get_systotal(sys::DPT_mixed) = get_systotal(sys.dpt)
@@ -585,7 +587,7 @@ get_systotal(sys::DPT_mixed) = get_systotal(sys.dpt)
 L_contact(sys::Union{DPT, DPT_mixed}) = L_end(sys) - couple_range(sys) + 1
 R_contact(sys::Union{DPT, DPT_mixed}) = R_begin(sys) + couple_range(sys) - 1
 
-includeU(sys::DPT_mixed) = sys.includeU
+QPCmixed(sys::DPT_mixed) = sys.QPCmixed
 energies(sys::DPT_mixed) = sys.energies
 ks(sys::DPT_mixed) = sys.ks
 LR(sys::DPT_mixed) = sys.LR
@@ -629,7 +631,7 @@ end
 
 
 for func ∈ [
-    includeU, energies, ks, LR
+    QPCmixed, energies, ks, LR
     ]
     
     func = Symbol(func)
@@ -652,23 +654,23 @@ function DPT_setter(
     ddposition ="R",
     systype="Fermion",
     graph = false,
-    includeU = false,
+    QPCmixed = false,
     kwargs...
 )  
     # for avg, we remove the DD sites and merge it to L end
     if avg
         ddposition = "avg"
         graph = false
-        includeU= false
+        QPCmixed= false
         systype = "Electron"
     end 
 
 
     if mixed
-        sys = set_DPT_mixed(; systype=systype, ddposition = ddposition, graph=graph, includeU=includeU, kwargs...)
+        sys = DPT_mixed(; systype=systype, ddposition = ddposition, graph=graph, QPCmixed=QPCmixed, kwargs...)
 
     else
-        sys = set_DPT(; systype=systype, ddposition=ddposition, graph=graph, kwargs...)
+        sys = DPT(; systype=systype, ddposition=ddposition, graph=graph, kwargs...)
     end 
 
     if avg
