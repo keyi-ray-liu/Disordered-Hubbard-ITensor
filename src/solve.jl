@@ -206,9 +206,9 @@ function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation; save_every=
         end 
 
         if save_every
-            wf = h5open( getworkdir() * "tTDVP" * string(dt) * ".h5", "w")
+            wfstr = getworkdir() * "tTDVP" * string(dt) * ".h5"
         else
-            wf = h5open( getworkdir() * "tTDVPlaststate.h5", "w")
+            wfstr = getworkdir() * "tTDVPlaststate.h5"
 
             open(getworkdir() * "tTDVPlasttime", "w") do io
                 writedlm(io, dt)
@@ -220,8 +220,10 @@ function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation; save_every=
             writedlm(io, dt)
         end 
 
-        write(wf, "psi1", ψ)
-        close(wf)
+        h5open(wfstr, "w") do io
+            write(io, "psi1", ψ)
+        end 
+
 
     end 
 

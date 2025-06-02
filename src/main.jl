@@ -7,26 +7,29 @@ keyi.liu@nist.gov
 ALL RIGHTS RESERVED
 """
 
-using Pkg
+# using Pkg
 
-for strs in ["Lazy", 
-    "DelimitedFiles",
-    "Glob",
-    "ITensors",
-    "ITensorMPS",
-    "JSON3",
-    "StatsBase",
-    "KrylovKit",
-    "Suppressor",
-    "ITensorGaussianMPS",
-    "HDF5",
-    "Observers",
-    "StableRNGs",
-    "ITensorUnicodePlots"
-    ]
+# 
 
-    Pkg.add(strs)
-end 
+# for strs in ["Lazy", 
+#     "DelimitedFiles",
+#     "Glob",
+#     "ITensors",
+#     "ITensorMPS",
+#     "JSON3",
+#     "StatsBase",
+#     "KrylovKit",
+#     "Suppressor",
+#     "ITensorGaussianMPS",
+#     "HDF5",
+#     "Observers",
+#     "StableRNGs",
+#     "ITensorUnicodePlots"
+#     ]
+
+#     @warn "INSTALLING PACKAGES!"
+#     Pkg.add(strs)
+# end 
 
 using Lazy
 using DelimitedFiles
@@ -99,7 +102,7 @@ include("test.jl")
 #include("ed.jl")
 
 
-const DISABLE_BLAS = false
+const DISABLE_BLAS = true
 
 
 if DISABLE_BLAS

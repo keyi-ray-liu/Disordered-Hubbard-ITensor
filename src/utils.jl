@@ -158,8 +158,9 @@ function load_ψ(output::String; tag ="psi1")
   else
     wf = h5open( workdir * output * ".h5", "r")
   end 
-
+  
   ψ = read(wf, tag, MPS)
+  close(wf)
 
   return ψ
 end 
@@ -168,6 +169,7 @@ function load_ψ(t::Float64; tag ="psi1")
   workdir = getworkdir()
   wf = h5open( workdir * "tTDVP" * string(t) * ".h5", "r")
   ψ = read(wf, tag, MPS)
+  close(wf)
 
   return ψ
 end 
