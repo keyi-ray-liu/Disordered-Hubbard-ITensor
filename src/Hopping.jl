@@ -163,7 +163,7 @@ function HoppingNeighbor(sys::DPT, j::Int)
 
     # # lower dot
     # elseif j == L(sys) + 1
-    #     hop = [[t_doubledot(sys), j + 1]]
+    #     hop = [[vs(sys), j + 1]]
 
     if L_begin(sys) <= j < L_end(sys) || R_begin(sys) <= j < R_end(sys)
         hop = [[t_reservoir(sys), j + 1]]
@@ -172,7 +172,7 @@ function HoppingNeighbor(sys::DPT, j::Int)
         hop =  [[t_reservoir(sys), R_begin(sys)]]
 
     elseif j == dd_lower(sys)
-        hop = [[t_doubledot(sys), j + 1]]
+        hop = [[vs(sys), j + 1]]
 
     else
         hop = []
@@ -186,7 +186,7 @@ end
 function HoppingNeighbor(sys::DPT_mixed, j::Int)
 
     if j == dd_lower(sys)
-        hop = [[t_doubledot(sys), j + 1]]
+        hop = [[vs(sys), j + 1]]
 
     else
         # we connect within the spatial region
@@ -224,7 +224,7 @@ HoppingNeighbor(sys::DPT_graph, j::Int) = HoppingNeighbor(sys.dpt, j)
 function HoppingNeighbor(sys::DPT_avg, j::Int)
 
     if j == dd_lower(sys)
-        return [[t_reservoir(sys), t_doubledot(sys), j + 1]]
+        return [[t_reservoir(sys), vs(sys), j + 1]]
 
     else
         hop =  HoppingNeighbor(sys.dpt, j)

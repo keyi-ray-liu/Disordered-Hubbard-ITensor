@@ -4,9 +4,9 @@ get_ex(raw::String, static_str::String) = parse(Int, SubString(raw, 1 + length(T
 
 get_start(raw::String) = parse(Int, SubString(raw, 1 + length("start"), length(raw) - length(".h5")))
 
-get_dyna_files() = sort( 
+get_dyna_files(; workflag = "") = sort( 
     filter(x-> !occursin("lasttime", x),
-    filter(x->occursin(DYNA_STR,x), readdir(getworkdir())))
+    filter(x->occursin(DYNA_STR,x), readdir(getworkdir(workflag))))
     , by=get_time)
 
 shuffler(arr, random) = random ? shuffle(arr) : arr
@@ -119,9 +119,9 @@ function get_type_dict(systype)
 end 
 
 """Set the work directory"""
-function getworkdir()
+function getworkdir( workflag )
 
-  workdir = pwd() * "/work/"
+  workdir = pwd() * "/work$(workflag)/"
 
   if !isdir(workdir)
     mkdir(workdir)
@@ -147,11 +147,11 @@ function variance(H::MPO, psi::MPS)
   end
 end
 
-check_ψ(output) = isfile( getworkdir() * output * ".h5")
+check_ψ(output, workflag ) = isfile( getworkdir(workflag) * output * ".h5")
 
 
-function load_ψ(output::String; tag ="psi1")
-  workdir = getworkdir()
+function load_ψ(output::String, workflag :: String; tag ="psi1")
+  workdir = getworkdir(workflag )
 
   if length(output) > 3 && output[end-2:end] == ".h5"
     wf = h5open(workdir * output, "r")
@@ -165,8 +165,8 @@ function load_ψ(output::String; tag ="psi1")
   return ψ
 end 
 
-function load_ψ(t::Float64; tag ="psi1")
-  workdir = getworkdir()
+function load_ψ(t::Float64, workflag :: String; tag ="psi1")
+  workdir = getworkdir(workflag )
   wf = h5open( workdir * "tTDVP" * string(t) * ".h5", "r")
   ψ = read(wf, tag, MPS)
   close(wf)
@@ -174,7 +174,7 @@ function load_ψ(t::Float64; tag ="psi1")
   return ψ
 end 
 
-load_ψ(t::Int; tag ="psi1") = load_ψ( float(t); tag = tag)
+load_ψ(t::Int, workflag::String; tag ="psi1") = load_ψ( float(t), workflag; tag = tag)
 
 function load_plasmon(output)
   ex = readdlm( getworkdir() * output * "ex")
@@ -183,7 +183,7 @@ function load_plasmon(output)
 
 end 
 
-checkexist(output) = isfile( getworkdir() * output * ".h5")
+checkexist(output, workflag ) = isfile( getworkdir(workflag ) * output * ".h5")
 
 
 # returns the precise site number of the ex QE site, beginning of the subsystem and end of subsystem, corresponding to site j
@@ -449,9 +449,9 @@ function partial_contract(ψ::MPS, sites::Vector{Int})
 end 
 
 
-function saveham(file, s)
+function saveham(file, s, workflag)
 
-  open( getworkdir() * "H" * file ,"w") do io
+  open( getworkdir(workflag) * "H" * file ,"w") do io
     write(io, string(s))
   end
 
@@ -517,12 +517,14 @@ function get_tcd_gs()
 end 
 
 
-function prev_res() 
-  if !isempty(Glob.glob( "$LASTSTSTR.h5", getworkdir())) 
+function prev_res(workflag) 
+  @info workflag
+
+  if !isempty(Glob.glob( "$(LASTSTSTR).h5", getworkdir(workflag))) 
 
       @warn "prev state detected"
-      last_time = readdlm(getworkdir() * "tTDVPlasttime")[end]
-      last_state = load_ψ( "$LASTSTSTR")
+      last_time = readdlm(getworkdir(workflag) * "tTDVPlasttime")[end]
+      last_state = load_ψ( "$(LASTSTSTR)", workflag)
 
   else
 
@@ -646,3 +648,26 @@ function modifystate(ψ::MPS, process:: Perturbation, sys::Systems)
 
   return ψ
 end 
+
+
+
+function get_mf(mode ;U = 0.0, mu = 0.0, L = 2, vs = 0.25 )
+  
+  if mode == "connectDD"
+    #loop(; NLs = [L], vss= [vs], Us = [U], mus = [mu])
+    val = []
+
+    open(  pwd() * "/LOOP/U$(U)_vs$(vs)_mu$(mu)_L$(L)", "r") do IO
+      val = readdlm(IO)
+    end 
+
+    @show val
+    return val
+
+  else
+    return [0.0, 0.0]
+  end 
+end 
+
+
+

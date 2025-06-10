@@ -39,6 +39,7 @@ end
 struct ProductStateDriver <: ModeDriver
 end 
 
+
 struct Identity <: StateModifier
 end 
 
@@ -394,7 +395,7 @@ struct DPT <: Systems
 
     U :: Float64
     t_reservoir :: Float64
-    t_doubledot :: Float64
+    vs :: Float64
     L :: Int
     R :: Int
     systype :: String
@@ -410,7 +411,7 @@ struct DPT <: Systems
     function DPT(;
     U = 2.0,
     t_reservoir = 1.0,
-    t_doubledot = 1.0,
+    vs = 1.0,
     L = 6,
     R = 6,
     systype = "Fermion",
@@ -435,7 +436,7 @@ struct DPT <: Systems
     new(
     U,
     t_reservoir,
-    t_doubledot,
+    vs,
     L,
     R,
     systype,
@@ -520,7 +521,7 @@ bias_doubledot(sys::DPT) = sys.bias_doubledot
 bias_L(sys::DPT) = sys.bias_L
 bias_R(sys::DPT) = sys.bias_R
 t_reservoir(sys::DPT) = sys.t_reservoir
-t_doubledot(sys::DPT) = sys.t_doubledot
+vs(sys::DPT) = sys.vs
 contact(sys::DPT) = sys.contact
 contact_t(sys::DPT) = sys.contact_t
 get_systotal(sys::DPT) = 2 + L(sys) + R(sys)
@@ -559,7 +560,7 @@ struct DPT_mixed <: Systems
 
     dpt = DPT(;graph=false, ddposition=ddposition, kwargs...)
 
-    
+
     new(
         dpt,
         energies,
@@ -620,7 +621,7 @@ end
 set_graph(sys::Union{DPT, DPT_mixed}, graph::Bool) = graph ? set_DPT_graph(sys) : sys
 
 for func ∈ [systype, 
-    U, L, R, N, couple_range, bias_doubledot, bias_L, bias_R, t_reservoir, t_doubledot, contact, contact_t, dd_lower, L_begin, L_end, R_begin, R_end, L_contact, R_contact, ddposition
+    U, L, R, N, couple_range, bias_doubledot, bias_L, bias_R, t_reservoir, vs, contact, contact_t, dd_lower, L_begin, L_end, R_begin, R_end, L_contact, R_contact, ddposition
     ]
     
     func = Symbol(func)
@@ -677,7 +678,8 @@ function DPT_setter(
         sys = DPT_avg(sys)
     end 
 
-    @show sys
+    #@show sys
+    return sys
 
 end 
 

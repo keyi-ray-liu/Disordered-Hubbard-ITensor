@@ -255,7 +255,7 @@ function Onsite(sys::DPT_mixed, j::Int)
     elseif j <= R_contact(sys)
 
         if !QPCmixed(sys)
-            onsite = bias_R(sys) - 1/2 * U(sys) +  + sys.dpt.μ1
+            onsite = bias_R(sys) - 1/2 * U(sys) + sys.dpt.μ1
 
         else
             j_mix = j - L_begin(sys) + 1 - (R_begin(sys) - L_end(sys)  - 1)

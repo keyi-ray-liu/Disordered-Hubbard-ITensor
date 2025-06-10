@@ -135,9 +135,9 @@ end
 
 
 
-function dyna_SRDM(; ψ=nothing, kwargs...)
+function dyna_SRDM(; ψ=nothing, workflag = "", kwargs...)
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
 
     if isnothing(ψ)
         T = []
@@ -145,7 +145,7 @@ function dyna_SRDM(; ψ=nothing, kwargs...)
 
         for file in get_dyna_files()
 
-            ψ = load_ψ(file)
+            ψ = load_ψ(file, workflag)
             t = get_time(file)
             append!(T, t)
 
@@ -169,9 +169,9 @@ function dyna_SRDM(; ψ=nothing, kwargs...)
 
 end 
 
-function dyna_product_state_overlap(; ψ=nothing, sys=nothing, kwargs...)
+function dyna_product_state_overlap(; ψ=nothing, sys=nothing, workflag = "", kwargs...)
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
     
 
     if isnothing(ψ)
@@ -193,11 +193,11 @@ function dyna_product_state_overlap(; ψ=nothing, sys=nothing, kwargs...)
 end 
 
 
-function dyna_EE(; max_order=1, ψ=nothing, kwargs...)
+function dyna_EE(; max_order=1, ψ=nothing, workflag = "", kwargs...)
 
 
     #sites = []
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
 
     if isnothing(ψ)
         T = []
@@ -207,7 +207,7 @@ function dyna_EE(; max_order=1, ψ=nothing, kwargs...)
 
         for file in get_dyna_files()
 
-            ψ = load_ψ(file)
+            ψ = load_ψ(file, workflag)
             t = get_time(file)
 
             println("Calculating EE, $t")
@@ -283,11 +283,11 @@ function static_tcd(;padding=false, start_off=0, end_off=0, static_str="temp_pla
 
     files = get_static_files(static_str)
 
-    gs = load_ψ( TEMP_tag * static_str * "1",  tag="psi")
+    gs = load_ψ( TEMP_tag * static_str * "1";  tag="psi")
 
     for file in files
 
-        ψ = load_ψ(file, tag= "psi")
+        ψ = load_ψ(file; tag= "psi")
 
         res = cal_TCD(ψ, gs; start_off=start_off, end_off=end_off)
 
@@ -328,7 +328,7 @@ function dyna_tcd(; gs=get_tcd_gs(), ψ=nothing,  kwargs...)
 
         for file in get_dyna_files()
 
-            ψ = load_ψ(file)
+            ψ = load_ψ(file, workflag)
             t = get_time(file)
             append!(T, t)
 
@@ -356,9 +356,9 @@ end
 
 
 
-function dyna_occ(; sys=Chain(), ψ=nothing, kwargs...)
+function dyna_occ(; sys=Chain(), ψ=nothing, workflag = "", kwargs...)
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
 
     if isnothing(ψ)
         if systype(sys) == "Electron"
@@ -372,7 +372,7 @@ function dyna_occ(; sys=Chain(), ψ=nothing, kwargs...)
 
         for file in get_dyna_files()
 
-            ψ = load_ψ(file)
+            ψ = load_ψ(file, workflag)
             t = get_time(file)
             append!(T, t)
 
@@ -421,7 +421,7 @@ function dyna_occ(; sys=Chain(), ψ=nothing, kwargs...)
 
 end 
 
-function dyna_coherence(; ψ=nothing, sys=DPT(), kwargs...)
+function dyna_coherence(; ψ=nothing, sys=DPT(), workflag = "", kwargs...)
 
     function work(ψ, sys)
         
@@ -433,11 +433,10 @@ function dyna_coherence(; ψ=nothing, sys=DPT(), kwargs...)
         
         coh = correlation_matrix(ψ, op1, op2; sites= get_systotal(sys) -1 : get_systotal(sys))
 
-        @show coh
         return coh[1, 2]
     end 
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
 
     if isnothing(ψ)
         T = []
@@ -445,7 +444,7 @@ function dyna_coherence(; ψ=nothing, sys=DPT(), kwargs...)
 
         for file in get_dyna_files()
 
-            ψ = load_ψ(file)
+            ψ = load_ψ(file, workflag)
             t = get_time(file)
             append!(T, t)
 
@@ -470,7 +469,7 @@ function dyna_coherence(; ψ=nothing, sys=DPT(), kwargs...)
 
 end 
 
-function dyna_dptcurrent(; ψ=nothing, sys=DPT(), kwargs...)
+function dyna_dptcurrent(; ψ=nothing, sys=DPT(), workflag = "", kwargs...)
 
     function work(ψ, sys)
         
@@ -484,7 +483,7 @@ function dyna_dptcurrent(; ψ=nothing, sys=DPT(), kwargs...)
         return 2 * imag(corr[1, end])
     end 
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
 
     if isnothing(ψ)
         T = []
@@ -492,7 +491,7 @@ function dyna_dptcurrent(; ψ=nothing, sys=DPT(), kwargs...)
 
         for file in get_dyna_files()
 
-            ψ = load_ψ(file)
+            ψ = load_ψ(file, workflag)
             t = get_time(file)
             append!(T, t)
 
@@ -517,7 +516,7 @@ function dyna_dptcurrent(; ψ=nothing, sys=DPT(), kwargs...)
 
 end 
 
-function dyna_dptcurrent_mix(; ψ=nothing, sys=DPT_mixed(), kwargs...)
+function dyna_dptcurrent_mix(; ψ=nothing, sys=DPT_mixed(), workflag = "", kwargs...)
 
     function work(ψ, ULR, sys)
         # except the DD sites
@@ -528,7 +527,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=DPT_mixed(), kwargs...)
     end 
 
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
 
     ks = readdlm( workdir * "ks")
     LR = readdlm( workdir * "LR")
@@ -545,7 +544,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=DPT_mixed(), kwargs...)
 
         for file in get_dyna_files()
 
-            ψ = load_ψ(file)
+            ψ = load_ψ(file, workflag)
             t = get_time(file)
             append!(T, t)
 
@@ -570,7 +569,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=DPT_mixed(), kwargs...)
 
 end 
 
-function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, t=nothing, corr_cutoff=Inf, kwargs...)
+function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, t=nothing, workflag = "", corr_cutoff=Inf, kwargs...)
     function work(ψ, sys)
         
         if  sys.systype == "Fermion" 
@@ -579,7 +578,7 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, t=nothing, corr_c
             ops = [["Cdagup", "Cup"], ["Cdagdn", "Cdn"]]
         end 
         
-        corrs = corr_work(ψ, ops, t; corr_cutoff=corr_cutoff)
+        corrs = corr_work(ψ, ops, t, workflag; corr_cutoff=corr_cutoff)
         current = []
 
         source = sys.source
@@ -651,7 +650,7 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, t=nothing, corr_c
         return current
     end 
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
 
     if isnothing(ψ)
         T = []
@@ -659,7 +658,7 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, t=nothing, corr_c
 
         for file in get_dyna_files()
 
-            ψ = load_ψ(file)
+            ψ = load_ψ(file, workflag)
             t = get_time(file)
             append!(T, t)
 
@@ -686,9 +685,9 @@ end
 
 
 
-function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t; corr_cutoff=Inf)
+function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t, workflag; corr_cutoff=Inf)
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
     corrs = []
 
     for (op1, op2) in ops
@@ -718,9 +717,9 @@ function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t; corr_cutoff=Inf)
 end 
 
 
-function dyna_corr(; ψ=nothing, sys=Chain(), t=nothing, corr_cutoff=Inf, kwargs...) 
+function dyna_corr(; ψ=nothing, sys=Chain(), t=nothing, workflag = "", corr_cutoff=Inf, kwargs...) 
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
     ops = ops_determiner(sys)
 
     if isnothing(ψ)
@@ -729,11 +728,11 @@ function dyna_corr(; ψ=nothing, sys=Chain(), t=nothing, corr_cutoff=Inf, kwargs
         
         for file in get_dyna_files()
 
-            ψ = load_ψ(file)
+            ψ = load_ψ(file, workflag)
             t = get_time(file)
 
             println("Calculating corr, $t")
-            _ = corr_work(ψ, ops, t; corr_cutoff=corr_cutoff)
+            _ = corr_work(ψ, ops, t, workflag; corr_cutoff=corr_cutoff)
             append!(T, t)
 
         end 
@@ -742,7 +741,7 @@ function dyna_corr(; ψ=nothing, sys=Chain(), t=nothing, corr_cutoff=Inf, kwargs
 
     else
 
-        _ = corr_work(ψ, ops, t; corr_cutoff=corr_cutoff)
+        _ = corr_work(ψ, ops, t, workflag ; corr_cutoff=corr_cutoff)
 
     end 
 
@@ -758,11 +757,11 @@ function dyna_LSRcurrent()
     T = []
     current = []
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
 
     for file in get_dyna_files()
 
-        ψ = load_ψ(file)
+        ψ = load_ψ(file, workflag)
         t = get_time(file)
         append!(T, t)
 
@@ -786,11 +785,11 @@ function dyna_pϕ()
     pϕ = []
     T = []
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
 
     for file in get_dyna_files()
 
-        ψ = load_ψ(file)
+        ψ = load_ψ(file, workflag)
         t = get_time(file)
         append!(T, t)
 

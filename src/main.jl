@@ -24,7 +24,8 @@ ALL RIGHTS RESERVED
 #     "HDF5",
 #     "Observers",
 #     "StableRNGs",
-#     "ITensorUnicodePlots"
+#     "ITensorUnicodePlots",
+#     "Interpolations"
 #     ]
 
 #     @warn "INSTALLING PACKAGES!"
@@ -47,6 +48,8 @@ using Observers: observer
 using StableRNGs: StableRNG
 using Test: @test, @test_broken, @testset
 using ITensorUnicodePlots: @visualize
+#using Interpolations
+using LsqFit
 
 #using KrylovKit: eigsolve
 #using ITensorTDVP
@@ -99,6 +102,7 @@ include("specific.jl")
 include("basis.jl")
 include("QEutil.jl")
 include("test.jl")
+
 #include("ed.jl")
 
 
@@ -118,7 +122,7 @@ end
 
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
-    rm(getworkdir(), force=true, recursive=true)
+    rm(getworkdir(""), force=true, recursive=true)
     #corr_test2()
     #init_test()
     #SD_wrapper()
@@ -131,8 +135,10 @@ if test
     #chain_wrapper()
     #run_rectangular()
     #toytwolevel()
-    DPT_wrapper()
+    #DPT_wrapper()
     #quench_wrapper()
+    #DPT_iterate()
+    DPT_trend()
     #argtest()
     return nothing
 
@@ -143,6 +149,12 @@ else
 
     if ARG == "DPT"
         DPT_wrapper()
+
+    elseif ARG == "DPTtrend"
+        DPT_trend()
+
+    elseif ARG == "DPTiterate"
+        DPT_iterate()
 
     elseif ARG == "Quench"
         quench_wrapper()

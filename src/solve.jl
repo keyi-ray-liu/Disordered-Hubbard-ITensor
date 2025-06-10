@@ -2,13 +2,13 @@
 """ DMRG routine that solves for the states given H and initial guess.
 
 Returns: array of MPS's"""
-function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation) 
+function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation, workflag :: String ) 
 
     ex, prev_state, prev_energy, prev_var, sweepcnt, sweepdim, noise, TEcutoff, krylovdim, weight = SimulationParameters(simulation)
 
     prev_state = convert(Vector{MPS}, prev_state)
 
-    workdir = getworkdir()
+    workdir = getworkdir(workflag)
     allvars = copy(prev_var)
     allenergy = copy(prev_energy)
     cur_ex = 1 + length(prev_state)
@@ -156,7 +156,7 @@ function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation)
 end 
 
 
-function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation; save_every=true, obs=Function[], corr_cutoff=Inf, init_obs = true, kwargs...)
+function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation, workflag ; save_every=true, obs=Function[], corr_cutoff=Inf, init_obs = true, kwargs...)
 
     τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
 
@@ -164,10 +164,10 @@ function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation; save_every=
 
     if init_obs
         for ob in obs
-            ob(;ψ=ψ, t=0, corr_cutoff = corr_cutoff, kwargs...)
+            ob(;ψ=ψ, t=0, corr_cutoff = corr_cutoff,  workflag = workflag, kwargs...)
         end 
 
-        open(getworkdir() * "times", "a" ) do io
+        open(getworkdir(workflag) * "times", "a" ) do io
             writedlm(io, start - τ)
         end 
     end 
@@ -183,7 +183,7 @@ function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation; save_every=
 
         @info "TDVP time : $dt"
         #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
-        @time ψ = tdvp(H,  -im * τ, ψ; updater_kwargs = (; eager=true), maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ/2, normalize=true,outputlevel=1,
+        @time ψ = tdvp(H,  -im * τ, ψ; updater_kwargs = (; eager=true), maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ, normalize=true,outputlevel=1,
         # (step_observer!)=sys_obs
         )
 
@@ -202,21 +202,21 @@ function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation; save_every=
 
         # we might need to calculate observables on the go
         for ob in obs
-            ob(;ψ=ψ, t=dt, corr_cutoff = corr_cutoff, kwargs...)
+            ob(;ψ=ψ, t=dt, corr_cutoff = corr_cutoff, workflag = workflag, kwargs...)
         end 
 
         if save_every
-            wfstr = getworkdir() * "tTDVP" * string(dt) * ".h5"
+            wfstr = getworkdir(workflag) * "tTDVP" * string(dt) * ".h5"
         else
-            wfstr = getworkdir() * "tTDVPlaststate.h5"
+            wfstr = getworkdir(workflag) * "tTDVPlaststate.h5"
 
-            open(getworkdir() * "tTDVPlasttime", "w") do io
+            open(getworkdir(workflag) * "tTDVPlasttime", "w") do io
                 writedlm(io, dt)
             end
 
         end 
 
-        open(getworkdir() * "times", "a" ) do io
+        open(getworkdir(workflag) * "times", "a" ) do io
             writedlm(io, dt)
         end 
 
