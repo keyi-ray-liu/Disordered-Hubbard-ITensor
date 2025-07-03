@@ -94,7 +94,7 @@ end
 
 
 """generate a product state across LR, representing the 0k fermi level, with all given parameters, at zero bias"""
-function fermilevel(sys :: SD_array)
+function fermilevel(sys :: SD_array, ordering :: String)
 
     source = sys.source
     array = sys.array
@@ -108,12 +108,19 @@ function fermilevel(sys :: SD_array)
     LR = vcat(source.LR, drain.LR)
 
 
+
     # the last occupied sites
     
-    sourceinds = findall( x-> x>0, LR)[source.N[1] + 1:end]
-    sourceinds = shift_basis(left_len, arr_len, sourceinds)
+    if ordering == "REVSORTED"
+        sourceinds = findall( x-> x>0, LR)[source.N[1] + 1:end]
+        draininds = findall( x-> x<0, LR)[drain.N[1] + 1:end]
 
-    draininds = findall( x-> x<0, LR)[drain.N[1] + 1:end]
+    elseif ordering == "SORTED"
+        sourceinds = findall( x-> x>0, LR)[1: source.N[1]]
+        draininds = findall( x-> x<0, LR)[1: drain.N[1]]
+    end 
+
+    sourceinds = shift_basis(left_len, arr_len, sourceinds)
     draininds = shift_basis(left_len, arr_len, draininds)
 
     arrayinds = left_len + 1 : left_len + arr_len
@@ -134,4 +141,4 @@ function fermilevel(sys :: SD_array)
 
 end 
 
-fermilevel(sys::SD_array, sites)  = random_mps(sites, fermilevel(sys); linkdims=10)
+fermilevel(sys::SD_array, sites, ordering :: String)  = random_mps(sites, fermilevel(sys, ordering); linkdims=10)

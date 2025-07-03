@@ -44,10 +44,10 @@ using ITensorGaussianMPS
 using Random
 using HDF5
 using Logging
-using Observers: observer
+#using Observers: observer
 using StableRNGs: StableRNG
 using Test: @test, @test_broken, @testset
-using ITensorUnicodePlots: @visualize
+#using ITensorUnicodePlots: @visualize
 #using Interpolations
 using LsqFit
 
@@ -123,23 +123,11 @@ end
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
     rm(getworkdir(""), force=true, recursive=true)
-    #corr_test2()
-    #init_test()
-    #SD_wrapper()
-    #lapacktest()
-    #chain_wrapper()
-    #QE_wrapper(QE_HOM)
-    #ring_wrapper()
-    #NF_wrapper()
-    #QE_wrapper("QE_two")
-    #chain_wrapper()
-    #run_rectangular()
-    #toytwolevel()
-    #DPT_wrapper()
-    #quench_wrapper()
-    #DPT_iterate()
-    DPT_trend()
+    rm( pwd() * "/work*/", force=true, recursive=true)
+    NF_wrapper()
+    #DPT_trend()
     #argtest()
+    
     return nothing
 
 
@@ -149,6 +137,9 @@ else
 
     if ARG == "DPT"
         DPT_wrapper()
+
+    elseif ARG == "DPTinit"
+        DPT_init_scan()
 
     elseif ARG == "DPTtrend"
         DPT_trend()

@@ -295,3 +295,127 @@ function toytwolevel()
 
 
 end 
+
+
+
+function test_rotation_gate()
+
+    s = siteinds("Fermion", 2; conserve_qns = true)
+    state1 = ["Emp", "Emp"]
+    #state2 = ["Emp", "Occ"]
+
+
+
+    #a += sqrt(0.7), "Cdag", 1
+    #a += sqrt(0.3), "Cdag", 2
+
+    #a = sqrt(0.7) * Op("cdag", s, 1)
+    #b = sqrt(0.3) * Op("cdag", s, 2)
+
+
+    # a = sqrt(0.7) * op("Cdag", s[1]) 
+    # @show a
+
+
+    M = zeros(ComplexF64, 4, 4)
+
+    M[2, 1] = sqrt(0.6)
+    M[3, 1] = sqrt(0.4) * exp( 1im * 0.5)
+    #sqrt(0.7)
+    #M[2, 2] = sqrt(0.3)
+
+    a = op(M, s[1], s[2])
+
+    ψ = randomMPS(s, state1)
+    ψ = apply(a, ψ)
+    #ψ2 = randomMPS(s, state2)
+
+    #ψ :: MPS = add(sqrt(0.7) * ψ1, sqrt(0.3) * ψ2)
+
+    # @show typeof(ψ), fieldnames(typeof(ψ))
+    # @show typeof(ψ.data), fieldnames(typeof(ψ.data))
+    # @show typeof(ψ.data[1]), fieldnames(typeof(ψ.data[1]))
+    # @show fieldnames(typeof(ψ.data[1].tensor.storage))
+    #@show typeof(ψ.data[1].tensor.inds), fieldnames(typeof(ψ.data[1].tensor.inds))
+
+
+
+
+    #ψ.data[1].tensor.storage.data = [sqrt(0.1), sqrt(0.9)]
+    @show expect(ψ, "N")
+    @show correlation_matrix(ψ, "Cdag", "C")
+
+end 
+
+
+function test_hop_gate()
+
+    s = siteinds("Fermion", 2; conserve_qns = true)
+    state1 = ["Occ", "Emp"]
+    #state2 = ["Emp", "Occ"]
+    
+    a = OpSum()
+    a += sqrt(0.7), "Cdag", 1, "C", 2
+    a += sqrt(0.3), "Cdag", 2, "C", 1
+
+    a = MPO(a, s)
+    ψ = randomMPS(s, state1)
+    ψ = apply(a, ψ)
+
+    @show expect(ψ, "N")
+    @show correlation_matrix(ψ, "Cdag", "C")
+
+end 
+
+
+
+# function test_DPT()
+
+
+    
+
+#     dpt_in = Dict()
+
+
+#     L = get(dpt_in, "L", 34)
+#     R = get(dpt_in, "R", 34)
+#     tswitch = Float64(get(dpt_in, "tswitch", 0.0))
+#     t_fin = Float64(get(dpt_in, "tfin", 30.0))
+#     τ = get(dpt_in, "timestep", 0.25)
+#     TEdim = get(dpt_in, "TEdim", 64)
+#     biasLR = get(dpt_in, "biasLR", 0.0)
+#     mixed = get(dpt_in, "mixed", true)
+#     ordering = get(dpt_in, "ordering", "SORTED")
+#     avg = get(dpt_in, "avg", false)
+#     sweepcnt = get(dpt_in, "sweepcnt", 30)
+#     vs = get(dpt_in, "vs", 0.25)
+
+#     κs = [sqrt(0.5), sqrt(0.8), sqrt(0.95)]
+#     θs = [0, 1/3 * π, 2/3 * π, π]
+#     γs = [0.1, 0.5, 1.0]
+#     Us = [0.1, 3.25, 5.5]
+
+#     Threads.@threads for (κ, θ, γ, U) in collect(Base.product(κs, θs, γs, Us ))
+
+#         ψ1 = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manuallower", vs = vs, ordering = ordering, workflag = "lok$(κ)t$(θ)g$(γ)U$(U)")
+
+#         sites = siteinds(ψ1)
+
+#         ψ2 = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manualupper", sites = sites, vs = vs, ordering = ordering, workflag = "upk$(κ)t$(θ)g$(γ)U$(U)")
+
+#         ψ = add( κ * ψ1, γ * exp(1im* θ) * sqrt(1 - κ^2) * ψ2)
+
+
+#         expval = expect(ψ, "N")
+#         corr = correlation_matrix(ψ, "Cdag", "C")
+
+#         @show expval[end - 1: end]
+#         @show corr[end - 1: end, end - 1: end]
+
+#         process = Supplywf(ψ)
+
+#         run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = "_k$(κ)_t$(θ)_g$(γ)_U$(U)", ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "override", vs = vs, process = process)
+
+#     end 
+
+# end 

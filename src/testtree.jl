@@ -213,7 +213,7 @@ include("observables.jl")
 
 #     for b in 1:N
 #         @show b
-#         RDM(M, b)
+#         RDM1(M, b)
 #     end
     
 

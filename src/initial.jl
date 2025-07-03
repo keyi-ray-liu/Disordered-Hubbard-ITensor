@@ -25,6 +25,8 @@ function gen_state_str(sys::DPT; initdd="LOWER", ifshuffle = false, kwargs...)
         initarr = ["Occ", "Emp"]
     elseif initdd == "UPPER"
         initarr = ["Emp", "Occ"]
+    elseif initdd == "EMPTY"
+        initarr = ["Emp", "Emp"]
     else
         error("Unknown init")
     end 
@@ -60,14 +62,14 @@ function gen_state_str(sys::DPT_avg; kwargs...)
 
 end 
 
-gen_state_str(sys::Reservoir; kwargs...) = reverse!([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
+gen_state_str(sys::Reservoir; kwargs...) = reverse([ get_type_dict(sys.systype)[i] for i=1:4 for _ in 1:sys.N[i]])
 
 
 
-function gen_state_str(sys::SD_array; fermi=true, random=false, kwargs...) 
+function gen_state_str(sys::SD_array; fermi=true, random=false, ordering = "SORTED", kwargs...) 
 
     if fermi && typeof(sys.source) != Reservoir_spatial
-        state_str = fermilevel(sys)
+        state_str = fermilevel(sys, ordering)
 
     else
         source = shuffler(gen_state_str(sys.source), random)
@@ -262,10 +264,12 @@ function gen_state(sys::Systems; QN=true, sites=nothing, kwargs...)
     end 
 
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
-    @show gen_state_str(sys; kwargs...)
-    ψ = randomMPS(sites, gen_state_str(sys) 
-    #; linkdims=10
+    @show state_str = gen_state_str(sys; kwargs...)
+    ψ = randomMPS(sites, state_str
+    ; linkdims=10
     )
+
+    #@show expect(ψ, "N")
 
     return ψ
 

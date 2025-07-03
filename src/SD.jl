@@ -86,7 +86,7 @@ end
 
 
 """worker function that runs SD calculations"""
-function run_SD(; biasS=0.0, biasA=0.0, biasD=0.0, initbiasA = 500.0, mode="productstate", ω = -1.0, kwargs...)
+function run_SD(; biasS=0.0, biasA=0.0, biasD=0.0, initbiasA = 500.0, mode="productstate", ordering = ordering, ω = -1.0, kwargs...)
  
     obs= [dyna_EE, dyna_occ, dyna_SDcurrent,
     #dyna_SRDM, 
@@ -97,20 +97,20 @@ function run_SD(; biasS=0.0, biasA=0.0, biasD=0.0, initbiasA = 500.0, mode="prod
     
     # else
     if mode == "productstate"
-        energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = biasS, bias_R = biasD, couple_range=0, ω = ω )
+        energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = biasS, bias_R = biasD, couple_range=0, ω = ω, ordering = ordering)
         modedriver = ProductStateDriver()
 
     elseif mode == "ProdReservoir"
-        energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = 0.0, bias_R = 0.0, couple_range=0, ω = ω )
+        energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = 0.0, bias_R = 0.0, couple_range=0, ω = ω, ordering = ordering)
         modedriver = ProdReservoirDriver()
 
     elseif mode == "BiasReverseGS"
-        energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = 0.0, bias_R = 0.0, couple_range=0, ω = ω )
+        energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = 0.0, bias_R = 0.0, couple_range=0, ω = ω, ordering = ordering)
         modedriver = BiasReverseGS()
 
     elseif mode == "BiasGS"
 
-        energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = biasS, bias_R = biasD, couple_range=0, ω = ω)
+        energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = biasS, bias_R = biasD, couple_range=0, ω = ω, ordering = ordering)
         modedriver = BiasGSDriver()
 
     else
@@ -120,7 +120,7 @@ function run_SD(; biasS=0.0, biasA=0.0, biasD=0.0, initbiasA = 500.0, mode="prod
     
     timecontrol = get_time_control()
 
-    run_SD(modedriver, timecontrol, energies, ks, LR, obs;  biasA=biasA, biasS=biasS, biasD=biasD, initbiasA=initbiasA, corr_cutoff=0.0, ω=ω, kwargs... )
+    run_SD(modedriver, timecontrol, energies, ks, LR, obs;  biasA=biasA, biasS=biasS, biasD=biasD, initbiasA=initbiasA, corr_cutoff=0.0, ω=ω, ordering = ordering, kwargs... )
 
     # end 
 
@@ -147,11 +147,10 @@ function SD_wrapper()
     Ns = get(sd_in, "Ns", 1)
     Nd = get(sd_in, "Nd", 0)
     Na = get(sd_in, "Na", 0)
-    biasS = get(sd_in, "biasS", 0.0)
     biasA = get(sd_in, "biasA", 0.0)
     G1 = get(sd_in, "G1", 0.0)
     G2 = get(sd_in, "G2", 0.0)
-    biasD = get(sd_in, "biasD", 0.0)
+    bias = get(sd_in, "bias", 0.0)
     initbiasA = get(sd_in, "initbiasA", 500)
     systype = get(sd_in, "systype", "Electron")
     contact_scaling = get(sd_in, "contactscaling", 2.0)
@@ -162,7 +161,9 @@ function SD_wrapper()
     mode = get(sd_in, "mode", "productstate")
     ω = get(sd_in, "reservoirspacing", -1.0)
     sweepcnt = get(sd_in, "sweepcnt", 200)
+    t = get(sd_in, "t", -1.0)
+    ordering = get(sd_in, "ordering", "SORTED")
 
-    run_SD(; s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = biasS, biasA = biasA, G1 = G1, G2 = G2, biasD = biasD, reservoir_type=reservoir_type, manualmixprod=manualmixprod, mode=mode, config=config, initbiasA = initbiasA, ω=ω, sweepcnt = sweepcnt)
+    run_SD(; s_coupling=s_coupling, d_coupling=d_coupling, Ls=Ls, Ld=Ld, Ns=Ns, Na = Na, Nd=Nd, λ_ne = λ_ne, λ_ee = λ_ee, systype=systype, TEdim = TEdim, contact_scaling=contact_scaling, U=U, biasS = bias/2, biasA = biasA, G1 = G1, G2 = G2, biasD = -bias/2, reservoir_type=reservoir_type, manualmixprod=manualmixprod, mode=mode, config=config, initbiasA = initbiasA, ω=ω, sweepcnt = sweepcnt, ordering = ordering, t= t)
 
 end 

@@ -42,11 +42,28 @@ function cal_TCD(ψ1, ψ2; start_off = 0, end_off = 0
 end 
 
 
+function RDM2(ket::MPS, a::Int, b::Int)
+
+    orthogonalize!(ket,a)
+    sites = siteinds(ket)
+    bra = prime(dag(ket),linkinds(ket))
+    
+    rho = prime(ket[a],linkinds(ket,a-1)) * prime(bra[a], sites[a])
+    for j in a+1:b-1
+        rho *= ket[j]*bra[j]
+    end
+    rho *= prime(ket[b],linkinds(ket,b)) * prime(bra[b], sites[b])  
+
+    return rho
+
+end 
+
+
 
 
 
 """calculate reduced density matrix of one site"""
-function RDM(ψ::MPS, b::Int)
+function RDM1(ψ::MPS, b::Int)
 
     s = siteinds(ψ)
 
@@ -128,7 +145,7 @@ end
 
 function scan_RDM(ψ::MPS)
 
-    return [RDM(ψ, b) for b in 1:length(ψ)]
+    return [RDM1(ψ, b) for b in 1:length(ψ)]
 
 end 
 
@@ -169,7 +186,7 @@ function dyna_SRDM(; ψ=nothing, workflag = "", kwargs...)
 
 end 
 
-function dyna_product_state_overlap(; ψ=nothing, sys=nothing, workflag = "", kwargs...)
+function dyna_product_state_overlap(; ψ=nothing, sys=nothing, workflag = "", ordering = "SORTED", kwargs...)
 
     workdir = getworkdir(workflag)
     
@@ -180,7 +197,7 @@ function dyna_product_state_overlap(; ψ=nothing, sys=nothing, workflag = "", kw
 
         if typeof(sys.source) == Reservoir_momentum
             sites = siteinds(ψ)
-            ϕ = fermilevel(sys, sites)
+            ϕ = fermilevel(sys, sites, ordering)
             overlap = abs2(inner(ϕ, ψ))
 
             open( workdir * "productstateoverlap", "a") do io
@@ -460,8 +477,12 @@ function dyna_coherence(; ψ=nothing, sys=DPT(), workflag = "", kwargs...)
     else
 
         coh = work(ψ, sys)
-        open( workdir * "coherence", "a") do io
-            writedlm(io, coh)
+        open( workdir * "coherenceRE", "a") do io
+            writedlm(io, real.(coh))
+        end 
+
+        open( workdir * "coherenceIM", "a") do io
+            writedlm(io, imag.(coh))
         end 
 
     end 

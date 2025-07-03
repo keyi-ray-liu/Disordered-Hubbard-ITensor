@@ -28,6 +28,13 @@ function run_static_simulation(::Systems, ::StaticSimulation, ::MPS, process :: 
 
 end 
 
+function run_static_simulation(::Systems, ::StaticSimulation, ::MPS, process :: Supplywf, workflag :: String;  message="")
+
+    @info "Supply directly provided wavefunction"
+    return [process.ψ]
+
+end 
+
 """we completely decoupled the code logic of dynamic SimulationParameters, it is required that one provides an initial state"""
 
 function run_dynamic_simulation(sys::Systems, simulation::DynamicSimulation, ψ::MPS, workflag :: String; message = "Dynamic", save_every=true, obs=Function[], init_obs=true,  kwargs...)
@@ -47,7 +54,7 @@ function run_dynamic_simulation(sys::Systems, simulation::DynamicSimulation, ψ:
 end 
 
 """Wrapper function to automatically load last checkpoint, and run simulations according to the given parameters and system configurations"""
-function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys::Systems, obs; random=true, process :: StateModifier = Identity(), workflag = "", kwargs...)
+function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys::Systems, obs; random=true, process :: StateModifier = Identity(), sites = nothing, workflag = "", kwargs...)
 
     τ = timecontrol.τ
     fin = timecontrol.fin
@@ -56,7 +63,7 @@ function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys
     @show last_time
     start = last_time > -Inf ? last_time + τ : τ
 
-    ψ = gen_state(init; random=random, kwargs...)
+    ψ = gen_state(init; random=random, sites = sites, kwargs...)
     # we solve for the GS of the whole system at zero bias, we also bias the array so that nothing is occupied there
 
     if isnothing(init)
@@ -70,11 +77,13 @@ function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys
     end 
 
     Dynamic = DynamicSimulation(;τ=τ, start=start, fin=fin, kwargs...)
-    _ = run_dynamic_simulation(sys, Dynamic, ψ0, workflag; save_every=false, obs=obs, kwargs...)
+    ψ0 = run_dynamic_simulation(sys, Dynamic, ψ0, workflag; save_every=false, obs=obs, kwargs...)
+
+    return ψ0
 end 
 
 """Wrapper function to automatically load last checkpoint, and run a two-stage dynamical simulation, with specified t1 and t2"""
-function run_gs_dyna(timecontrol::TwoStage, init::Union{Nothing, Systems}, s1::Systems, s2::Systems, obs; random=true, process :: StateModifier = Identity(), workflag = "", kwargs...)
+function run_gs_dyna(timecontrol::TwoStage, init::Union{Nothing, Systems}, s1::Systems, s2::Systems, obs; random=true, sites = nothing, process :: StateModifier = Identity(), workflag = "", kwargs...)
 
     τ1 = timecontrol.τ1
     fin1 = timecontrol.fin1
@@ -85,7 +94,7 @@ function run_gs_dyna(timecontrol::TwoStage, init::Union{Nothing, Systems}, s1::S
     @show last_time
 
 
-    ψ = gen_state(init; random=random, kwargs...)
+    ψ = gen_state(init; sites = sites, random=random, kwargs...)
     # we solve for the GS of the whole system at zero bias, we also bias the array so that nothing is occupied there
 
     if isnothing(init)
@@ -109,6 +118,7 @@ function run_gs_dyna(timecontrol::TwoStage, init::Union{Nothing, Systems}, s1::S
     Stage2 = DynamicSimulation(;τ=τ2, start=s2start, fin=fin2, kwargs...)
     ψ0 = run_dynamic_simulation(s2, Stage2, ψ0, workflag; save_every=false, obs=obs, kwargs...)
 
+    return ψ0
 
 end 
 

@@ -31,7 +31,7 @@ function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation, workflag :: String
         setmaxdim!(sweeps, sweepdim)
 
         if noise
-            setnoise!(sweeps, 1E-6)
+            setnoise!(sweeps, 1E-5)
         end 
 
         setcutoff!(sweeps, TEcutoff)

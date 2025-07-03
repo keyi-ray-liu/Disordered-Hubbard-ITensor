@@ -344,7 +344,7 @@ function gen_graph(sys::DPT_graph)
   end 
 
   #@show g
-  @visualize g
+  #@visualize g
 
   return g
   
@@ -671,3 +671,31 @@ end
 
 
 
+
+
+function two_site_rotate(ψ, α, ϕ)
+
+  s = siteinds(ψ)
+  M = zeros(ComplexF64, 4, 4)
+  M[2, 1] = sqrt(α)
+  M[3, 1] = sqrt(1 - α) * exp( 1im * ϕ)
+  #sqrt(0.7)
+  #M[2, 2] = sqrt(0.3)
+
+  a = op(M, s[end - 1], s[end])
+  ψ = apply(a, ψ)
+
+  return ψ
+end 
+
+
+function fit()
+    # @. linear(x, p) = p[1] * x + p[2]
+    # p0 = [0.1, 0.5]
+
+    # d1fit = curve_fit(linear, Us, d1s, p0)
+    # @show coef(d1fit)
+
+    # d1func(x) = linear(x, coef(d1fit))
+
+end 

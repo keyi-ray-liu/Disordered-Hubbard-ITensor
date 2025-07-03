@@ -47,6 +47,10 @@ struct PreLoadGS <: StateModifier
     filestr :: String
 end 
 
+struct Supplywf <: StateModifier
+    ψ :: MPS
+end 
+
 
 struct LoadSource <: StateModifier
     N :: Int
@@ -432,7 +436,7 @@ struct DPT <: Systems
     end 
 
     lattice_info = set_lattice(ddposition, L, R, couple_range)
-
+    @show μ1
     new(
     U,
     t_reservoir,
