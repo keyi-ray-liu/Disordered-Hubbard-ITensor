@@ -49,7 +49,7 @@ using StableRNGs: StableRNG
 using Test: @test, @test_broken, @testset
 #using ITensorUnicodePlots: @visualize
 #using Interpolations
-using LsqFit
+#using LsqFit
 
 #using KrylovKit: eigsolve
 #using ITensorTDVP
@@ -124,8 +124,8 @@ if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
     rm(getworkdir(""), force=true, recursive=true)
     rm( pwd() * "/work*/", force=true, recursive=true)
-    NF_wrapper()
-    #DPT_trend()
+    #NF_wrapper()
+    DPT_wrapper()
     #argtest()
     
     return nothing
@@ -138,14 +138,10 @@ else
     if ARG == "DPT"
         DPT_wrapper()
 
-    elseif ARG == "DPTinit"
-        DPT_init_scan()
 
     elseif ARG == "DPTtrend"
         DPT_trend()
 
-    elseif ARG == "DPTiterate"
-        DPT_iterate()
 
     elseif ARG == "Quench"
         quench_wrapper()

@@ -11,11 +11,47 @@ function gen_state_str(sys::QE_two; kwargs...)
 end 
 
 
-function gen_state_str(sys::DPT; initdd="LOWER", ifshuffle = false, kwargs...) 
+function gen_state_str(sys::DPT; kwargs...)
 
-    f(x) = ifshuffle ? shuffle(x) : reverse(x)
     Lres = f([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
     Rres = f([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+
+    return gen_state_str(sys, Lres, Rres; kwargs...)
+
+end 
+
+
+function gen_state_str(sys::DPT_mixed; ordering = "SORTED", kwargs...) 
+
+    LL = div(L(sys.dpt), 2)
+    RR = div(R(sys.dpt), 2)
+
+    @show LL, RR
+    LR = sys.LR
+    if ordering == "REVSORTED"
+        leftinds = findall( x-> x>0, LR)[ LL + 1:end]
+        rightinds = findall( x-> x<0, LR)[ RR + 1:end]
+
+    elseif ordering == "SORTED"
+        leftinds = findall( x-> x>0, LR)[1: LL]
+        rightinds = findall( x-> x<0, LR)[1: RR]
+    end 
+
+    reservoirarr = ["Emp" for _ in 1:( L(sys.dpt) + R(sys.dpt))]
+    reservoirarr[leftinds] .= "Occ"
+    reservoirarr[rightinds] .= "Occ"
+
+    half = LL + RR
+    Lres = reservoirarr[1: half]
+    Rres = reservoirarr[half + 1:end]
+
+    return gen_state_str(sys.dpt, Lres, Rres; kwargs...)
+end 
+
+
+function gen_state_str(sys::DPT, Lres :: Array{String}, Rres :: Array{String}; initdd="LOWER", ifshuffle = false, kwargs...) 
+
+    f(x) = ifshuffle ? shuffle(x) : reverse(x)
 
     L = []
     M = []
@@ -82,8 +118,8 @@ function gen_state_str(sys::SD_array; fermi=true, random=false, ordering = "SORT
 end 
 
 
+# we re-write the function to provide better guess
 
-gen_state_str(sys::DPT_mixed; kwargs...) = gen_state_str(sys.dpt; kwargs...)
 
 gen_state_str(sys::LSR_SIAM; kwargs...) = vcat([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]], ["Emp"], [ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
 
@@ -266,7 +302,7 @@ function gen_state(sys::Systems; QN=true, sites=nothing, kwargs...)
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
     @show state_str = gen_state_str(sys; kwargs...)
     ψ = randomMPS(sites, state_str
-    ; linkdims=10
+    #; linkdims=10
     )
 
     #@show expect(ψ, "N")

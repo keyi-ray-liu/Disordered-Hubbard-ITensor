@@ -677,6 +677,8 @@ function two_site_rotate(ψ, α, ϕ)
 
   s = siteinds(ψ)
   M = zeros(ComplexF64, 4, 4)
+
+  α = min(α, 1)
   M[2, 1] = sqrt(α)
   M[3, 1] = sqrt(1 - α) * exp( 1im * ϕ)
   #sqrt(0.7)
@@ -688,6 +690,26 @@ function two_site_rotate(ψ, α, ϕ)
   return ψ
 end 
 
+
+function searchkey(s, key, func)
+
+  s = split(s, "/")[end]
+  strs = split(s, "_")
+
+  for str in strs
+
+    if str[1:length(key)] == key
+      return func( str[ length(key) + 1 : end])
+    end 
+
+  end 
+
+end 
+
+
+function checkunique(fs, key, func)
+  return sort([ searchkey(f, key, func) for f in fs])
+end 
 
 function fit()
     # @. linear(x, p) = p[1] * x + p[2]

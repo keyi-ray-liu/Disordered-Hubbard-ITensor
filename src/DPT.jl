@@ -1,7 +1,9 @@
 """get mixed basis Reservoir parameters, the energies returned are at 0 bias, however the order is done at finite bias"""
 
 
-gen_obs(mixed, QPCmixed) = [dyna_EE, dyna_occ, dyna_coherence, (mixed && QPCmixed) ? dyna_dptcurrent_mix : dyna_dptcurrent, dyna_corr, dyna_SRDM]
+gen_obs(mixed, QPCmixed) = [dyna_EE, dyna_occ, dyna_coherence, (mixed && QPCmixed) ? dyna_dptcurrent_mix : dyna_dptcurrent
+#, dyna_corr, dyna_SRDM
+]
 
 
 
@@ -107,57 +109,6 @@ end
 
 
 
-
-function DPT_wrapper()
-
-    
-
-    dpt_in = load_JSON( pwd() * "/dptpara.json")
-
-    U = get(dpt_in, "U", 2.0)
-    L = get(dpt_in, "L", 16)
-    R = get(dpt_in, "R", 16)
-    tswitch = Float64(get(dpt_in, "tswitch", 5.0))
-    t_fin = Float64(get(dpt_in, "tfin", 2 * tswitch))
-    τ = get(dpt_in, "timestep", 0.125)
-    TEdim = get(dpt_in, "TEdim", 64)
-    biasLR = get(dpt_in, "biasLR", BIASLR)
-    mixed = get(dpt_in, "mixed", false)
-    ordering = get(dpt_in, "ordering", "SORTED")
-    QPCmixed = get(dpt_in, "QPCmixed", true)
-    ddposition = get(dpt_in, "ddposition", "R")
-    avg = get(dpt_in, "avg", false)
-    switchinterval = get(dpt_in, "switchinterval", 20)
-    sweepcnt = get(dpt_in, "sweepcnt", 60)
-    vs = get(dpt_in, "vs", 0.125)
-    initdd = get(dpt_in, "initdd", "LOWER")
-    mode = get(dpt_in, "mode", "disconnectDD")
-
-    if DISABLE_BLAS && TEdim > 128  
-        @show ITensors.enable_threaded_blocksparse()
-        @show ITensors.enable_threaded_blocksparse()
-    else
-        @show ITensors.disable_threaded_blocksparse()
-        @show ITensors.disable_threaded_blocksparse()
-    end 
-
-    #run_DPT(U, L, R, tswitch, t_fin; τ=τ, TEdim=TEdim, bias_L = biasLR/2, bias_R  = -biasLR/2, mixed=mixed, ordering=ordering, QPCmixed=QPCmixed, ddposition=ddposition, avg=avg, switchinterval=switchinterval, sweepcnt=sweepcnt, initdd = initdd, vs=vs)
-
-    d1, QPC = get_mf(mode ; U = U, mu = biasLR, L = L, vs = vs )
-
-    run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition="R",  avg=avg,  n1init = d1, QPC = QPC, TEdim = TEdim, sweepcnt = sweepcnt, mode = mode, vs = vs, ordering = ordering)
-    # dyna_occ()
-    # dyna_EE()
-
-    # if mixed
-    #     dyna_dptcurrent_mix()
-    # else
-    #     dyna_dptcurrent()
-    # end 
-
-end 
-
-
 function plot_mix()
 
     #sys = DPT_mixed(; L =8, R=8, graph=true )
@@ -198,11 +149,11 @@ function get_d1QPC(workflag, L)
     nd1 = sum(mean(occ[(end - 8):end , end - 1], dims = 1))
     nQPC = sum(mean(occ[(end - 8):end, (L - 1):(L + 2)], dims = 1))
 
-    @show nd1, nQPC
+    @show workflag, nd1, nQPC
     return nd1, nQPC
 end 
 
-function DPT_init_scan()
+function DPT_wrapper()
 
 
 
@@ -221,39 +172,28 @@ function DPT_init_scan()
     sweepcnt = get(dpt_in, "sweepcnt", 30)
     vs = get(dpt_in, "vs", 0.25)
 
+    # the argument has higher priority
+    α = get(dpt_in, "n1init", 1.0)
 
-    αs = [0.5]
-    #αs = 0.55:0.05:1.0
 
-    for α in αs
-        ψ = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manualempty", n1init = α, vs = vs, ordering = ordering, workflag = "zero_U$(U)_init$(α)", initdd = "EMPTY")
-        
-        ψ = two_site_rotate(ψ, α, 0)
-        expval = expect(ψ, "N")
-        corr = correlation_matrix(ψ, "Cdag", "C")
+    workflag = "zero"
 
-        @show expval[end - 1: end]
-        @show corr[end - 1: end, end - 1: end]
+    ψ = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manualempty", n1init = α, vs = vs, ordering = ordering, workflag = workflag, initdd = "EMPTY")
+    
+    ψ = two_site_rotate(ψ, α, 0)
+    expval = expect(ψ, "N")
+    corr = correlation_matrix(ψ, "Cdag", "C")
 
-        process = Supplywf(ψ)
+    @show expval[end - 1: end]
+    @show corr[end - 1: end, end - 1: end]
 
-        workflag = "_U$(U)_init$(α)"
+    process = Supplywf(ψ)
 
-        ψ2 = run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = workflag, ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "override", vs = vs, process = process)
+    workflag = ""
 
-        last = L + R + 2
-        rdm = RDM2(ψ2, last - 1, last)
+    run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = workflag, ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "override", vs = vs, process = process)
 
-        # c1 = op("Cdag", siteinds(ψ2)[end - 1])
-        # c2 = op("C", siteinds(ψ2)[end])
-
-        workdir = getworkdir(workflag)
-        h5open(workdir *"2RDM.h5", "w" ) do io
-            write(io, "rho", rdm)
-        end 
-
-        
-    end 
+    
 
 
 end 
@@ -265,7 +205,7 @@ function DPT_trend()
 
 
     dpt_in = load_JSON( pwd() * "/dptpara.json")
-    U = get(dpt_in, "U", 0.1)
+    U_start = get(dpt_in, "U", 0.1)
     L = get(dpt_in, "L", 34)
     R = get(dpt_in, "R", L)
     tswitch = Float64(get(dpt_in, "tswitch", 0.0))
@@ -278,42 +218,65 @@ function DPT_trend()
     avg = get(dpt_in, "avg", false)
     sweepcnt = get(dpt_in, "sweepcnt", 30)
     vs = get(dpt_in, "vs", 0.25)
+    fitmode = get(dpt_in, "fitmode", "sqrt")
 
+    stepsize = 0.1
 
-    d1s = []
-    stepsize = 0.2
-    Us = [ U - stepsize, U]
-    # establish initial guess
+    # we first check if there are already existing values
+    existUs = checkunique(glob("work_*", pwd()), "U", x -> parse(Float64, x))
 
-    for U in Us
+    if length(existUs) > 2
 
-        workflag = "_init_U" * string(trunc(U, sigdigits=5)) 
-        run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = workflag, ddposition="R",  avg=avg, TEdim = TEdim, sweepcnt = sweepcnt, mode = "disconnectDD", vs = vs)
+        if fitmode == "sqrt"
+            d1s = [ sqrt(get_d1QPC( "_U$(U)", L)[1]) for U in existUs[2:3]]
+        elseif fitmode == "linear"
+            d1s = [ get_d1QPC( "_U$(U)", L)[1] for U in existUs[2:3]]
+        end 
 
-        nd1, _ = get_d1QPC(workflag, L)
-        append!(d1s, sqrt(nd1))
+        U = existUs[1]
 
+        @warn "RESTART from U = $(U)"
+
+    else
+        d1s = []
+        Us = [ U_start - stepsize, U_start]
+        # establish initial guess
+
+        for U in Us
+
+            workflag = "_U" * string(trunc(U, sigdigits=5)) 
+            run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = workflag, ddposition="R",  avg=avg, TEdim = TEdim, sweepcnt = sweepcnt, mode = "disconnectDD", vs = vs)
+
+            nd1, _ = get_d1QPC(workflag, L)
+
+            if fitmode == "sqrt"
+                append!(d1s, sqrt(nd1))
+            elseif fitmode == "linear"
+                append!(d1s, nd1)
+            end 
+
+        end 
+
+        U = U_start - stepsize * 2
     end 
-
-    # @. linear(x, p) = p[1] * x + p[2]
-    # p0 = [0.1, 0.5]
-
-    # d1fit = curve_fit(linear, Us, d1s, p0)
-    # @show coef(d1fit)
-
-    # d1func(x) = linear(x, coef(d1fit))
-
-
-    U = U - stepsize * 2
+        
+    
     while U > 0.01
 
         U = trunc(U, sigdigits=5)
-        α = (max(1/sqrt(2), d1s[1] - (d1s[2] - d1s[1])))^2
+
+        if fitmode == "sqrt"
+            α = (max(1/sqrt(2), d1s[1] - (d1s[2] - d1s[1])))^2
+        elseif fitmode == "linear"
+            α = max(1/2, d1s[1] - (d1s[2] - d1s[1]))
+        else
+            error("unknown fitmode")
+        end 
 
         @show d1s, α
-        workflag = "_U$(U)" 
+        workflag = "zero_U$(U)"
 
-        ψ = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manualempty", n1init = α, vs = vs, ordering = ordering, workflag = "zero_U$(U)_init$(α)", initdd = "EMPTY")
+        ψ = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manualempty", n1init = α, vs = vs, ordering = ordering, workflag = workflag, initdd = "EMPTY")
         
         ψ = two_site_rotate(ψ, α, 0)
         expval = expect(ψ, "N")
@@ -324,12 +287,17 @@ function DPT_trend()
 
         process = Supplywf(ψ)
 
-        workflag = "_U$(U)_init$(α)"
+        workflag = "_U$(U)"
 
         run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = workflag, ddposition="R",  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "override", vs = vs, process = process)
 
         nd1, _ = get_d1QPC(workflag, L)
-        d1s = [sqrt(nd1), d1s[1]]
+
+        if fitmode == "sqrt"
+            d1s = [sqrt(nd1), d1s[1]]
+        elseif fitmode == "linear"
+            d1s = [nd1, d1s[1]]
+        end 
 
         U -= stepsize
     end 
