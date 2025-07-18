@@ -11,7 +11,9 @@ function gen_state_str(sys::QE_two; kwargs...)
 end 
 
 
-function gen_state_str(sys::DPT; kwargs...)
+function gen_state_str(sys::DPT; ifshuffle = false, kwargs...)
+
+    f(x) = ifshuffle ? shuffle(x) : reverse(x)
 
     Lres = f([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
     Rres = f([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
@@ -49,9 +51,9 @@ function gen_state_str(sys::DPT_mixed; ordering = "SORTED", kwargs...)
 end 
 
 
-function gen_state_str(sys::DPT, Lres :: Array{String}, Rres :: Array{String}; initdd="LOWER", ifshuffle = false, kwargs...) 
+function gen_state_str(sys::DPT, Lres :: Array{String}, Rres :: Array{String}; initdd="LOWER", kwargs...) 
 
-    f(x) = ifshuffle ? shuffle(x) : reverse(x)
+    
 
     L = []
     M = []
