@@ -122,9 +122,11 @@ end
 
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
-    rm(getworkdir(""), force=true, recursive=true)
-    rm( pwd() * "/work*/", force=true, recursive=true)
+    #rm(getworkdir(""), force=true, recursive=true)
+    #rm( pwd() * "/workzero/", force=true, recursive=true)
+    #rm( pwd() * "/work/", force=true, recursive=true)
     #NF_wrapper()
+    #test_corr_MPO()
     DPT_wrapper()
     #argtest()
     

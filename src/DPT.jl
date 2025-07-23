@@ -93,12 +93,17 @@ function run_DPT_many_body(U, L, R,  t_fin :: Float64; tswitch = 0.0, bias_L = B
     if tswitch > 0
 
         stage2 = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, vs=0.0, bias_R=bias_R, bias_doubledot = [0.0, 0.0], energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
-        stage3 = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, vs=vs, bias_R=bias_R, energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
+
+        stage3 = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, vs=vs, bias_R=bias_R, bias_doubledot = [0.0, 0.0], energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
+
         timecontrol = TwoStage(τ, τ, tswitch, t_fin)
+
         ψ = run_gs_dyna(timecontrol, init, stage2, stage3, obs; process = process, workflag = workflag, sites = sites, initdd = initdd, kwargs...)
     else
         sys = DPT_setter(mixed, avg; U=U, L=L, R=R, bias_L=bias_L, vs=vs, bias_R=bias_R, bias_doubledot = [0.0, 0.0], energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
+
         timecontrol = OneStage( τ, t_fin)
+
         ψ =  run_gs_dyna(timecontrol, init, sys, obs; process = process, workflag = workflag, sites = sites, initdd = initdd, kwargs...)
     end 
     

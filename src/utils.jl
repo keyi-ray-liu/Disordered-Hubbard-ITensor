@@ -523,8 +523,19 @@ function prev_res(workflag)
   if !isempty(Glob.glob( "$(LASTSTSTR).h5", getworkdir(workflag))) 
 
       @warn "prev state detected"
-      last_time = readdlm(getworkdir(workflag) * "tTDVPlasttime")[end]
-      last_state = load_ψ( "$(LASTSTSTR)", workflag)
+
+      try
+
+        last_time = readdlm(getworkdir(workflag) * "tTDVPlasttime")[end]
+        last_state = load_ψ( "$(LASTSTSTR)", workflag)
+        
+      catch 
+
+        @warn "prev state broken, load back up state"
+        last_time = readdlm(getworkdir(workflag) * "tTDVPbaktime")[end]
+        last_state = load_ψ( "$(BACKSTR)", workflag)
+        
+      end
 
   else
 

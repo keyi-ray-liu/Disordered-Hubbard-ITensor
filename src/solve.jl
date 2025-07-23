@@ -206,22 +206,36 @@ function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation, workflag ; 
         end 
 
         if save_every
-            wfstr = getworkdir(workflag) * "tTDVP" * string(dt) * ".h5"
-        else
-            wfstr = getworkdir(workflag) * "tTDVPlaststate.h5"
+            wft = getworkdir(workflag) * "tTDVP" * string(dt) * ".h5"
+            h5open(wft, "w") do io
+                write(io, "psi1", ψ)
+            end 
 
-            open(getworkdir(workflag) * "tTDVPlasttime", "w") do io
+        else
+            wflast = getworkdir(workflag) * "$(LASTSTSTR).h5"
+            timelast = getworkdir(workflag) * "tTDVPlasttime"
+
+            wfbak = getworkdir(workflag) * "$(BACKSTR).h5"
+            timebak = getworkdir(workflag) * "tTDVPbaktime"
+
+            h5open(wflast, "w") do io
+                write(io, "psi1", ψ)
+            end 
+
+            open(timelast, "w") do io
                 writedlm(io, dt)
             end
+            
+            # this makes sure that if the program is ended while the saving operation is going, only one of the h5 files would be damaged
+            cp(wflast, wfbak; force = true)
+            cp(timelast, timebak; force = true)
 
         end 
+
+
 
         open(getworkdir(workflag) * "times", "a" ) do io
             writedlm(io, dt)
-        end 
-
-        h5open(wfstr, "w") do io
-            write(io, "psi1", ψ)
         end 
 
 

@@ -419,3 +419,33 @@ end
 #     end 
 
 # end 
+
+
+
+function test_corr_MPO()
+
+
+    N = 4
+    s = siteinds("Electron", N; conserve_qns = true )
+    state = [ isodd(i) ? "Emp" : "Up" for i in 1:N]
+    psi1 = randomMPS(s, state)
+
+    state2 = [ iseven(i) ? "Emp" : "Up" for i in 1:N]
+    psi2 = randomMPS(s, state2)
+
+    psi = add( sqrt(0.7) * psi1, sqrt(0.3) * psi2)
+    @show expect(psi, "Sz")
+
+    a = OpSum()
+    for i in 1:N
+        for j in 1:N
+            a += 1.0, "Sz", i, "Sz", j
+        end 
+    end 
+
+    A = MPO(a, s)
+
+    @show inner(psi', A, psi)
+    @show sum(correlation_matrix(psi, "Sz", "Sz"))
+
+end 

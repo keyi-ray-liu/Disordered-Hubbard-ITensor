@@ -3,6 +3,7 @@ const TOL = 1e-10
 const DYNA_STR = "tTDVP"
 const BIASLR = 0.5
 const LASTSTSTR = "tTDVPlaststate"
+const BACKSTR = "tTDVPbakstate"
 const TEMP_tag = "temp_"
 const EQINIT_STR = "EqInit"
 
