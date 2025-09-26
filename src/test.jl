@@ -449,3 +449,48 @@ function test_corr_MPO()
     @show sum(correlation_matrix(psi, "Sz", "Sz"))
 
 end 
+
+
+
+function mix_test()
+
+    L = 6
+    res = 5
+    #s = siteinds( n -> n <= res ? "Fermion" : "S=1/2", L; conserve_qns = true)
+
+
+    s1 = siteinds("Fermion", res; conserve_qns = true)
+    s2 = siteinds("S=1/2", 1; conserve_qns = false)
+
+    s = vcat(s1, s2)
+
+    str = vcat([ isodd(i) ? "Emp" : "Occ" for i in 1:res ], ["0"])
+
+    M = randomMPS(s, str)
+
+    Sx = op("Sx", s[6]) 
+    Op = exp(im * 0.2 * pi * Sx)
+    M = apply(Op, M)
+
+    @show myexpect(M, "N", "Sz")
+
+    #@show (correlation_matrix(M, "Sz", "Sz"))
+
+
+end 
+
+
+function qnname_test()
+
+    QN = true
+
+    qnnames = ["Sp1" for _ in 1:10]
+    #sites = [ siteind( "Fermion", i; conserve_qns = QN, qnname_number = qnnames[i]) for i in 1:10]
+
+    sites = [siteind("Fermion", n; conserve_qns=true, 
+    #qnname_nf =qnnames[n]
+    ) for n in 1:10]
+
+    @show sites
+
+end 

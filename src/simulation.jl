@@ -61,8 +61,9 @@ function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys
 
     last_time, last_state = prev_res(workflag)
     @show last_time
-    start = last_time > -Inf ? last_time + τ : τ
+    start = last_time > -Inf ? last_time  : 0.0
 
+    @info val = get(kwargs, :TEdim, 256) 
     ψ = gen_state(init; random=random, sites = sites, kwargs...)
     # we solve for the GS of the whole system at zero bias, we also bias the array so that nothing is occupied there
 
@@ -83,7 +84,7 @@ function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys
 end 
 
 """Wrapper function to automatically load last checkpoint, and run a two-stage dynamical simulation, with specified t1 and t2"""
-function run_gs_dyna(timecontrol::TwoStage, init::Union{Nothing, Systems}, s1::Systems, s2::Systems, obs; random=true, sites = nothing, process :: StateModifier = Identity(), workflag = "", kwargs...)
+function run_gs_dyna(timecontrol::TwoStage, init::Union{Nothing, Systems}, s1::Systems, s2::Systems, obs; random=true, sites = nothing, process :: StateModifier = Identity(), workflag = "", nsite1 = 2, nsite2 = 2, kwargs...)
 
     τ1 = timecontrol.τ1
     fin1 = timecontrol.fin1
@@ -108,15 +109,15 @@ function run_gs_dyna(timecontrol::TwoStage, init::Union{Nothing, Systems}, s1::S
 
     if last_time < fin1
         @info "Stage 1"
-        s1start = max(0, last_time) + τ1
-        Stage1 = DynamicSimulation(;τ=τ1, start=s1start, fin=fin1, kwargs...)
-        ψ0 = run_dynamic_simulation(s1, Stage1, ψ0, workflag; save_every=false, obs=obs, kwargs...)
+        s1start = max(0, last_time) 
+        Stage1 = DynamicSimulation(;τ=τ1, start=s1start, fin=fin1, nsite = nsite1, kwargs...)
+        ψ0 = run_dynamic_simulation(s1, Stage1, ψ0, workflag; save_every=false, message = "DynamicsS1", obs=obs, kwargs...)
     end 
 
     @info "Stage 2"
-    s2start = max(last_time, fin1) + τ2
-    Stage2 = DynamicSimulation(;τ=τ2, start=s2start, fin=fin2, kwargs...)
-    ψ0 = run_dynamic_simulation(s2, Stage2, ψ0, workflag; save_every=false, obs=obs, kwargs...)
+    s2start = max(last_time, fin1) 
+    Stage2 = DynamicSimulation(;τ=τ2, start=s2start, fin=fin2, nsite = nsite2, kwargs...)
+    ψ0 = run_dynamic_simulation(s2, Stage2, ψ0, workflag; save_every=false, message = "DynamicsS2", obs=obs, init_obs = false, kwargs...)
 
     return ψ0
 

@@ -122,21 +122,53 @@ output(simulation::StaticSimulation) = simulation.output
 
 struct DynamicSimulation <: SimulationParameters
 
-    τ :: Float64
-    start :: Float64
-    fin :: Float64
+    stages :: Array{Array{Float64}}
+    # τ :: Float64
+    # start :: Float64
+    # fin :: Float64
     TEcutoff :: Float64
     TEdim :: Int
     nsite :: Int
     function DynamicSimulation(;  
         τ = 0.1,
-        start = 0.1,
+        start = 0.0,
         fin=20.0,
+        stagetype="uniform",
         TEcutoff=1E-12,
         TEdim=64,
         nsite=2,
         kwargs...)
-        new(τ, start, fin, TEcutoff, TEdim, nsite)
+
+        if stagetype == "uniform"
+            stages = [[τ, start, fin]]
+
+        elseif stagetype == "expadiabatic"
+            numstage = get(kwargs, :numstage, 8)
+            stepeachstage = get(kwargs, :stepeachstage, 2)
+            time = start
+            stages = []
+
+            # we first sum up all the residues
+            # initstep = τ * (1 - sum( [1/2^num for num in numstage:-1:1]))
+            # @show initstep  
+
+            for num in numstage:-1:1
+                
+                step = τ/2^num
+
+                initstep = num == numstage ? 2 : 1
+                duration = step * stepeachstage * initstep
+                append!(stages,  [[step, time, time + duration] ])
+                time += duration
+            end 
+
+            append!(stages, [[τ, time , fin]])
+            @show stages
+        
+        else
+            error("Unknown stage control!")
+        end 
+        new( stages, TEcutoff, TEdim, nsite)
     end 
 end 
 
@@ -412,6 +444,7 @@ struct DPT <: Systems
     bias_R :: Float64
     lattice_info :: Dict
     μ1 :: Float64
+    n1penalty :: Union{Float64, Nothing}
 
     function DPT(;
     U = 2.0,
@@ -429,6 +462,7 @@ struct DPT <: Systems
     ddposition = "R",
     graph=false,
     μ1 = 0.0,
+    n1penalty = nothing,
     kwargs...
     )
 
@@ -452,7 +486,8 @@ struct DPT <: Systems
     bias_L,
     bias_R,
     lattice_info,
-    μ1 
+    μ1,
+    n1penalty
     )
 
     # if graph
@@ -584,6 +619,11 @@ struct DPT_mixed <: Systems
 end 
 
 
+struct DPT_TLS <: Systems
+    dpt :: Union{DPT, DPT_mixed}
+end 
+
+get_systotal(sys::DPT_TLS) = get_systotal(sys.dpt) - 1
 
 
 get_systotal(sys::DPT_mixed) = get_systotal(sys.dpt)
@@ -633,6 +673,7 @@ for func ∈ [systype,
     @eval $func(sys::DPT_mixed) = $func(sys.dpt)
     @eval $func(sys::DPT_graph) = $func(sys.dpt)
     @eval $func(sys::DPT_avg) = $func(sys.dpt)
+    @eval $func(sys::DPT_TLS) = $func(sys.dpt)
 end 
 
 
@@ -655,7 +696,8 @@ get_systotal(sys::DPT_avg) = L(sys) + R(sys)
 
 function DPT_setter(
     mixed :: Bool,
-    avg :: Bool 
+    avg :: Bool,
+    TLS :: Bool
     ;
     ddposition ="R",
     systype="Fermion",
@@ -671,12 +713,17 @@ function DPT_setter(
         systype = "Electron"
     end 
 
+    @info ddposition
 
     if mixed
         sys = DPT_mixed(; systype=systype, ddposition = ddposition, graph=graph, QPCmixed=QPCmixed, kwargs...)
 
     else
         sys = DPT(; systype=systype, ddposition=ddposition, graph=graph, kwargs...)
+    end 
+
+    if TLS
+        sys = DPT_TLS(sys)
     end 
 
     if avg
@@ -953,9 +1000,9 @@ CoulombParameters(sys::Coulombic) = sys.λ_ee, sys.λ_ne, sys.exch, sys.scr, sys
 
 SimulationParameters(sys::StaticSimulation) = sys.ex, sys.prev_state, sys.prev_energy, sys.prev_var, sys.sweepcnt, sys.sweepdim, sys.noise, sys.cutoff,sys.krylovdim, sys.weight
 
-SimulationParameters(sys::DynamicSimulation) = sys.τ, sys.start, sys.fin, sys.TEcutoff, sys.TEdim, sys.nsite
+SimulationParameters(sys::DynamicSimulation) = sys.TEcutoff, sys.TEdim, sys.nsite
 
-add_specific_int!(::Systems, res) = res
+
 
 
 

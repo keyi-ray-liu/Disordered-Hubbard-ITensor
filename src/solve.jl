@@ -30,6 +30,7 @@ function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation, workflag :: String
         sweeps = Sweeps(sweepcnt)
         setmaxdim!(sweeps, sweepdim)
 
+
         if noise
             setnoise!(sweeps, 1E-5)
         end 
@@ -135,17 +136,21 @@ function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation, workflag :: String
         end
     end 
 
-    open(workdir * "staticocc", "w") do io
-        for psi in prev_state
+    # open(workdir * "staticocc", "w") do io
+    #     for psi in prev_state
 
-            try
-                writedlm(io, expect(psi, "N"))
-            catch 
-                writedlm(io, expect(psi, "Ntot"))
-            end 
+    #         try
+    #             writedlm(io, expect(psi, "N"))
+    #         catch 
+    #             try
+    #                 writedlm(io, expect(psi, "Ntot"))
+    #             catch
+    #                 writedlm(io, expect(psi, selectors))
+    #             end 
+    #         end 
             
-        end
-    end
+    #     end
+    # end
 
 
     return prev_state
@@ -158,89 +163,105 @@ end
 
 function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation, workflag ; save_every=true, obs=Function[], corr_cutoff=Inf, init_obs = true, kwargs...)
 
-    τ, start, fin, TEcutoff, TEdim, nsite= SimulationParameters(simulation)
+    TEcutoff, TEdim, nsite= SimulationParameters(simulation)
+
+    @info "nsite:", nsite
 
     # get the t=0 stats
 
     if init_obs
         for ob in obs
-            ob(;ψ=ψ, t=0, corr_cutoff = corr_cutoff,  workflag = workflag, kwargs...)
+            ob(;ψ=ψ, curtime=0, corr_cutoff = corr_cutoff,  workflag = workflag, kwargs...)
         end 
+        
+        τ, start, fin = simulation.stages[1]
 
         open(getworkdir(workflag) * "times", "a" ) do io
-            writedlm(io, start - τ)
+            writedlm(io, start)
         end 
     end 
 
-    for dt in start:τ:fin
+    for (τ, start, fin) in simulation.stages
+        for dt in (start + τ):τ:fin
 
-        # step(; sweep) = sweep
-        # state_size(;state) = Base.format_bytes(Base.summarysize(state))
-        # sys_obs = observer(
-        #   "sizes" => state_size, "steps" => step
-        # )
+            # step(; sweep) = sweep
+            # state_size(;state) = Base.format_bytes(Base.summarysize(state))
+            # sys_obs = observer(
+            #   "sizes" => state_size, "steps" => step
+            # )
 
 
-        @info "TDVP time : $dt"
-        #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
-        @time ψ = tdvp(H,  -im * τ, ψ; updater_kwargs = (; eager=true), maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ, normalize=true,outputlevel=1,
-        # (step_observer!)=sys_obs
-        )
+            @info "TDVP time : $dt"
+            #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
+            @time ψ = tdvp(H,  -im * τ, ψ; updater_kwargs = (; eager=true), maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ, normalize=true,outputlevel=1, 
+            #krylovdim = 10,
+            # (step_observer!)=sys_obs
+            )
 
-        mem = Sys.maxrss()/2^30
-        @info "Max. RSS = $mem GB"
 
-        # println("\nResults")
-        # println("=======")
-        # for n in 1:length(sys_obs.steps)
-        #   println("step = ", sys_obs.steps[n])
-        #   println("After sweep |psi| =", sys_obs.sizes[n] )
-        # end
+            mem = Sys.maxrss()/2^30
+            @info "Max. RSS = $mem GB"
 
-        #println( "inner", abs(inner(ψ1, ψ)))
-        #ψ = ψ1
+            # println("\nResults")
+            # println("=======")
+            # for n in 1:length(sys_obs.steps)
+            #   println("step = ", sys_obs.steps[n])
+            #   println("After sweep |psi| =", sys_obs.sizes[n] )
+            # end
 
-        # we might need to calculate observables on the go
-        for ob in obs
-            ob(;ψ=ψ, t=dt, corr_cutoff = corr_cutoff, workflag = workflag, kwargs...)
-        end 
+            #println( "inner", abs(inner(ψ1, ψ)))
+            #ψ = ψ1
 
-        if save_every
-            wft = getworkdir(workflag) * "tTDVP" * string(dt) * ".h5"
-            h5open(wft, "w") do io
-                write(io, "psi1", ψ)
+            # we might need to calculate observables on the go
+            for ob in obs
+                ob(;ψ=ψ, curtime=dt, corr_cutoff = corr_cutoff, workflag = workflag, kwargs...)
             end 
 
-        else
-            wflast = getworkdir(workflag) * "$(LASTSTSTR).h5"
-            timelast = getworkdir(workflag) * "tTDVPlasttime"
+            if save_every
+                wft = getworkdir(workflag) * "tTDVP" * string(dt) * ".h5"
+                h5open(wft, "w") do io
+                    write(io, "psi1", ψ)
+                end 
 
-            wfbak = getworkdir(workflag) * "$(BACKSTR).h5"
-            timebak = getworkdir(workflag) * "tTDVPbaktime"
+            else
+                wflast = getworkdir(workflag) * "$(LASTSTSTR).h5"
+                timelast = getworkdir(workflag) * "tTDVPlasttime"
 
-            h5open(wflast, "w") do io
-                write(io, "psi1", ψ)
+                wfbak = getworkdir(workflag) * "$(BACKSTR).h5"
+                timebak = getworkdir(workflag) * "tTDVPbaktime"
+
+                h5open(wflast, "w") do io
+                    write(io, "psi1", ψ)
+                end 
+
+                open(timelast, "w") do io
+                    writedlm(io, dt)
+                end
+                
+                # this makes sure that if the program is ended while the saving operation is going, only one of the h5 files would be damaged
+
+                h5open(wfbak, "w") do io
+                    write(io, "psi1", ψ)
+                end 
+
+                open(timebak, "w") do io
+                    writedlm(io, dt)
+                end
+
+
             end 
 
-            open(timelast, "w") do io
+
+
+            open(getworkdir(workflag) * "times", "a" ) do io
                 writedlm(io, dt)
-            end
-            
-            # this makes sure that if the program is ended while the saving operation is going, only one of the h5 files would be damaged
-            cp(wflast, wfbak; force = true)
-            cp(timelast, timebak; force = true)
+            end 
+
 
         end 
-
-
-
-        open(getworkdir(workflag) * "times", "a" ) do io
-            writedlm(io, dt)
-        end 
-
-
     end 
 
+    @info "Dynamic Ends"
     return ψ
 
 end 

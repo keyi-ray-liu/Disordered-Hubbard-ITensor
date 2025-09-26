@@ -100,24 +100,26 @@ function fermilevel(sys :: SD_array, ordering :: String)
     array = sys.array
     drain = sys.drain
 
-    empty = ["Emp" for _ in 1:get_systotal(sys)]
+    fillstr = systype(sys) == "Fermion" ? "Occ" : "UpDn"
+    empty = [fillstr for _ in 1:get_systotal(sys)]
 
     left_len = get_systotal(source)
     arr_len = get_systotal(array)
 
     LR = vcat(source.LR, drain.LR)
 
+    @show source.N[1]
 
 
     # the last occupied sites
     
     if ordering == "REVSORTED"
-        sourceinds = findall( x-> x>0, LR)[source.N[1] + 1:end]
-        draininds = findall( x-> x<0, LR)[drain.N[1] + 1:end]
+        sourceinds = findall( x-> x>0, LR)[1 : source.N[1]]
+        draininds = findall( x-> x<0, LR)[1 : drain.N[1] ]
 
     elseif ordering == "SORTED"
-        sourceinds = findall( x-> x>0, LR)[1: source.N[1]]
-        draininds = findall( x-> x<0, LR)[1: drain.N[1]]
+        sourceinds = findall( x-> x>0, LR)[ end - source.N[1] + 1: end]
+        draininds = findall( x-> x<0, LR)[ end - drain.N[1] + 1: end]
     end 
 
     sourceinds = shift_basis(left_len, arr_len, sourceinds)
@@ -126,10 +128,12 @@ function fermilevel(sys :: SD_array, ordering :: String)
     arrayinds = left_len + 1 : left_len + arr_len
 
     # we assume no mixture of up and dn, for example
-    fillstr = systype(sys) == "Fermion" ? "Occ" : "UpDn"
+    @show sourceinds
+    @show draininds
+    @show arrayinds
 
-    empty[ draininds ] .= fillstr
-    empty[ sourceinds ] .= fillstr
+    empty[ draininds ] .= "Emp"
+    empty[ sourceinds ] .= "Emp"
 
     empty[arrayinds] = gen_state_str(array)
 

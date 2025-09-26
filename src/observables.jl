@@ -129,6 +129,28 @@ function entropies(psi::MPS, b::Int, max_order::Int)
 end
 
 
+""" calculates explicitly the SVD"""
+function SVD(psi::MPS, b::Int)
+
+    s = siteinds(psi)  
+    orthogonalize!(psi, b)
+
+    if b==1
+        _,S,_ = svd(psi[b], (s[b],))
+    else
+        _,S,_ = svd(psi[b], (linkind(psi, b-1), s[b]))
+    end
+
+    Sval = [ S[n, n] for n in 1:dim(S, 1)]
+    Sval = reverse(sort(Sval))
+    # return as uniform array
+    #@show size(Sval)
+
+    # S = diag(dense(S))
+    # Sval = [ val for val in S]
+    return Sval
+end
+
 
 function scan_ee(ψ::MPS, max_order::Int)
 
@@ -151,6 +173,41 @@ end
 
 
 
+function dyna_SVD(; ψ=nothing, workflag = "", curtime= nothing, kwargs...)
+
+    if isnothing(ψ)
+        error("SVD currently only supports in time cal")
+    end 
+
+    workdir = getworkdir(workflag)
+
+    S = [SVD(ψ, i) for i in eachindex(ψ)]
+    
+    #S = resize!.(S, maximum(length, S))
+    
+    newS = zeros( size(S)[1], maximum(length, S))
+    for (i, s) in enumerate(S)
+        newS[i, 1: length(s)] = s
+    end 
+
+
+    outfile = workdir * "SVD.h5"
+
+    if curtime % 5 == 0
+        h5open( outfile, isfile( outfile) ? "r+" : "w") do io
+
+            if !haskey(io, string(curtime))
+                write(io, string(curtime), newS)
+            else
+                @warn "duplicate key found, not write"
+            end 
+            
+        end 
+    end 
+
+end 
+
+
 
 function dyna_SRDM(; ψ=nothing, workflag = "", kwargs...)
 
@@ -163,10 +220,10 @@ function dyna_SRDM(; ψ=nothing, workflag = "", kwargs...)
         for file in get_dyna_files()
 
             ψ = load_ψ(file, workflag)
-            t = get_time(file)
-            append!(T, t)
+            curtime = get_time(file)
+            append!(T, curtime)
 
-            println("Calculating SRDM, $t")
+            println("Calculating SRDM, $curtime")
 
             SRDM = scan_RDM(ψ)
             @show append!(SRDMs, [SRDM])
@@ -225,9 +282,9 @@ function dyna_EE(; max_order=1, ψ=nothing, workflag = "", kwargs...)
         for file in get_dyna_files()
 
             ψ = load_ψ(file, workflag)
-            t = get_time(file)
+            curtime = get_time(file)
 
-            println("Calculating EE, $t")
+            println("Calculating EE, $curtime")
             ee, bond = scan_ee(ψ, max_order)
             
             print(ee)
@@ -238,7 +295,7 @@ function dyna_EE(; max_order=1, ψ=nothing, workflag = "", kwargs...)
                 append!(SRenyi[i], [Renyi])
             end 
             
-            append!(T, t)
+            append!(T, curtime)
             append!(SvN, [vN])
             append!(bonds, [bond])
             #append!(sites, [site])
@@ -346,10 +403,10 @@ function dyna_tcd(; gs=get_tcd_gs(), ψ=nothing,  kwargs...)
         for file in get_dyna_files()
 
             ψ = load_ψ(file, workflag)
-            t = get_time(file)
-            append!(T, t)
+            curtime = get_time(file)
+            append!(T, curtime)
 
-            println("Calculating TCD, $t")
+            println("Calculating TCD, $curtime")
 
             tcd = cal_TCD(ψ, gs; start_off=start_off, end_off=end_off)
             @show append!(TCD, [tcd])
@@ -390,10 +447,10 @@ function dyna_occ(; sys=Chain(), ψ=nothing, workflag = "", kwargs...)
         for file in get_dyna_files()
 
             ψ = load_ψ(file, workflag)
-            t = get_time(file)
-            append!(T, t)
+            curtime = get_time(file)
+            append!(T, curtime)
 
-            println("Calculating occ, $t")
+            println("Calculating occ, $curtime")
 
             if systype(sys)== "Electron"
                 append!(occup, [expect(ψ, "Nup")])
@@ -447,8 +504,10 @@ function dyna_coherence(; ψ=nothing, sys=DPT(), workflag = "", kwargs...)
         else
             op1, op2 = "Cdagup", "Cup"
         end 
+
+        ddsite = dd_lower(sys)
         
-        coh = correlation_matrix(ψ, op1, op2; sites= get_systotal(sys) -1 : get_systotal(sys))
+        coh = correlation_matrix(ψ, op1, op2; sites= ddsite : ddsite + 1)
 
         return coh[1, 2]
     end 
@@ -462,10 +521,10 @@ function dyna_coherence(; ψ=nothing, sys=DPT(), workflag = "", kwargs...)
         for file in get_dyna_files()
 
             ψ = load_ψ(file, workflag)
-            t = get_time(file)
-            append!(T, t)
+            curtime = get_time(file)
+            append!(T, curtime)
 
-            println("Calculating coherence, $t")
+            println("Calculating coherence, $curtime")
 
             coh = work(ψ, sys)
             @show append!(cohs, coh)
@@ -513,10 +572,10 @@ function dyna_dptcurrent(; ψ=nothing, sys=DPT(), workflag = "", kwargs...)
         for file in get_dyna_files()
 
             ψ = load_ψ(file, workflag)
-            t = get_time(file)
-            append!(T, t)
+            curtime = get_time(file)
+            append!(T, curtime)
 
-            println("Calculating DPT current, $t")
+            println("Calculating DPT current, $curtime")
 
             current = work(ψ, sys)
             @show append!(currentLR, current)
@@ -566,10 +625,10 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=DPT_mixed(), workflag = "", kwarg
         for file in get_dyna_files()
 
             ψ = load_ψ(file, workflag)
-            t = get_time(file)
-            append!(T, t)
+            curtime = get_time(file)
+            append!(T, curtime)
 
-            println("Calculating DPT mix current, $t")
+            println("Calculating DPT mix current, $curtime")
 
             current = work(ψ, ULR, sys)
             append!(currentLR, current)
@@ -590,7 +649,7 @@ function dyna_dptcurrent_mix(; ψ=nothing, sys=DPT_mixed(), workflag = "", kwarg
 
 end 
 
-function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, t=nothing, workflag = "", corr_cutoff=Inf, kwargs...)
+function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, curtime=nothing, workflag = "", corr_cutoff=Inf, kwargs...)
     function work(ψ, sys)
         
         if  sys.systype == "Fermion" 
@@ -599,7 +658,7 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, t=nothing, workfl
             ops = [["Cdagup", "Cup"], ["Cdagdn", "Cdn"]]
         end 
         
-        corrs = corr_work(ψ, ops, t, workflag; corr_cutoff=corr_cutoff)
+        corrs = corr_work(ψ, ops, Inf, workflag; corr_cutoff=corr_cutoff)
         current = []
 
         source = sys.source
@@ -680,10 +739,10 @@ function dyna_SDcurrent(; ψ=nothing, sys :: SD_array=nothing, t=nothing, workfl
         for file in get_dyna_files()
 
             ψ = load_ψ(file, workflag)
-            t = get_time(file)
-            append!(T, t)
+            curtime = get_time(file)
+            append!(T, curtime)
 
-            println("Calculating DPT current, $t")
+            println("Calculating DPT current, $curtime")
 
             current = work(ψ, sys)
             @show append!(SDcurrents, [current])
@@ -706,7 +765,7 @@ end
 
 
 
-function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t, workflag; corr_cutoff=Inf)
+function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, curtime, workflag; corr_cutoff=Inf, site_lo = nothing, site_hi = nothing)
 
     workdir = getworkdir(workflag)
     corrs = []
@@ -715,19 +774,24 @@ function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t, workflag; corr_cu
         corr = correlation_matrix(ψ, op1, op2)
         #@show corr
 
-        if t < corr_cutoff
+        if !isnothing(site_lo) && !isnothing(site_hi)
+            corr = corr[site_lo:site_hi, site_lo:site_hi]
+        end 
+
+        if curtime < corr_cutoff
             outfile = workdir * "corr" * op1 * op2 * ".h5"
+
             h5open(outfile, isfile( outfile) ? "r+" : "w") do io
 
-                if !haskey(io, string(t))
-                    write(io, string(t), corr)
+                if !haskey(io, string(curtime))
+                    write(io, string(curtime), corr)
                 else
                     @warn "duplicate key found, not write"
                 end 
                 
             end 
         else
-            @warn "t greater than correlation cutoff time, do not write to file"
+            @warn "curtime greater than correlation cutoff time, do not write to file"
         end 
         
         append!(corrs, [corr])
@@ -738,10 +802,11 @@ function corr_work(ψ ::MPS,  ops:: Vector{Vector{String}}, t, workflag; corr_cu
 end 
 
 
-function dyna_corr(; ψ=nothing, sys=Chain(), t=nothing, workflag = "", corr_cutoff=Inf, kwargs...) 
+function dyna_corr(; ψ=nothing, sys=Chain(), curtime=nothing, workflag = "", corr_cutoff=Inf, kwargs...) 
 
     workdir = getworkdir(workflag)
     ops = ops_determiner(sys)
+    site_lo, site_hi = site_determiner(sys)
 
     if isnothing(ψ)
 
@@ -750,11 +815,11 @@ function dyna_corr(; ψ=nothing, sys=Chain(), t=nothing, workflag = "", corr_cut
         for file in get_dyna_files()
 
             ψ = load_ψ(file, workflag)
-            t = get_time(file)
+            curtime = get_time(file)
 
-            println("Calculating corr, $t")
-            _ = corr_work(ψ, ops, t, workflag; corr_cutoff=corr_cutoff)
-            append!(T, t)
+            println("Calculating corr, $curtime")
+            _ = corr_work(ψ, ops, curtime, workflag; corr_cutoff=corr_cutoff, site_lo = site_lo, site_hi = site_hi)
+            append!(T, curtime)
 
         end 
 
@@ -762,7 +827,8 @@ function dyna_corr(; ψ=nothing, sys=Chain(), t=nothing, workflag = "", corr_cut
 
     else
 
-        _ = corr_work(ψ, ops, t, workflag ; corr_cutoff=corr_cutoff)
+        @show curtime
+        _ = corr_work(ψ, ops, curtime, workflag ; corr_cutoff=corr_cutoff, site_lo = site_lo, site_hi = site_hi)
 
     end 
 
@@ -783,10 +849,10 @@ function dyna_LSRcurrent()
     for file in get_dyna_files()
 
         ψ = load_ψ(file, workflag)
-        t = get_time(file)
-        append!(T, t)
+        curtime = get_time(file)
+        append!(T, curtime)
 
-        println("Calculating LSR current, $t")
+        println("Calculating LSR current, $curtime")
 
         L = div(length(ψ), 2) 
         println(L)
@@ -811,10 +877,10 @@ function dyna_pϕ()
     for file in get_dyna_files()
 
         ψ = load_ψ(file, workflag)
-        t = get_time(file)
-        append!(T, t)
+        curtime = get_time(file)
+        append!(T, curtime)
 
-        println("Calculating partial contraction, $t")
+        println("Calculating partial contraction, $curtime")
 
         #state = [ partial_contract(ψ, [i, i+1]) for i in 1:div(length(ψ), 2) ]
         state = partial_contract(ψ, [1, 2])

@@ -219,6 +219,20 @@ function HoppingNeighbor(sys::DPT_mixed, j::Int)
 
 end 
 
+# no hopping except DD and center region (if applicable)
+function HoppingNeighbor(sys::DPT_TLS, j::Int)
+
+
+    if j != dd_lower(sys)
+        hop = HoppingNeighbor(sys.dpt, j)
+    else
+        hop = []
+    end
+
+    return hop
+
+end 
+
 HoppingNeighbor(sys::DPT_graph, j::Int) = HoppingNeighbor(sys.dpt, j)
 
 function HoppingNeighbor(sys::DPT_avg, j::Int)

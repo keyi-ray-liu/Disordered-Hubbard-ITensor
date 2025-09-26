@@ -91,6 +91,7 @@ function run_SD(; biasS=0.0, biasA=0.0, biasD=0.0, initbiasA = 500.0, mode="prod
     obs= [dyna_EE, dyna_occ, dyna_SDcurrent,
     #dyna_SRDM, 
     #dyna_product_state_overlap
+    dyna_corr
     ]
 
     # now we switch on the bias in L/R
@@ -120,7 +121,7 @@ function run_SD(; biasS=0.0, biasA=0.0, biasD=0.0, initbiasA = 500.0, mode="prod
     
     timecontrol = get_time_control()
 
-    run_SD(modedriver, timecontrol, energies, ks, LR, obs;  biasA=biasA, biasS=biasS, biasD=biasD, initbiasA=initbiasA, corr_cutoff=0.0, ω=ω, ordering = ordering, kwargs... )
+    run_SD(modedriver, timecontrol, energies, ks, LR, obs;  biasA=biasA, biasS=biasS, biasD=biasD, initbiasA=initbiasA, corr_cutoff=20.0, ω=ω, ordering = ordering, kwargs... )
 
     # end 
 
@@ -160,7 +161,7 @@ function SD_wrapper()
     manualmixprod = get(sd_in, "manualmixprod", false)
     mode = get(sd_in, "mode", "productstate")
     ω = get(sd_in, "reservoirspacing", -1.0)
-    sweepcnt = get(sd_in, "sweepcnt", 200)
+    sweepcnt = get(sd_in, "sweepcnt", 30)
     t = get(sd_in, "t", -1.0)
     ordering = get(sd_in, "ordering", "SORTED")
 

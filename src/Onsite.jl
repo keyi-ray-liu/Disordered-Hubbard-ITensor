@@ -279,6 +279,21 @@ function Onsite(sys::DPT_mixed, j::Int)
 
 end 
 
+
+# Onsite interactions for TLS,
+function Onsite(sys::DPT_TLS, j::Int)
+
+    if j != dd_lower(sys)
+        onsite = Onsite(sys.dpt, j)
+    else
+        onsite = 0
+    end 
+
+    return onsite
+
+end 
+
+
 Onsite(sys::DPT_graph, j::Int) = Onsite(sys.dpt, j)
 
 

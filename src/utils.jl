@@ -550,6 +550,31 @@ function prev_res(workflag)
 end 
 
 
+function ops_determiner(::SD_array)
+
+      ops = [
+          ["Cdagup", "Cup"],
+          ["Cdagdn", "Cdn"],
+          ["Nup", "Nup"],
+          ["Ndn", "Ndn"]
+      ]
+
+      return ops
+end 
+
+function ops_determiner(::DPT_avg)
+
+      ops = [
+          ["Cdagup", "Cup"],
+          #["Cdagdn", "Cdn"],
+          #["Cdagup", "Cdn"],
+          #["Cdagdn", "Cup"],
+          ["Nup", "Nup"]
+      ]
+      return ops
+end 
+
+
 
 function ops_determiner(sys)
 
@@ -558,30 +583,15 @@ function ops_determiner(sys)
         ["Cdag", "C"],
         ["N", "N"]
     ]
-
-  elseif typeof(sys) <: SD_array
-
-      ops = [
-          ["Cdagup", "Cup"],
-          ["Cdagdn", "Cdn"],
-          #["Nup", "Nup"],
-          #["Ndn", "Ndn"]
-      ]
-
-  elseif typeof(sys) == DPT_avg
-      ops = [
-          ["Cdagup", "Cup"],
-          #["Cdagdn", "Cdn"],
-          #["Cdagup", "Cdn"],
-          #["Cdagdn", "Cup"],
-          ["Nup", "Nup"]
-      ]
   end 
 
   return ops
 
 end 
 
+
+site_determiner(sys::Systems) = 1, get_systotal(sys)
+site_determiner(sys::SD_array) = @show get_systotal(sys.source) + 1 , get_systotal(sys.source) + get_systotal(sys.array)
 
 function get_time_control()
 
@@ -684,7 +694,7 @@ end
 
 
 
-function two_site_rotate(ψ, α, ϕ)
+function two_site_rotate(ψ, α, ϕ, ddsite)
 
   s = siteinds(ψ)
   M = zeros(ComplexF64, 4, 4)
@@ -695,7 +705,7 @@ function two_site_rotate(ψ, α, ϕ)
   #sqrt(0.7)
   #M[2, 2] = sqrt(0.3)
 
-  a = op(M, s[end - 1], s[end])
+  a = op(M, s[ddsite], s[ddsite + 1])
   ψ = apply(a, ψ)
 
   return ψ

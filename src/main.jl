@@ -35,6 +35,7 @@ ALL RIGHTS RESERVED
 using Lazy
 using DelimitedFiles
 using Glob
+using ITensorMPS: scalartype, adapt
 using ITensors, ITensorMPS 
 using JSON3
 using LinearAlgebra
@@ -83,6 +84,7 @@ using Test: @test, @test_broken, @testset
 
 include("systems.jl")
 include("QEsystems.jl")
+include("overload.jl")
 include("initial.jl")
 include("Onsite.jl")
 include("Hopping.jl")
@@ -102,7 +104,7 @@ include("specific.jl")
 include("basis.jl")
 include("QEutil.jl")
 include("test.jl")
-
+include("penalty.jl")
 #include("ed.jl")
 
 
@@ -123,11 +125,14 @@ end
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
     #rm(getworkdir(""), force=true, recursive=true)
-    #rm( pwd() * "/workzero/", force=true, recursive=true)
-    #rm( pwd() * "/work/", force=true, recursive=true)
+    rm( pwd() * "/workzero_repeat1/", force=true, recursive=true)
+    rm( pwd() * "/work_repeat1/", force=true, recursive=true)
     #NF_wrapper()
     #test_corr_MPO()
-    DPT_wrapper()
+    #mix_test()
+    #qnname_test()
+    SD_wrapper()
+    #DPT_wrapper()
     #argtest()
     
     return nothing

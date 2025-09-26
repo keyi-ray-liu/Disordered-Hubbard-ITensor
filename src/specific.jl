@@ -4,6 +4,8 @@ Uk(j::Int, sys::DPT_mixed) = Uk(j, ks(sys), LR(sys))
 Uk(j::Int, sys::DPT_graph) = typeof(sys.dpt) == DPT_mixed ? Uk(j, sys.dpt) : error("subsystem not mixed")
 
 
+add_specific_int!(::Systems, res) = res
+
 """generate the  transformation LR vectors for the Reservoir(s) SPATIAL site j, with given ordering of the momentum space, with LR cross terms being zero"""
 function Uk(j::Int, ks, LR)
 
@@ -122,6 +124,35 @@ function add_specific_int!(sys:: DPT_avg, res)
 
     end 
 
+
+    return res
+end 
+
+
+
+function add_specific_int!(sys:: DPT_TLS, res)
+
+    @info "Adding TLS interactions"
+
+    dd = dd_lower(sys)
+    # adding coupling
+    res += vs(sys)/2, "S+", dd
+    res += vs(sys)/2, "S-", dd
+
+    # adding potential
+    ϵ = bias_doubledot(sys)
+    Δ = (ϵ[1] - ϵ[2])/2
+
+    res += Δ, "Sz", dd
+
+    # adding coupling (den den)
+    den =  vcat( [ [U(sys), k] for k in L_contact(sys):L_end(sys)], [[U(sys), k] for k in R_begin(sys):R_contact(sys)])
+
+    for (U, s) in den
+
+        s = trunc(Int, s)
+        res += U, "N", s, "Sz", dd
+    end 
 
     return res
 end 

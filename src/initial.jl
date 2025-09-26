@@ -22,9 +22,7 @@ function gen_state_str(sys::DPT; ifshuffle = false, kwargs...)
 
 end 
 
-
-function gen_state_str(sys::DPT_mixed; ordering = "SORTED", kwargs...) 
-
+function gen_res(sys::DPT_mixed; ordering = "SORTED", kwargs...)
     LL = div(L(sys.dpt), 2)
     RR = div(R(sys.dpt), 2)
 
@@ -46,10 +44,24 @@ function gen_state_str(sys::DPT_mixed; ordering = "SORTED", kwargs...)
     half = LL + RR
     Lres = reservoirarr[1: half]
     Rres = reservoirarr[half + 1:end]
+    return Lres, Rres
 
+end 
+
+function gen_state_str(sys::DPT_mixed; ordering = "SORTED", kwargs...) 
+
+    Lres, Rres = gen_res(sys; ordering = ordering, kwargs...)
     return gen_state_str(sys.dpt, Lres, Rres; kwargs...)
 end 
 
+
+function gen_state_str(sys::DPT_TLS; ordering = "SORTED", kwargs...)
+
+    Lres, Rres = gen_res(sys.dpt; ordering = ordering, kwargs...)
+    state_str = vcat(Lres, Rres, ["0"])
+
+    return state_str
+end 
 
 function gen_state_str(sys::DPT, Lres :: Array{String}, Rres :: Array{String}; initdd="LOWER", kwargs...) 
 
@@ -171,7 +183,7 @@ function gen_state(sys::GQS; QN=true, kwargs...)
         return gen_state(sys.chain; QN=QN, kwargs...)
 
     elseif init(sys) == 2
-        sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=QN)
+        sites = gen_site_inds(sys, QN)
 
         @show state_str1 = vcat(["Occ" for _ in 1:N(sys)[2]], ["Emp" for _ in 1:N(sys)[1]])
 
@@ -214,6 +226,8 @@ end
 
 
 
+
+
 function gen_state(sys::SD_array; manualmixprod=false, random=false, kwargs...)
 
     @show manualmixprod
@@ -222,7 +236,7 @@ function gen_state(sys::SD_array; manualmixprod=false, random=false, kwargs...)
         
         state_str =  gen_state_str(sys; random=random, kwargs...)
         @show state_str
-        sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=true)
+        sites = gen_site_inds(sys)
 
         ψ = randomMPS(sites, state_str
         #; linkdims=10
@@ -231,7 +245,7 @@ function gen_state(sys::SD_array; manualmixprod=false, random=false, kwargs...)
     else
 
         
-        sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=true)
+        sites = gen_site_inds(sys)
         source :: Reservoir_momentum = sys.source
         #drain :: Reservoir_momentum = sys.drain
         #array :: Systems = sys.array
@@ -290,13 +304,64 @@ end
 # end 
 
 
+# function gen_state(sys::DPT_TLS; QN=true, sites=nothing, kwargs...)
+
+#     if isnothing(sites)
+#         sites = siteinds( n -> n <= get_systotal(sys) - 1 ? "Fermion" : "S=1/2", get_systotal(sys); conserve_qns = true)
+#     else
+#         @info "using predefined sites"
+#     end 
+
+#     #@show length(gen_state_str(sys)), length(get_systotal(sys))
+#     @show state_str = gen_state_str(sys; kwargs...)
+#     ψ = randomMPS(sites, state_str
+#     #; linkdims=get(kwargs, :initlinkdim, 1)
+#     )
+
+#     @show linkdims(ψ)
+#     #@show expect(ψ, "N")
+
+#     return ψ
+
+# end 
+
+function gen_qn_name(sys :: Union{DPT, DPT_mixed})
+
+    ddpos = dd_lower(sys)
+    qnnames = [ i == ddpos || i == ddpos + 1 ? "Sp2" : "Sp1" for i in 1:get_systotal(sys)]
+
+    return qnnames
+end 
+
+
+function gen_qn_name(sys :: Systems)
+    qnnames = [ "Sp1" for _ in 1:get_systotal(sys)]
+    return qnnames
+end 
+
+
+function gen_site_inds(sys :: Systems; QN = true)
+    qnnames = gen_qn_name(sys)
+
+    @show qnnames
+
+    sites = [ siteind( systype(sys), i; conserve_qns = QN, qnname_nf = qnnames[i]) for i in 1:get_systotal(sys)]
+
+    return sites
+end 
+
+
+
+
 
 
 function gen_state(sys::Systems; QN=true, sites=nothing, kwargs...)
 
     if isnothing(sites)
-        sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=QN)
 
+        sites = gen_site_inds(sys; QN = QN)
+        #sites = siteinds(systype(sys), get_systotal(sys); conserve_qns=QN)
+        # @show sites
     else
         @info "using predefined sites"
     end 
@@ -304,9 +369,10 @@ function gen_state(sys::Systems; QN=true, sites=nothing, kwargs...)
     #@show length(gen_state_str(sys)), length(get_systotal(sys))
     @show state_str = gen_state_str(sys; kwargs...)
     ψ = randomMPS(sites, state_str
-    #; linkdims=10
+    #; linkdims=get(kwargs, :initlinkdim, 1)
     )
 
+    @show linkdims(ψ)
     #@show expect(ψ, "N")
 
     return ψ
@@ -324,6 +390,7 @@ function gen_hamiltonian(sys::Systems)
     res = add_qe!(sys, res)
     res = add_HubbardRepulsion!(sys, res)
     res = add_specific_int!(sys, res)
+    res = add_penalty!(sys, res)
     
     return res
 end 
