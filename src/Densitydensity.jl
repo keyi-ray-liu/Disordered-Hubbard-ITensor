@@ -165,7 +165,7 @@ function DenDenNeighbor(sys::DPT, j::Int)
 end 
 
 
-function DenDenNeighbor(sys::DPT_mixed, j::Int)
+function DenDenNeighbor(sys::Union{DPT_mixed, DPT_TLS, DPT_avg}, j::Int)
 
     # if center region is not under mixed basis, they are still interacting spatially 
     if !QPCmixed(sys)
@@ -177,7 +177,7 @@ function DenDenNeighbor(sys::DPT_mixed, j::Int)
     return den
 end 
 
-DenDenNeighbor(res::Reservoir, j::Int; left_offset=0) = []
+DenDenNeighbor(::Reservoir, j::Int; kwargs...) = []
 
 function DenDenNeighbor(sys::SD_array, j::Int)
 
@@ -198,17 +198,13 @@ function DenDenNeighbor(sys::SD_array, j::Int)
 end 
 
 
-function DenDenNeighbor(sys::DPT_avg, j::Int)
 
-    DenDenNeighbor(sys.dpt, j)
-
-end 
 
 
 DenDenNeighbor(sys::DPT_graph, j::Int) = DenDenNeighbor(sys.dpt, j)
 
 ddoperators(sys::Systems) = systype(sys) == "Fermion" ? [["N", "N"]] : [["Ntot", "Ntot"]]
-ddoperators(sys::DPT_avg) =  [["Ndn", "Nup"]]
+ddoperators(::DPT_avg) =  [["Ndn", "Nup"]]
 
 function add_DensityDensity!(sys::Systems, res::OpSum)
     

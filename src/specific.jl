@@ -136,23 +136,23 @@ function add_specific_int!(sys:: DPT_TLS, res)
 
     dd = dd_lower(sys)
     # adding coupling
-    res += vs(sys)/2, "S+", dd
-    res += vs(sys)/2, "S-", dd
+    res += vs(sys), "T", dd
+
 
     # adding potential
-    ϵ = bias_doubledot(sys)
-    Δ = (ϵ[1] - ϵ[2])/2
+    # ϵ = bias_doubledot(sys)
+    # Δ = (ϵ[1] - ϵ[2])/2
 
-    res += Δ, "Sz", dd
+    # res += Δ, "Sz", dd
 
     # adding coupling (den den)
-    den =  vcat( [ [U(sys), k] for k in L_contact(sys):L_end(sys)], [[U(sys), k] for k in R_begin(sys):R_contact(sys)])
+    # den =  vcat( [ [U(sys), k] for k in L_contact(sys):L_end(sys)], [[U(sys), k] for k in R_begin(sys):R_contact(sys)])
 
-    for (U, s) in den
+    # for (U, s) in den
 
-        s = trunc(Int, s)
-        res += U, "N", s, "Sz", dd
-    end 
+    #     s = trunc(Int, s)
+    #     res += U, "N", s, "Sz", dd
+    # end 
 
     return res
 end 

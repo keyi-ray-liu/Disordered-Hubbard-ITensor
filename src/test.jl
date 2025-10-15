@@ -317,10 +317,18 @@ function test_rotation_gate()
     # @show a
 
 
-    M = zeros(ComplexF64, 4, 4)
+    # M = zeros(ComplexF64, 4, 4)
 
-    M[2, 1] = sqrt(0.6)
-    M[3, 1] = sqrt(0.4) * exp( 1im * 0.5)
+    # M[2, 1] = sqrt(0.6)
+    # M[3, 1] = sqrt(0.4) * exp( 1im * 0.5)
+
+    a = sqrt(0.6)
+    b = sqrt(0.4) * exp(1im * 0.5)
+
+    M = [ 0 0 0 0;
+          a 0 0 0;
+          b 0 0 0;
+          0 -b -a 0]
     #sqrt(0.7)
     #M[2, 2] = sqrt(0.3)
 
@@ -346,6 +354,53 @@ function test_rotation_gate()
     @show correlation_matrix(ψ, "Cdag", "C")
 
 end 
+
+
+function test_rotation_electron_gate()
+
+    s = siteinds("Electron", 2; conserve_qns = true)
+    state1 = ["Up", "Up"]
+
+    a = sqrt(0.6)
+    b = sqrt(0.4)
+    # Single-site ops:
+    # "Cdagdn" returns a rank-2 ITensor with indices (s' , s)
+    # "F" is the fermion parity operator diag(1,-1,-1,1) on (|Emp>,|Up>,|Dn>,|UpDn>)
+    Cdagdn1 = op("Cdagdn", s[1])     # c†_{1↓}
+    Cdagdn2 = op("Cdagdn", s[2])     # c†_{2↓}
+    F1      = op("F",      s[1])     # fermion parity on site 1
+    Id2     = op("Id",     s[2])     # identity on site 2
+
+    # Two-site operator:
+    # Outer products (no shared indices) build the tensor product with the right index structure.
+    O = a*(Cdagdn1 * Id2) + b*(F1 * Cdagdn2)
+    #sqrt(0.7)
+    #M[2, 2] = sqrt(0.3)
+
+    #a = op(M, s[1], s[2])
+
+    ψ = randomMPS(s, state1)
+    ψ = apply(O, ψ)
+    #ψ2 = randomMPS(s, state2)
+
+    #ψ :: MPS = add(sqrt(0.7) * ψ1, sqrt(0.3) * ψ2)
+
+    # @show typeof(ψ), fieldnames(typeof(ψ))
+    # @show typeof(ψ.data), fieldnames(typeof(ψ.data))
+    # @show typeof(ψ.data[1]), fieldnames(typeof(ψ.data[1]))
+    # @show fieldnames(typeof(ψ.data[1].tensor.storage))
+    #@show typeof(ψ.data[1].tensor.inds), fieldnames(typeof(ψ.data[1].tensor.inds))
+
+
+
+
+    #ψ.data[1].tensor.storage.data = [sqrt(0.1), sqrt(0.9)]
+    @show expect(ψ, "Nup")
+    @show expect(ψ, "Ndn")
+    
+
+end 
+
 
 
 function test_hop_gate()

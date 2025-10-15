@@ -1,5 +1,7 @@
 HubbardRepulsion(sys::Systems, ::Int) = systype(sys) == "Fermion" ? 0.0 : U(sys)
 
+HubbardRepulsion(sys::DPT_avg, ::Int) = 0.0
+
 function HubbardRepulsion(sys::SD_array, j::Int)
 
     source = get_systotal(sys.source)

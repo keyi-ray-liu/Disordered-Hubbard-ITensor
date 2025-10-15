@@ -58,7 +58,16 @@ end
 function gen_state_str(sys::DPT_TLS; ordering = "SORTED", kwargs...)
 
     Lres, Rres = gen_res(sys.dpt; ordering = ordering, kwargs...)
-    state_str = vcat(Lres, Rres, ["0"])
+
+    if ddposition(sys) == "M"
+        M = ["Emp"]
+        R = []
+
+    else
+        R = ["Emp"]
+        M = []
+    end 
+    state_str = vcat(Lres, M, Rres, R)
 
     return state_str
 end 
@@ -96,17 +105,21 @@ function gen_state_str(sys::DPT, Lres :: Array{String}, Rres :: Array{String}; i
 end 
 
 
-function gen_state_str(sys::DPT_avg; kwargs...)
-    Lres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
-    Rres = shuffle([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+function gen_state_str(sys::DPT_avg; initdd="LOWER", kwargs...)
 
-    if Lres[end] == "Up"
-        Lres[end] = "UpDn"
+    Lres, Rres = gen_res(sys.dpt; kwargs...)
+    replace!(Lres, "Occ" => "Up")
+    replace!(Rres, "Occ" => "Up")
 
-    else
-        Lres[end] = "Dn"
+    if initdd == "LOWER"
+
+        if Lres[end] == "Up"
+            Lres[end] = "UpDn"
+        else
+            Lres[end] = "Dn"
+        end 
+
     end 
-
 
     return vcat(Lres, Rres)
 
@@ -304,26 +317,27 @@ end
 # end 
 
 
-# function gen_state(sys::DPT_TLS; QN=true, sites=nothing, kwargs...)
+function gen_state(sys::DPT_TLS; QN=true, sites=nothing, kwargs...)
 
-#     if isnothing(sites)
-#         sites = siteinds( n -> n <= get_systotal(sys) - 1 ? "Fermion" : "S=1/2", get_systotal(sys); conserve_qns = true)
-#     else
-#         @info "using predefined sites"
-#     end 
+    if isnothing(sites)
+        sites = siteinds( n -> n != dd_lower(sys) ? "Fermion" : "TLS", get_systotal(sys); conserve_qns = QN)
+    else
+        @info "using predefined sites"
+    end 
 
-#     #@show length(gen_state_str(sys)), length(get_systotal(sys))
-#     @show state_str = gen_state_str(sys; kwargs...)
-#     ψ = randomMPS(sites, state_str
-#     #; linkdims=get(kwargs, :initlinkdim, 1)
-#     )
+    #@show length(gen_state_str(sys)), length(get_systotal(sys))
+    @show state_str = gen_state_str(sys; kwargs...)
 
-#     @show linkdims(ψ)
-#     #@show expect(ψ, "N")
+    ψ = randomMPS(sites, state_str
+    #; linkdims=get(kwargs, :initlinkdim, 1)
+    )
 
-#     return ψ
+    @show linkdims(ψ)
+    #@show expect(ψ, "N")
 
-# end 
+    return ψ
+
+end 
 
 function gen_qn_name(sys :: Union{DPT, DPT_mixed})
 
@@ -343,6 +357,7 @@ end
 function gen_site_inds(sys :: Systems; QN = true)
     qnnames = gen_qn_name(sys)
 
+    @info "symmetry: ", QN
     @show qnnames
 
     sites = [ siteind( systype(sys), i; conserve_qns = QN, qnname_nf = qnnames[i]) for i in 1:get_systotal(sys)]
@@ -356,6 +371,10 @@ end
 
 
 function gen_state(sys::Systems; QN=true, sites=nothing, kwargs...)
+
+    if QN == false
+        @warn "NO QN"
+    end 
 
     if isnothing(sites)
 

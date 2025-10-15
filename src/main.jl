@@ -25,7 +25,8 @@ ALL RIGHTS RESERVED
 #     "Observers",
 #     "StableRNGs",
 #     "ITensorUnicodePlots",
-#     "Interpolations"
+#     "Interpolations",
+#     "PackageCompiler"
 #     ]
 
 #     @warn "INSTALLING PACKAGES!"
@@ -45,6 +46,7 @@ using ITensorGaussianMPS
 using Random
 using HDF5
 using Logging
+using PackageCompiler
 #using Observers: observer
 using StableRNGs: StableRNG
 using Test: @test, @test_broken, @testset
@@ -131,8 +133,11 @@ if test
     #test_corr_MPO()
     #mix_test()
     #qnname_test()
-    SD_wrapper()
-    #DPT_wrapper()
+    #SD_wrapper()
+    #test_rotation_gate()
+    #test_rotation_electron_gate()
+    #ITensors.compile()
+    DPT_wrapper()
     #argtest()
     
     return nothing

@@ -463,6 +463,7 @@ struct DPT <: Systems
     graph=false,
     μ1 = 0.0,
     n1penalty = nothing,
+    TLS = false,
     kwargs...
     )
 
@@ -470,7 +471,7 @@ struct DPT <: Systems
         ddposition = "M"
     end 
 
-    lattice_info = set_lattice(ddposition, L, R, couple_range)
+    lattice_info = set_lattice(ddposition, L, R, couple_range, TLS)
     @show μ1
     new(
     U,
@@ -499,14 +500,16 @@ end
 end 
 
 
-function set_lattice(ddposition, L, R, couple_range)
+function set_lattice(ddposition, L, R, couple_range, TLS)
 
     lattice_info = Dict{Any, Any}(
         "ddposition" => ddposition
     )
 
+    offset = TLS ? 1 : 0
     if ddposition == "R"
         lattice_info["dd_lower"] = L + R + 1
+        lattice_info["dd_upper"] = L + R + 2 - offset
         lattice_info["L_begin"] = 1
         lattice_info["L_end"] = L
         lattice_info["R_begin"] = L + 1
@@ -516,24 +519,27 @@ function set_lattice(ddposition, L, R, couple_range)
         
     elseif ddposition == "M"
         lattice_info["dd_lower"] = L + 1
+        lattice_info["dd_upper"] = L + 2 - offset
         lattice_info["L_begin"] = 1
         lattice_info["L_end"] = L
-        lattice_info["R_begin"] = L + 3
-        lattice_info["R_end"] = L + R + 2
+        lattice_info["R_begin"] = L + 3 - offset
+        lattice_info["R_end"] = L + R + 2 - offset
         lattice_info["L_contact"] = L - couple_range + 1
-        lattice_info["R_contact"] = L + couple_range + 2
+        lattice_info["R_contact"] = L + couple_range + 2 - offset
 
     elseif ddposition == "L"
         lattice_info["dd_lower"] = 1
-        lattice_info["L_begin"] = 3
-        lattice_info["L_end"] = L + 2
-        lattice_info["R_begin"] = L + 3
-        lattice_info["R_end"] = L + R + 2
-        lattice_info["L_contact"] = L - couple_range + 3
-        lattice_info["R_contact"] = L + couple_range + 2
+        lattice_info["dd_upper"] = 2 - offset
+        lattice_info["L_begin"] = 3 - offset
+        lattice_info["L_end"] = L + 2 - offset
+        lattice_info["R_begin"] = L + 3 - offset
+        lattice_info["R_end"] = L + R + 2 - offset
+        lattice_info["L_contact"] = L - couple_range + 3 - offset
+        lattice_info["R_contact"] = L + couple_range + 2 - offset
 
     elseif ddposition == "avg"
         lattice_info["dd_lower"] = L
+        lattice_info["dd_upper"] = L + 1
         lattice_info["L_begin"] = 1
         lattice_info["L_end"] = L
         lattice_info["R_begin"] = L + 1
@@ -567,6 +573,7 @@ contact_t(sys::DPT) = sys.contact_t
 get_systotal(sys::DPT) = 2 + L(sys) + R(sys)
 N(sys::DPT) = [L(sys) - div(L(sys), 2), div(L(sys), 2), 0, 0]
 dd_lower(sys::DPT) = sys.lattice_info["dd_lower"]
+dd_upper(sys::DPT) = sys.lattice_info["dd_upper"]
 L_begin(sys::DPT) = sys.lattice_info["L_begin"] 
 L_end(sys::DPT) = sys.lattice_info["L_end"] 
 R_begin(sys::DPT) = sys.lattice_info["R_begin"] 
@@ -634,6 +641,7 @@ L_contact(sys::Union{DPT, DPT_mixed}) = L_end(sys) - couple_range(sys) + 1
 R_contact(sys::Union{DPT, DPT_mixed}) = R_begin(sys) + couple_range(sys) - 1
 
 QPCmixed(sys::DPT_mixed) = sys.QPCmixed
+QPCmixed(sys::DPT_TLS) = QPCmixed(sys.dpt)
 energies(sys::DPT_mixed) = sys.energies
 ks(sys::DPT_mixed) = sys.ks
 LR(sys::DPT_mixed) = sys.LR
@@ -644,6 +652,10 @@ struct DPT_avg <: Systems
     dpt :: Union{DPT, DPT_mixed}
 
 end 
+
+μ1(sys::DPT_avg) = μ1(sys.dpt)
+μ1(sys::DPT_mixed) = μ1(sys.dpt)
+μ1(sys::DPT) = sys.μ1
 
 
 struct DPT_graph <: Systems
@@ -666,7 +678,7 @@ end
 set_graph(sys::Union{DPT, DPT_mixed}, graph::Bool) = graph ? set_DPT_graph(sys) : sys
 
 for func ∈ [systype, 
-    U, L, R, N, couple_range, bias_doubledot, bias_L, bias_R, t_reservoir, vs, contact, contact_t, dd_lower, L_begin, L_end, R_begin, R_end, L_contact, R_contact, ddposition
+    U, L, R, N, couple_range, bias_doubledot, bias_L, bias_R, t_reservoir, vs, contact, contact_t, dd_lower, dd_upper, L_begin, L_end, R_begin, R_end, L_contact, R_contact, ddposition
     ]
     
     func = Symbol(func)
@@ -716,10 +728,10 @@ function DPT_setter(
     @info ddposition
 
     if mixed
-        sys = DPT_mixed(; systype=systype, ddposition = ddposition, graph=graph, QPCmixed=QPCmixed, kwargs...)
+        sys = DPT_mixed(; systype=systype, ddposition = ddposition, graph=graph, QPCmixed=QPCmixed, TLS = TLS, kwargs...)
 
     else
-        sys = DPT(; systype=systype, ddposition=ddposition, graph=graph, kwargs...)
+        sys = DPT(; systype=systype, ddposition=ddposition, graph=graph, TLS = TLS, kwargs...)
     end 
 
     if TLS

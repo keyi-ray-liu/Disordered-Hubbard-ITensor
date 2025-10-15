@@ -559,8 +559,23 @@ function dyna_dptcurrent(; ψ=nothing, sys=DPT(), workflag = "", kwargs...)
             op1, op2 = "Cdagup", "Cup"
         end 
         
-        corr = correlation_matrix(ψ, op1, op2; sites=L_end(sys):R_begin(sys))
-        return 2 * imag(corr[1, end])
+        #corr = correlation_matrix(ψ, op1, op2; sites=L_end(sys):R_begin(sys))
+
+        #return 2 * imag(corr[1, end])
+
+        rhs = copy(ψ)
+        s = siteinds(rhs)
+
+        G1 = op(op1, s[L_end(sys)])
+        orthogonalize!(ψ, L_end(sys))
+        rhs = apply(G1, rhs)
+
+        G2 = op(op2, s[R_begin(sys)])
+        orthogonalize!(ψ, R_begin(sys))
+        rhs = apply(G2, rhs)
+
+        return 2 * imag( inner(ψ, rhs))
+        
     end 
 
     workdir = getworkdir(workflag)

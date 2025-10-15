@@ -694,19 +694,60 @@ end
 
 
 
-function two_site_rotate(ψ, α, ϕ, ddsite)
+function rotate_gate(ψ, α, ϕ, ddsite, TLS, avg)
 
   s = siteinds(ψ)
-  M = zeros(ComplexF64, 4, 4)
 
-  α = min(α, 1)
-  M[2, 1] = sqrt(α)
-  M[3, 1] = sqrt(1 - α) * exp( 1im * ϕ)
-  #sqrt(0.7)
-  #M[2, 2] = sqrt(0.3)
+  if !TLS
 
-  a = op(M, s[ddsite], s[ddsite + 1])
-  ψ = apply(a, ψ)
+    if !avg
+      
+
+      α = min(α, 1)
+
+      # M = zeros(ComplexF64, 4, 4)
+      # M[2, 1] = sqrt(α)
+      # M[3, 1] = sqrt(1 - α) * exp( 1im * ϕ)
+
+      a = sqrt(α)
+      b = sqrt(1 - α) * exp( 1im * ϕ)
+
+      M = [ 0 0 0 0;
+            a 0 0 0;
+            b 0 0 0;
+            0 -b -a 0]
+      #sqrt(0.7)
+      #M[2, 2] = sqrt(0.3)
+
+      a = op(M, s[ddsite], s[ddsite + 1])
+      ψ = apply(a, ψ)
+
+    else
+      # "F" is the fermion parity operator diag(1,-1,-1,1) on (|Emp>,|Up>,|Dn>,|UpDn>)
+      Cdagdn1 = op("Cdagdn", s[ddsite])     # c†_{1↓}
+      Cdagdn2 = op("Cdagdn", s[ddsite + 1])     # c†_{2↓}
+      F1      = op("F",      s[ddsite])     # fermion parity on site 1
+      Id2     = op("Id",     s[ddsite + 1])     # identity on site 2
+
+      # Two-site operator:
+      # Outer products (no shared indices) build the tensor product with the right index structure.
+      O = sqrt(α) *(Cdagdn1 * Id2) + sqrt(1 - α) * exp( 1im * ϕ) *(F1 * Cdagdn2)
+      ψ = apply(O, ψ)
+
+    end 
+
+
+
+  else
+
+    M = zeros(ComplexF64, 2, 2)
+    M[1, 1] = sqrt(α)
+    M[2, 2] = sqrt(1 - α) * exp( 1im * ϕ)
+
+    a = op(M, s[ddsite])
+    ψ = apply(a, ψ)
+
+  end 
 
   return ψ
 end 

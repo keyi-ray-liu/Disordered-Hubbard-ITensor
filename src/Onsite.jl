@@ -189,7 +189,7 @@ function Onsite(sys::DPT, j ::Int) :: Float64
 
     #upper
     #elseif j == L(sys) + 2
-    elseif j == dd_lower(sys) + 1
+    elseif j == dd_upper(sys)
         onsite = bias_doubledot(sys)[2]
 
     elseif j <= L_end(sys)
@@ -230,7 +230,7 @@ function Onsite(sys::DPT_mixed, j::Int)
         onsite -= U(sys) *  couple_range(sys)
 
     #upper
-    elseif j == dd_lower(sys) + 1
+    elseif j == dd_upper(sys)
         onsite = bias_doubledot(sys)[2]
 
     # left no contact
@@ -285,8 +285,12 @@ function Onsite(sys::DPT_TLS, j::Int)
 
     if j != dd_lower(sys)
         onsite = Onsite(sys.dpt, j)
-    else
-        onsite = 0
+    else  
+
+        #we only focus on the hypothetical lower site, because we overload the "N" operator to be [1 0]
+        onsite = bias_doubledot(sys)[1]
+        # left_offset from int term
+        onsite -= U(sys) *  couple_range(sys)
     end 
 
     return onsite
@@ -300,10 +304,10 @@ Onsite(sys::DPT_graph, j::Int) = Onsite(sys.dpt, j)
 function Onsite(sys::DPT_avg, j::Int) 
 
     if j == dd_lower(sys)
-        return bias_L(sys) - 1/2 * U(sys), bias_doubledot(sys)[1] - U(sys) * couple_range(sys)
+        return bias_L(sys) - 1/2 * U(sys) + μ1(sys), bias_doubledot(sys)[1] - U(sys) * couple_range(sys)
 
-    elseif j == dd_lower(sys) + 1
-        return bias_R(sys) - 1/2 * U(sys), bias_doubledot(sys)[2] 
+    elseif j == dd_upper(sys)
+        return bias_R(sys) - 1/2 * U(sys) + μ1(sys), bias_doubledot(sys)[2] 
 
     else
         
@@ -374,7 +378,7 @@ end
 
 
 onsiteoperators(sys::Systems) = systype(sys) == "Fermion" ? ["N"] : ["Ntot"]
-onsiteoperators(sys::DPT_avg) = ["Nup", "Ndn"]
+onsiteoperators(::DPT_avg) = ["Nup", "Ndn"]
 
 function add_onsite!(sys::Systems, res::OpSum)
     

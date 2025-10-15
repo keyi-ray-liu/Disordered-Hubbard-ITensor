@@ -1,8 +1,9 @@
 """get mixed basis Reservoir parameters, the energies returned are at 0 bias, however the order is done at finite bias"""
 
 
-gen_obs(mixed, QPCmixed) = [dyna_EE, dyna_occ, dyna_coherence, (mixed && QPCmixed) ? dyna_dptcurrent_mix : dyna_dptcurrent,
-#, dyna_corr, dyna_SRDM
+gen_obs(mixed, QPCmixed) = [dyna_EE, dyna_occ, (mixed && QPCmixed) ? dyna_dptcurrent_mix : dyna_dptcurrent,
+#, dyna_corr, dyna_SRDM 
+# dyna_coherence,
 dyna_SVD
 ]
 
@@ -160,11 +161,13 @@ function get_d1QPC(workflag, L, ddsite)
     return nd1, nQPC
 end 
 
-function DPT_wrapper()
+function DPT_wrapper(; dpt_in = nothing)
 
 
-
-    dpt_in = load_JSON( pwd() * "/dptpara.json")
+    if isnothing(dpt_in)
+        dpt_in = load_JSON( pwd() * "/dptpara.json")
+    end 
+    
     U = get(dpt_in, "U", 0.1)
     L = get(dpt_in, "L", 34)
     R = get(dpt_in, "R", L)
@@ -182,10 +185,15 @@ function DPT_wrapper()
     TLS = get(dpt_in, "TLS", false)
     stagetype = get(dpt_in, "stagetype", "uniform")
     ddposition = get(dpt_in, "ddposition", "M")
+    QN = get(dpt_in, "QN", true)
     #initlinkdim = get(dpt_in, "initlinkdim", 1)
 
     # the argument has higher priority
     α = get(dpt_in, "n1init", 1.0)
+
+    if avg
+        ddposition = "avg"
+    end 
 
     for cnt in 1:repeat
         @info "reapet counter:", cnt
@@ -193,24 +201,32 @@ function DPT_wrapper()
         #workflag = "zero_repeat$(cnt)"
         workflag = "zero_repeat$(cnt)"
 
-        ψ = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition=ddposition,  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manualempty", n1init = α, vs = vs, ordering = ordering, workflag = workflag, initdd = "EMPTY", TLS = TLS)
+        ψ = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition=ddposition,  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manualempty", n1init = α, vs = vs, ordering = ordering, workflag = workflag, initdd = "EMPTY", TLS = TLS, QN = QN)
         
         #exppre = expect(ψ, "N")
         if ddposition == "R"
             ddsite = L + R + 1
         elseif ddposition == "M"
             ddsite = L + 1
+        elseif ddposition == "avg"
+            ddsite = L
         else
             ddsite = 1
         end 
 
-        ψ = two_site_rotate(ψ, α, 0, ddsite)
-        exppost = expect(ψ, "N")
-        corr = correlation_matrix(ψ, "Cdag", "C")
+        ψ = rotate_gate(ψ, α, 0, ddsite, TLS, avg)
+
+        exppost = []
+        try
+            exppost = expect(ψ, "N")
+        catch
+            exppost = expect(ψ, "Ndn")
+        end 
+        #corr = correlation_matrix(ψ, "Cdag", "C")
 
         #@show exppre .- exppost
         @show exppost[ddsite: ddsite + 1]
-        @show corr[ddsite : ddsite + 1, ddsite: ddsite + 1]
+        #@show corr[ddsite : ddsite + 1, ddsite: ddsite + 1]
 
         process = Supplywf(ψ)
 
@@ -219,7 +235,8 @@ function DPT_wrapper()
         run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = workflag, ddposition=ddposition,  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "override", vs = vs, process = process, #initlinkdim = initlinkdim
         #n1penalty = α
         stagetype = stagetype,
-        TLS = TLS
+        TLS = TLS,
+        QN = QN
         )
 
         newα, _ = get_d1QPC(workflag, L, ddsite)
