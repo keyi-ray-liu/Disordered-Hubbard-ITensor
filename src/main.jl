@@ -127,7 +127,7 @@ end
 if test
     #map(rm, Glob.glob( "corr*", getworkdir()))
     #rm(getworkdir(""), force=true, recursive=true)
-    rm( pwd() * "/workzero_repeat1/", force=true, recursive=true)
+    #rm( pwd() * "/workzero_repeat1/", force=true, recursive=true)
     rm( pwd() * "/work_repeat1/", force=true, recursive=true)
     #NF_wrapper()
     #test_corr_MPO()
@@ -137,7 +137,9 @@ if test
     #test_rotation_gate()
     #test_rotation_electron_gate()
     #ITensors.compile()
-    DPT_wrapper()
+    #test_exp(10; nsteps = 100, order = 2)
+    #DPT_wrapper()
+    DPT_compare()
     #argtest()
     
     return nothing

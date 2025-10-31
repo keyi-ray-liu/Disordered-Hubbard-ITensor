@@ -193,7 +193,9 @@ function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation, workflag ; 
 
             @info "TDVP time : $dt"
             #ψ1 = tdvp(H, ψ, -1.0im * τ;  nsweeps=20, TEcutoff, nsite=2)
-            @time ψ = tdvp(H,  -im * τ, ψ; updater_kwargs = (; eager=true), maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ, normalize=true,outputlevel=1, 
+            @time ψ = tdvp(H,  -im * τ, ψ; 
+            #updater_kwargs = (; eager=true),
+            maxdim = TEdim,  cutoff=TEcutoff, nsite=nsite, time_step= -im * τ, normalize=true,outputlevel=1, 
             #krylovdim = 10,
             # (step_observer!)=sys_obs
             )
@@ -266,3 +268,95 @@ function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation, workflag ; 
 
 end 
 
+
+
+
+
+
+function TEBD_evolve(h::OpSum, ψ::MPS, simulation::DynamicSimulation, workflag ; save_every=true, obs=Function[], corr_cutoff=Inf, init_obs = true, kwargs...)
+
+    TEcutoff, _, _= SimulationParameters(simulation)
+
+    # get the t=0 stats
+
+    if init_obs
+        for ob in obs
+            ob(;ψ=ψ, curtime=0, corr_cutoff = corr_cutoff,  workflag = workflag, kwargs...)
+        end 
+        
+        τ, start, fin = simulation.stages[1]
+
+        open(getworkdir(workflag) * "times", "a" ) do io
+            writedlm(io, start)
+        end 
+    end 
+
+    s = siteinds(ψ)
+
+    for (τ, start, fin) in simulation.stages
+        for dt in (start + τ):τ:fin
+
+
+
+            @info "TEBD time : $dt"
+
+            G = gate_decomp(h, s; t = τ)
+            @time ψ = apply(G, ψ; cutoff = TEcutoff)
+
+
+            mem = Sys.maxrss()/2^30
+            @info "Max. RSS = $mem GB"
+
+
+            for ob in obs
+                ob(;ψ=ψ, curtime=dt, corr_cutoff = corr_cutoff, workflag = workflag, kwargs...)
+            end 
+
+            if save_every
+                wft = getworkdir(workflag) * "tTDVP" * string(dt) * ".h5"
+                h5open(wft, "w") do io
+                    write(io, "psi1", ψ)
+                end 
+
+            else
+                wflast = getworkdir(workflag) * "$(LASTSTSTR).h5"
+                timelast = getworkdir(workflag) * "tTDVPlasttime"
+
+                wfbak = getworkdir(workflag) * "$(BACKSTR).h5"
+                timebak = getworkdir(workflag) * "tTDVPbaktime"
+
+                h5open(wflast, "w") do io
+                    write(io, "psi1", ψ)
+                end 
+
+                open(timelast, "w") do io
+                    writedlm(io, dt)
+                end
+                
+                # this makes sure that if the program is ended while the saving operation is going, only one of the h5 files would be damaged
+
+                h5open(wfbak, "w") do io
+                    write(io, "psi1", ψ)
+                end 
+
+                open(timebak, "w") do io
+                    writedlm(io, dt)
+                end
+
+
+            end 
+
+
+
+            open(getworkdir(workflag) * "times", "a" ) do io
+                writedlm(io, dt)
+            end 
+
+
+        end 
+    end 
+
+    @info "Dynamic Ends"
+    return ψ
+
+end 

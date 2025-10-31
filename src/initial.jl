@@ -13,6 +13,7 @@ end
 
 function gen_state_str(sys::DPT; ifshuffle = false, kwargs...)
 
+
     f(x) = ifshuffle ? shuffle(x) : reverse(x)
 
     Lres = f([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
@@ -22,7 +23,7 @@ function gen_state_str(sys::DPT; ifshuffle = false, kwargs...)
 
 end 
 
-function gen_res(sys::DPT_mixed; ordering = "SORTED", kwargs...)
+function gen_res(sys::DPT_mixed; ordering = "SORTED", ifshuffle = false, kwargs...)
     LL = div(L(sys.dpt), 2)
     RR = div(R(sys.dpt), 2)
 
@@ -40,6 +41,10 @@ function gen_res(sys::DPT_mixed; ordering = "SORTED", kwargs...)
     reservoirarr = ["Emp" for _ in 1:( L(sys.dpt) + R(sys.dpt))]
     reservoirarr[leftinds] .= "Occ"
     reservoirarr[rightinds] .= "Occ"
+
+    if ifshuffle
+        shuffle!(reservoirarr)
+    end 
 
     half = LL + RR
     Lres = reservoirarr[1: half]
@@ -65,6 +70,23 @@ function gen_state_str(sys::DPT_TLS; ordering = "SORTED", kwargs...)
 
     else
         R = ["Emp"]
+        M = []
+    end 
+    state_str = vcat(Lres, M, Rres, R)
+
+    return state_str
+end 
+
+function gen_state_str(sys::DPT_TLS2; ordering = "SORTED", kwargs...)
+
+    Lres, Rres = gen_res(sys.dpt; ordering = ordering, kwargs...)
+
+    if ddposition(sys) == "M"
+        M = ["1"]
+        R = []
+
+    else
+        R = ["1"]
         M = []
     end 
     state_str = vcat(Lres, M, Rres, R)
@@ -339,10 +361,34 @@ function gen_state(sys::DPT_TLS; QN=true, sites=nothing, kwargs...)
 
 end 
 
+
+function gen_state(sys::DPT_TLS2; sites=nothing, kwargs...)
+
+    # we explicitly does not allow QN
+    if isnothing(sites)
+        sites = siteinds( n -> n != dd_lower(sys) ? "Fermion" : "S=1/2", get_systotal(sys); conserve_qns = false)
+    else
+        @info "using predefined sites"
+    end 
+
+    #@show length(gen_state_str(sys)), length(get_systotal(sys))
+    @show state_str = gen_state_str(sys; kwargs...)
+
+    ψ = randomMPS(sites, state_str
+    #; linkdims=get(kwargs, :initlinkdim, 1)
+    )
+
+    @show linkdims(ψ)
+    #@show expect(ψ, "N")
+
+    return ψ
+
+end 
+
 function gen_qn_name(sys :: Union{DPT, DPT_mixed})
 
-    ddpos = dd_lower(sys)
-    qnnames = [ i == ddpos || i == ddpos + 1 ? "Sp2" : "Sp1" for i in 1:get_systotal(sys)]
+
+    qnnames = [ i == dd_lower(sys) || i == dd_upper(sys) ? "Sp2" : "Sp1" for i in 1:get_systotal(sys)]
 
     return qnnames
 end 
@@ -400,6 +446,23 @@ end
 
 
 function gen_hamiltonian(sys::Systems)
+
+    res = OpSum()
+
+    res = add_hop!(sys, res)
+    res = add_DensityDensity!(sys, res)
+    res = add_onsite!(sys, res)
+    res = add_qe!(sys, res)
+    res = add_HubbardRepulsion!(sys, res)
+    res = add_specific_int!(sys, res)
+    res = add_penalty!(sys, res)
+    
+    return res
+end 
+
+
+
+function gen_exp_(sys::Systems)
 
     res = OpSum()
 

@@ -69,6 +69,7 @@ struct TwoStage <: TimeControl
     fin2 :: Float64
 end 
 
+
 # U(sys::Hubbard) = sys.U
 systype(sys::Systems) = "Fermion"
 
@@ -518,14 +519,23 @@ function set_lattice(ddposition, L, R, couple_range, TLS)
         lattice_info["R_contact"] = L + couple_range
         
     elseif ddposition == "M"
+        # lattice_info["dd_lower"] = L + 1
+        # lattice_info["dd_upper"] = L + 2 - offset
+        # lattice_info["L_begin"] = 1
+        # lattice_info["L_end"] = L
+        # lattice_info["R_begin"] = L + 3 - offset
+        # lattice_info["R_end"] = L + R + 2 - offset
+        # lattice_info["L_contact"] = L - couple_range + 1
+        # lattice_info["R_contact"] = L + couple_range + 2 - offset
+
         lattice_info["dd_lower"] = L + 1
-        lattice_info["dd_upper"] = L + 2 - offset
+        lattice_info["dd_upper"] = L + R + 2 - offset
         lattice_info["L_begin"] = 1
         lattice_info["L_end"] = L
-        lattice_info["R_begin"] = L + 3 - offset
-        lattice_info["R_end"] = L + R + 2 - offset
+        lattice_info["R_begin"] = L + 2 - offset
+        lattice_info["R_end"] = L + R + 1 - offset
         lattice_info["L_contact"] = L - couple_range + 1
-        lattice_info["R_contact"] = L + couple_range + 2 - offset
+        lattice_info["R_contact"] = L + couple_range + 1 - offset
 
     elseif ddposition == "L"
         lattice_info["dd_lower"] = 1
@@ -630,9 +640,12 @@ struct DPT_TLS <: Systems
     dpt :: Union{DPT, DPT_mixed}
 end 
 
-get_systotal(sys::DPT_TLS) = get_systotal(sys.dpt) - 1
 
+struct DPT_TLS2 <: Systems
+    dpt :: Union{DPT, DPT_mixed}
+end 
 
+get_systotal(sys::Union{DPT_TLS, DPT_TLS2}) = get_systotal(sys.dpt) - 1
 get_systotal(sys::DPT_mixed) = get_systotal(sys.dpt)
 
 
@@ -642,6 +655,7 @@ R_contact(sys::Union{DPT, DPT_mixed}) = R_begin(sys) + couple_range(sys) - 1
 
 QPCmixed(sys::DPT_mixed) = sys.QPCmixed
 QPCmixed(sys::DPT_TLS) = QPCmixed(sys.dpt)
+QPCmixed(sys::DPT_TLS2) = QPCmixed(sys.dpt)
 energies(sys::DPT_mixed) = sys.energies
 ks(sys::DPT_mixed) = sys.ks
 LR(sys::DPT_mixed) = sys.LR
@@ -686,6 +700,7 @@ for func ∈ [systype,
     @eval $func(sys::DPT_graph) = $func(sys.dpt)
     @eval $func(sys::DPT_avg) = $func(sys.dpt)
     @eval $func(sys::DPT_TLS) = $func(sys.dpt)
+    @eval $func(sys::DPT_TLS2) = $func(sys.dpt)
 end 
 
 
@@ -735,7 +750,7 @@ function DPT_setter(
     end 
 
     if TLS
-        sys = DPT_TLS(sys)
+        sys = DPT_TLS2(sys)
     end 
 
     if avg

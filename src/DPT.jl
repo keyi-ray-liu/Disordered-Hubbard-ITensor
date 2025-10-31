@@ -72,7 +72,7 @@ function run_DPT_many_body(U, L, R,  t_fin :: Float64; tswitch = 0.0, bias_L = B
         μ1 = U * (n1init - 1/2)
         Uinit =  0.0
         vsinit = 0.0
-        DPT_INIT_BIAS = [+1e3, +1e3]
+        DPT_INIT_BIAS = [+10, +10]
 
     elseif mode == "override"
 
@@ -102,17 +102,18 @@ function run_DPT_many_body(U, L, R,  t_fin :: Float64; tswitch = 0.0, bias_L = B
         timecontrol = TwoStage(τ, τ, tswitch, t_fin)
 
         ψ = run_gs_dyna(timecontrol, init, stage2, stage3, obs; process = process, workflag = workflag, sites = sites, initdd = initdd, kwargs...)
+
+        return ψ, init, stage2, stage3
     else
         sys = DPT_setter(mixed, avg, TLS; U=U, L=L, R=R, bias_L=bias_L, vs=vs, bias_R=bias_R, bias_doubledot = [0.0, 0.0], energies=energies, ks=ks, LR=LR, QPCmixed=QPCmixed, couple_range=couple_range, ddposition=ddposition, graph=graph)
 
         timecontrol = OneStage( τ, t_fin)
 
         ψ =  run_gs_dyna(timecontrol, init, sys, obs; process = process, workflag = workflag, sites = sites, initdd = initdd, kwargs...)
+
+        return ψ, init, sys
     end 
     
-    
-
-    return ψ
 end 
 
 
@@ -150,9 +151,20 @@ end
 
 
 function get_d1QPC(workflag, L, ddsite)
-    wf = open(getworkdir(workflag) * "occ", "r") 
-    occ = readdlm(wf)
-    close(wf)
+
+
+    occ = nothing
+
+    try
+        wf = open(getworkdir(workflag) * "occ", "r") 
+        occ = readdlm(wf)
+        close(wf)
+    catch
+        wf = open(getworkdir(workflag) * "occdn", "r") 
+        occ = readdlm(wf)
+        close(wf)
+    end 
+    
 
     nd1 = sum(mean(occ[(end - 16):end , ddsite], dims = 1))
     nQPC = sum(mean(occ[(end - 16):end, (L - 1):(L + 2)], dims = 1))
@@ -165,6 +177,8 @@ function DPT_wrapper(; dpt_in = nothing)
 
 
     if isnothing(dpt_in)
+
+        @warn "Loading external json"
         dpt_in = load_JSON( pwd() * "/dptpara.json")
     end 
     
@@ -178,22 +192,24 @@ function DPT_wrapper(; dpt_in = nothing)
     biasLR = get(dpt_in, "biasLR", 0.0)
     mixed = get(dpt_in, "mixed", true)
     ordering = get(dpt_in, "ordering", "SORTED")
-    avg = get(dpt_in, "avg", false)
-    sweepcnt = get(dpt_in, "sweepcnt", 30)
+    sweepcnt = get(dpt_in, "sweepcnt", 10)
     vs = get(dpt_in, "vs", 0.25)
     repeat = get(dpt_in, "repeat", 1)
     TLS = get(dpt_in, "TLS", false)
     stagetype = get(dpt_in, "stagetype", "uniform")
     ddposition = get(dpt_in, "ddposition", "M")
     QN = get(dpt_in, "QN", true)
+    Trotterfirst = get(dpt_in, "Trotterfirst", false)
+    method = get(dpt_in, "method", "TDVP")
+
+    ifshuffle = get(dpt_in, "ifshuffle", false)
     #initlinkdim = get(dpt_in, "initlinkdim", 1)
 
     # the argument has higher priority
     α = get(dpt_in, "n1init", 1.0)
 
-    if avg
-        ddposition = "avg"
-    end 
+    ψ = ψinit = MPS()
+    avg = ddposition == "avg" ? true : false
 
     for cnt in 1:repeat
         @info "reapet counter:", cnt
@@ -201,39 +217,34 @@ function DPT_wrapper(; dpt_in = nothing)
         #workflag = "zero_repeat$(cnt)"
         workflag = "zero_repeat$(cnt)"
 
-        ψ = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition=ddposition,  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manualempty", n1init = α, vs = vs, ordering = ordering, workflag = workflag, initdd = "EMPTY", TLS = TLS, QN = QN)
+        ψ, init, _ = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition=ddposition,  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "manualempty", n1init = α, vs = vs, ordering = ordering, workflag = workflag, initdd = "EMPTY", TLS = TLS, QN = QN, ifshuffle = ifshuffle)
         
         #exppre = expect(ψ, "N")
-        if ddposition == "R"
-            ddsite = L + R + 1
-        elseif ddposition == "M"
-            ddsite = L + 1
-        elseif ddposition == "avg"
-            ddsite = L
-        else
-            ddsite = 1
-        end 
 
-        ψ = rotate_gate(ψ, α, 0, ddsite, TLS, avg)
+        ψ = rotate_gate(ψ, α, 0, init)
+
+        ψinit = deepcopy(ψ)
 
         exppost = []
         try
-            exppost = expect(ψ, "N")
+            exppost = myexpect(ψ, "N", "Sz")
         catch
             exppost = expect(ψ, "Ndn")
         end 
         #corr = correlation_matrix(ψ, "Cdag", "C")
 
         #@show exppre .- exppost
-        @show exppost[ddsite: ddsite + 1]
+        @show exppost[[dd_lower(init), dd_upper(init)]]
         #@show corr[ddsite : ddsite + 1, ddsite: ddsite + 1]
 
         process = Supplywf(ψ)
 
         workflag = "_repeat$(cnt)"
 
-        run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = workflag, ddposition=ddposition,  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "override", vs = vs, process = process, #initlinkdim = initlinkdim
+        ψ, = run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = workflag, ddposition=ddposition,  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "override", vs = vs, process = process, #initlinkdim = initlinkdim
         #n1penalty = α
+        Trotterfirst = Trotterfirst, 
+        method = method,
         stagetype = stagetype,
         TLS = TLS,
         QN = QN
@@ -248,11 +259,39 @@ function DPT_wrapper(; dpt_in = nothing)
         α = newα
     end 
 
-    
+    return ψ, ψinit
+end 
+
+
+
+
+function DPT_compare()
+
+
+    dpt_baseline = Dict(
+        "U" => 3.05,
+        "L" => 10,
+        "R" => 10,
+        "tswitch" => 0.0,
+        "tfin" => 0.0,
+        "timestep" => 0.25,
+        "TEdim" => 64,
+        "stagetype" => ""
+    )
+
+    d1 = copy(dpt_baseline)
+    d1["ddposition"] = "R"
+
+    @show d1
+    ψ1 = DPT_wrapper( ; dpt_in = d1)
+
+    # d2 = copy(dpt_baseline)
+    # d2["ddposition"] = "M"
+    # ψ2 = DPT_wrapper( ; dpt_in = d2)
+
 
 
 end 
-
 
 
 # function DPT_bare()

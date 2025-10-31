@@ -477,7 +477,7 @@ function dyna_occ(; sys=Chain(), ψ=nothing, workflag = "", kwargs...)
 
         if systype(sys) == "Fermion"
             open(workdir * "occ", "a") do io
-                writedlm( io, [round.(expect(ψ, "N"), sigdigits=6)])
+                writedlm( io, [round.(myexpect(ψ, "N", "Sz"), sigdigits=6)])
             end 
 
         else

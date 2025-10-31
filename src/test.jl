@@ -549,3 +549,20 @@ function qnname_test()
     @show sites
 
 end 
+
+
+
+
+
+function heisenberg(N)
+  os = OpSum()
+
+  for j in 1:(N - 1)
+    os += "Sz", j, "Sz", j + 1
+    os += 0.5, "S+", j, "S-", j + 1
+    os += 0.5, "S-", j, "S+", j + 1
+    os += "Sz", j
+  end
+  return os
+end
+

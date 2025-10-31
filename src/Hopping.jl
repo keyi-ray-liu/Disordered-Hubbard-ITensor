@@ -186,7 +186,7 @@ end
 function HoppingNeighbor(sys::DPT_mixed, j::Int)
 
     if j == dd_lower(sys)
-        hop = [[vs(sys), j + 1]]
+        hop = [[vs(sys), dd_upper(sys)]]
 
     else
         # we connect within the spatial region
@@ -220,7 +220,7 @@ function HoppingNeighbor(sys::DPT_mixed, j::Int)
 end 
 
 # no hopping except DD and center region (if applicable)
-function HoppingNeighbor(sys::DPT_TLS, j::Int)
+function HoppingNeighbor(sys::Union{DPT_TLS, DPT_TLS2}, j::Int)
 
 
     if j != dd_lower(sys)

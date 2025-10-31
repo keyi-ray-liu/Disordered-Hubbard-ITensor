@@ -176,12 +176,22 @@ end
 
 load_ψ(t::Int, workflag::String; tag ="psi1") = load_ψ( float(t), workflag; tag = tag)
 
+
+
+function load_ψ(path::String)
+
+  wf = h5open(path, "r")
+  ψ = read(wf, "psi1", MPS)
+  return ψ
+end 
+
 function load_plasmon(output)
   ex = readdlm( getworkdir() * output * "ex")
 
   return ex[2] - ex[1]
 
 end 
+
 
 checkexist(output, workflag ) = isfile( getworkdir(workflag ) * output * ".h5")
 
@@ -694,13 +704,13 @@ end
 
 
 
-function rotate_gate(ψ, α, ϕ, ddsite, TLS, avg)
+function rotate_gate(ψ, α, ϕ, init)
 
   s = siteinds(ψ)
 
-  if !TLS
+  if typeof(init) != DPT_TLS
 
-    if !avg
+    if typeof(init) != DPT_avg
       
 
       α = min(α, 1)
@@ -719,15 +729,15 @@ function rotate_gate(ψ, α, ϕ, ddsite, TLS, avg)
       #sqrt(0.7)
       #M[2, 2] = sqrt(0.3)
 
-      a = op(M, s[ddsite], s[ddsite + 1])
+      a = op(M, s[dd_lower(init)], s[dd_upper(init)])
       ψ = apply(a, ψ)
 
     else
       # "F" is the fermion parity operator diag(1,-1,-1,1) on (|Emp>,|Up>,|Dn>,|UpDn>)
-      Cdagdn1 = op("Cdagdn", s[ddsite])     # c†_{1↓}
-      Cdagdn2 = op("Cdagdn", s[ddsite + 1])     # c†_{2↓}
-      F1      = op("F",      s[ddsite])     # fermion parity on site 1
-      Id2     = op("Id",     s[ddsite + 1])     # identity on site 2
+      Cdagdn1 = op("Cdagdn", s[dd_lower(init)])     # c†_{1↓}
+      Cdagdn2 = op("Cdagdn", s[dd_upper(init)])     # c†_{2↓}
+      F1      = op("F",      s[dd_lower(init)])     # fermion parity on site 1
+      Id2     = op("Id",     s[dd_upper(init)])     # identity on site 2
 
       # Two-site operator:
       # Outer products (no shared indices) build the tensor product with the right index structure.
@@ -740,12 +750,16 @@ function rotate_gate(ψ, α, ϕ, ddsite, TLS, avg)
 
   else
 
-    M = zeros(ComplexF64, 2, 2)
-    M[1, 1] = sqrt(α)
-    M[2, 2] = sqrt(1 - α) * exp( 1im * ϕ)
+    # M = zeros(ComplexF64, 2, 2)
+    # M[1, 1] = sqrt(α)
+    # M[2, 2] = sqrt(1 - α) * exp( 1im * ϕ)
 
-    a = op(M, s[ddsite])
+    # a = op(M, s[ddsite])
+    # ψ = apply(a, ψ)
+
+    a = sqrt(α) * op("Sx", s[dd_lower(init)])
     ψ = apply(a, ψ)
+
 
   end 
 
@@ -783,3 +797,37 @@ function fit()
     # d1func(x) = linear(x, coef(d1fit))
 
 end 
+
+
+
+
+function gate_decomp( h :: OpSum, s; t = 1e-4)
+  
+  str =  string(h)
+
+  terms = split(str, "\n")
+  gates = ITensor[]
+
+  for term in terms[2:end-1]
+
+    coup, opts... = split(term)
+    coup = parse(Float64, coup)
+
+    gate = coup
+    for opt in opts
+        opname, ind = split(opt, "(")
+        ind = parse(Int, split(ind, ",")[1])
+
+        cop = op( opname, s[ind])
+        gate *= cop
+        
+    end 
+
+    G = exp( -im * gate * t / 2)
+    push!(gates, G)
+  end 
+
+  append!(gates, reverse(gates))
+  return gates
+  
+end

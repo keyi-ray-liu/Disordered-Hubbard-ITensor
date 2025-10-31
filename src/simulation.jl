@@ -37,9 +37,10 @@ end
 
 """we completely decoupled the code logic of dynamic SimulationParameters, it is required that one provides an initial state"""
 
-function run_dynamic_simulation(sys::Systems, simulation::DynamicSimulation, ψ::MPS, workflag :: String; message = "Dynamic", save_every=true, obs=Function[], init_obs=true,  kwargs...)
+function run_dynamic_simulation(sys::Systems, simulation::DynamicSimulation, ψ::MPS, workflag :: String; message = "Dynamic", save_every=true, obs=Function[], init_obs=true,  Trotterfirst =false,  method = "TDVP", kwargs...)
 
     @info message
+    @info "Method = $(method)"
     h = gen_hamiltonian(sys)
     H = MPO(h, siteinds(ψ))
 
@@ -47,11 +48,27 @@ function run_dynamic_simulation(sys::Systems, simulation::DynamicSimulation, ψ:
 
     saveham(message, h, workflag)
 
-    ψ = time_evolve(H, ψ, simulation, workflag; save_every=save_every, obs=obs, sys=sys, init_obs=init_obs, kwargs...)
+    if Trotterfirst
+
+        @warn "Trotter first!"
+        G = gate_decomp(h, siteinds(ψ))
+        ψ = apply(G, ψ)
+
+    else
+        @info "No Trotter"
+    end 
+    
+    # -----
+    if method == "TDVP"
+        ψ = time_evolve(H, ψ, simulation, workflag; save_every=save_every, obs=obs, sys=sys, init_obs=init_obs, kwargs...)
+    else
+        ψ = TEBD_evolve(h, ψ, simulation, workflag; save_every=save_every, obs=obs, sys=sys, init_obs=init_obs, kwargs...)
+    end 
 
     return ψ
 
 end 
+
 
 """Wrapper function to automatically load last checkpoint, and run simulations according to the given parameters and system configurations"""
 function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys::Systems, obs; random=true, process :: StateModifier = Identity(), sites = nothing, workflag = "", kwargs...)

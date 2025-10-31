@@ -156,3 +156,37 @@ function add_specific_int!(sys:: DPT_TLS, res)
 
     return res
 end 
+
+
+function add_specific_int!(sys:: DPT_TLS2, res)
+
+
+    @info "add DPT mixed interaction"
+
+    res = add_specific_int!(sys.dpt, res)
+
+    @info "Adding TLS2 interactions"
+
+    dd = dd_lower(sys)
+
+    # adding hopping
+    res += vs(sys), "Sx", dd
+
+    # adding potential
+    ϵ = bias_doubledot(sys)
+    Δ = (ϵ[1] - ϵ[2])/2
+
+    res += Δ, "Sz", dd
+
+    # adding coupling (den den)
+    den =  vcat( [ [U(sys), k] for k in L_contact(sys):L_end(sys)], [[U(sys), k] for k in R_begin(sys):R_contact(sys)])
+
+    for (U, s) in den
+
+        s = trunc(Int, s)
+        res += U, "N", s, "Sz", dd
+    end 
+
+    return res
+
+end 
