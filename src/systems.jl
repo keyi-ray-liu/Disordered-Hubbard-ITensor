@@ -40,6 +40,9 @@ end
 struct ProductStateDriver <: ModeDriver
 end 
 
+struct ProdGSDriver <: ModeDriver
+end 
+
 
 struct Identity <: StateModifier
 end 
@@ -54,6 +57,10 @@ end
 
 
 struct LoadSource <: StateModifier
+    N :: Int
+end 
+
+struct LoadBoth <: StateModifier
     N :: Int
 end 
 
@@ -134,7 +141,7 @@ struct DynamicSimulation <: SimulationParameters
         τ = 0.1,
         start = 0.0,
         fin=20.0,
-        stagetype="uniform",
+        stagetype="expadiabatic",
         TEcutoff=1E-12,
         TEdim=64,
         nsite=2,
@@ -144,8 +151,8 @@ struct DynamicSimulation <: SimulationParameters
             stages = [[τ, start, fin]]
 
         elseif stagetype == "expadiabatic"
-            numstage = get(kwargs, :numstage, 8)
-            stepeachstage = get(kwargs, :stepeachstage, 2)
+            numstage = get(kwargs, :numstage, 10)
+            stepeachstage = get(kwargs, :stepeachstage, 3)
             time = start
             stages = []
 
@@ -167,7 +174,8 @@ struct DynamicSimulation <: SimulationParameters
             @show stages
         
         else
-            error("Unknown stage control!")
+
+            error("Unknown stage control $(stagetype)!")
         end 
         new( stages, TEcutoff, TEdim, nsite)
     end 
@@ -519,17 +527,28 @@ function set_lattice(ddposition, L, R, couple_range, TLS)
         lattice_info["R_contact"] = L + couple_range
         
     elseif ddposition == "M"
-        # lattice_info["dd_lower"] = L + 1
-        # lattice_info["dd_upper"] = L + 2 - offset
-        # lattice_info["L_begin"] = 1
-        # lattice_info["L_end"] = L
-        # lattice_info["R_begin"] = L + 3 - offset
-        # lattice_info["R_end"] = L + R + 2 - offset
-        # lattice_info["L_contact"] = L - couple_range + 1
-        # lattice_info["R_contact"] = L + couple_range + 2 - offset
+        lattice_info["dd_lower"] = L + 1
+        lattice_info["dd_upper"] = L + 2 - offset
+        lattice_info["L_begin"] = 1
+        lattice_info["L_end"] = L
+        lattice_info["R_begin"] = L + 3 - offset
+        lattice_info["R_end"] = L + R + 2 - offset
+        lattice_info["L_contact"] = L - couple_range + 1
+        lattice_info["R_contact"] = L + couple_range + 2 - offset
 
+    elseif ddposition == "MR"
         lattice_info["dd_lower"] = L + 1
         lattice_info["dd_upper"] = L + R + 2 - offset
+        lattice_info["L_begin"] = 1
+        lattice_info["L_end"] = L
+        lattice_info["R_begin"] = L + 2 - offset
+        lattice_info["R_end"] = L + R + 1 - offset
+        lattice_info["L_contact"] = L - couple_range + 1
+        lattice_info["R_contact"] = L + couple_range + 1 - offset
+
+    elseif ddposition == "RM"
+        lattice_info["dd_lower"] = L + R + 2 - offset
+        lattice_info["dd_upper"] = L + 1
         lattice_info["L_begin"] = 1
         lattice_info["L_end"] = L
         lattice_info["R_begin"] = L + 2 - offset
@@ -816,8 +835,8 @@ struct Plunger <: Subsystem
             onsites = reshape(onsites, (Lx, Ly))
             for l in 1:Lx - 1
 
-                onsites[ diagind(onsites, l)] .= G1 / (Lx - l)
-                onsites[ diagind(onsites, -l)] .= G2 / (Lx - l)
+                onsites[ diagind(onsites, l)] .+= G1 / (Lx - l)
+                onsites[ diagind(onsites, -l)] .+= G2 / (Lx - l)
             end 
 
             onsites = reshape(onsites', Lx * Ly)

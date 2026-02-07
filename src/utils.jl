@@ -640,9 +640,42 @@ function modifystate(ψ:: MPS, process :: LoadSource, sys :: Systems)
 
   ops = systype(sys) == "Fermion" ? ["Cdag"] : ["Cdagup", "Cdagdn"]
 
+  @info "Load source"
   @show N = process.N
 
   sites_to_add = leftinds[  1 : N ]
+  #reverse!(sites_to_add)
+  for i in sites_to_add
+
+    @show i, length(s), length(ψ)
+    for opstring in ops
+
+      operator = op(opstring, s[i])
+      ψ = apply(operator, ψ)
+    end 
+
+  end 
+
+  @show expect(ψ, Nop)
+  return ψ
+
+end 
+
+
+function modifystate(ψ:: MPS, process :: LoadBoth, sys :: Systems)
+
+  Nop = systype(sys) == "Electron" ? "Ntot" : "N"
+  leftinds, rightinds = reservoirmapping(sys)
+  @show expect(ψ, Nop)
+
+  s = siteinds(ψ)
+
+  ops = systype(sys) == "Fermion" ? ["Cdag"] : ["Cdagup", "Cdagdn"]
+
+  @info "load both"
+  @show N = process.N
+
+  sites_to_add = vcat( leftinds[  1 : N ], rightinds[1 : N])
   #reverse!(sites_to_add)
   for i in sites_to_add
 

@@ -51,8 +51,8 @@ function run_dynamic_simulation(sys::Systems, simulation::DynamicSimulation, ψ:
     if Trotterfirst
 
         @warn "Trotter first!"
-        G = gate_decomp(h, siteinds(ψ))
-        ψ = apply(G, ψ)
+        G = gate_decomp(h, siteinds(ψ); t = 1e-6)
+        ψ = apply(G, ψ; cutoff = 1e-16)
 
     else
         @info "No Trotter"

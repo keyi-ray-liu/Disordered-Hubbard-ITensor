@@ -489,6 +489,11 @@ function dyna_occ(; sys=Chain(), ψ=nothing, workflag = "", kwargs...)
                 writedlm( io, [round.(expect(ψ, "Ndn"), sigdigits=6)])
             end 
 
+            open(workdir * "occupdn", "a") do io
+                writedlm( io, [round.(expect(ψ, "Nupdn"), sigdigits=6)])
+            end 
+
+
         end 
 
     end 
@@ -500,16 +505,28 @@ function dyna_coherence(; ψ=nothing, sys=DPT(), workflag = "", kwargs...)
     function work(ψ, sys)
         
         if systype(sys) == "Fermion" 
-            op1, op2 = "Cdag", "C"
+            opname = "C"
         else
-            op1, op2 = "Cdagup", "Cup"
+            opname = "Cup"
         end 
-
-        ddsite = dd_lower(sys)
         
-        coh = correlation_matrix(ψ, op1, op2; sites= ddsite : ddsite + 1)
+        coh = correlation_matrix(ψ, "Cdag", "C"; sites= dd_lower(sys) : dd_upper(sys))[ 1, end]
+        # s = siteinds(ψ)
 
-        return coh[1, 2]
+        # ci = op(opname, s[dd_lower(sys)])
+        # cj = op(opname, s[dd_upper(sys)])
+
+        # ψ1 = apply(ci, ψ)
+        # ψ2 = apply(cj, ψ)
+
+        # normalize!(ψ1)
+        # normalize!(ψ2)
+
+        # corr = inner(ψ1', ψ2)
+
+        # @show coh, corr
+
+        return coh
     end 
 
     workdir = getworkdir(workflag)

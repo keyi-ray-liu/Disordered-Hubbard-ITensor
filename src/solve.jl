@@ -166,6 +166,7 @@ function time_evolve(H::MPO, ψ::MPS, simulation::DynamicSimulation, workflag ; 
     TEcutoff, TEdim, nsite= SimulationParameters(simulation)
 
     @info "nsite:", nsite
+    @info "TEcutoff", TEcutoff
 
     # get the t=0 stats
 
@@ -302,6 +303,8 @@ function TEBD_evolve(h::OpSum, ψ::MPS, simulation::DynamicSimulation, workflag 
 
             G = gate_decomp(h, s; t = τ)
             @time ψ = apply(G, ψ; cutoff = TEcutoff)
+
+            normalize!(ψ)
 
 
             mem = Sys.maxrss()/2^30

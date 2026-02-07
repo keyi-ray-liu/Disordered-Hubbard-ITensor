@@ -51,10 +51,11 @@ function run_SD(::ProdReservoirDriver, timecontrol::TimeControl, energies, ks, L
     
     if reservoir_type == "mixed"
         init = SD_array(;  energies = energies, ks =ks, LR=LR,  kwargs..., biasS = 1e16, biasA = 0.0, biasD = 1e16, Ns = 0, Nd = 0, ω = ω,  s_coupling = 0.0, d_coupling = 0.0, reservoir_type = "mixed")
+        
         sys = SD_array(; energies = energies, ks =ks, LR=LR, kwargs..., Ns =Ns, Nd = Nd, biasS = 0.0, biasD=0.0, ω = ω,  reservoir_type = "mixed")
 
         process = LoadSource(Ns)
-        run_gs_dyna(timecontrol, init, sys, obs; process = process, kwargs...)
+        run_gs_dyna(timecontrol, init, sys, obs; process = process, Trotterfirst = true, kwargs...)
     else
         init = SD_array(;  energies = energies, ks =ks, LR=LR,  kwargs..., biasS = -1e3, biasA = 0.0, biasD = 1e3, Ns = Ns, Nd = Nd, s_coupling = 0.0, d_coupling = 0.0, reservoir_type = "spatial", ω = ω )
         sys = SD_array(; energies = energies, ks =ks, LR=LR, kwargs..., biasS = 0.0, biasD=0.0, reservoir_type = "spatial", ω = ω)
@@ -76,12 +77,28 @@ function run_SD(::BiasReverseGS, timecontrol::TimeControl, energies, ks, LR, obs
 end 
 
 function run_SD(::BiasGSDriver, timecontrol::TimeControl, energies, ks, LR, obs;  biasA=0.0, biasS=0.0, biasD=0.0, initbiasA=0.0, ω = -1.0, kwargs... )
+
+    
     @assert biasS != biasD != 0
 
-    @show init = SD_array(; biasS = 0, biasA = initbiasA, biasD = 0, energies = energies, ks =ks, LR=LR, ω = ω,  kwargs...)
+    @show init = SD_array(; biasS = 0, biasA = initbiasA, biasD = 0, energies = energies, ks =ks, LR=LR, ω = ω,  kwargs..., )
     @show sys = SD_array(; biasS = biasS, biasA = biasA, biasD=biasD, energies = energies, ks =ks, LR=LR, ω = ω,  kwargs...)
 
     run_gs_dyna(timecontrol, init, sys, obs; kwargs...)
+end 
+
+
+function run_SD(::ProdGSDriver, timecontrol::TimeControl, energies, ks, LR, obs; Ns = 0, Nd = 0,  biasA=0.0, biasS=0.0, biasD=0.0, ω = -1.0, kwargs... )
+
+    
+    @assert biasS != biasD != 0
+
+    @show init = SD_array(; biasS = 1e10, biasA = 0.0, biasD = 1e10, energies = energies, ks =ks, LR=LR, ω = ω,  Ns = 0, Nd = 0, kwargs...,  )
+    @show sys = SD_array(; biasS = biasS, biasA = biasA, biasD=biasD, energies = energies, ks =ks, LR=LR, ω = ω, Ns = Ns, Nd = Nd, kwargs...)
+
+    process = LoadBoth(Ns)
+
+    run_gs_dyna(timecontrol, init, sys, obs; process = process, Trotterfirst = true, kwargs...)
 end 
 
 
@@ -113,6 +130,11 @@ function run_SD(; biasS=0.0, biasA=0.0, biasD=0.0, initbiasA = 500.0, mode="prod
 
         energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = biasS, bias_R = biasD, couple_range=0, ω = ω, ordering = ordering)
         modedriver = BiasGSDriver()
+
+    elseif mode == "ProdGS"
+
+        energies, ks, LR = gen_mixed( get(kwargs, :reservoir_type, "spatial")=="mixed"; L = get(kwargs, :Ls, 4), R = get(kwargs, :Ld, 4), bias_L = biasS, bias_R = biasD, couple_range=0, ω = ω, ordering = ordering)
+        modedriver = ProdGSDriver()
 
     else
         error("Unrecognized Drive mode")

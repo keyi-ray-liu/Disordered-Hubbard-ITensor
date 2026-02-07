@@ -38,7 +38,7 @@ function gen_mixed(;L = 4, R =4 , bias_L = 0.0, bias_R=0.0, ω = -1.0,  ordering
         result = sort( vcat(L_val, R_val), rev=false)
 
     elseif ordering == "LRSORTED"
-        result = vcat(sort(L_val, by= e -> abs(e[1]), rev=true), sort(R_val, by= e -> abs(e[1])))
+        result = vcat(sort(L_val, rev=false), sort(R_val, rev = false))
 
     elseif ordering == "KMATCHED"
         result = sort( vcat(L_val, R_val), by= e-> e[2])

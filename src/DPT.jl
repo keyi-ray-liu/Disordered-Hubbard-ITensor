@@ -3,7 +3,7 @@
 
 gen_obs(mixed, QPCmixed) = [dyna_EE, dyna_occ, (mixed && QPCmixed) ? dyna_dptcurrent_mix : dyna_dptcurrent,
 #, dyna_corr, dyna_SRDM 
-# dyna_coherence,
+dyna_coherence,
 dyna_SVD
 ]
 
@@ -202,6 +202,7 @@ function DPT_wrapper(; dpt_in = nothing)
     Trotterfirst = get(dpt_in, "Trotterfirst", false)
     method = get(dpt_in, "method", "TDVP")
 
+    TEcutoff = get(dpt_in, "TEcutoff", 1e-12)
     ifshuffle = get(dpt_in, "ifshuffle", false)
     #initlinkdim = get(dpt_in, "initlinkdim", 1)
 
@@ -243,6 +244,7 @@ function DPT_wrapper(; dpt_in = nothing)
 
         ψ, = run_DPT_many_body(U, L, R,  t_fin; tswitch = tswitch, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  workflag = workflag, ddposition=ddposition,  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "override", vs = vs, process = process, #initlinkdim = initlinkdim
         #n1penalty = α
+        TEcutoff = TEcutoff,
         Trotterfirst = Trotterfirst, 
         method = method,
         stagetype = stagetype,
@@ -250,7 +252,7 @@ function DPT_wrapper(; dpt_in = nothing)
         QN = QN
         )
 
-        newα, _ = get_d1QPC(workflag, L, ddsite)
+        newα, _ = get_d1QPC(workflag, L, dd_lower(init))
 
         if abs(newα - α) < 1e-4
             break
@@ -276,7 +278,6 @@ function DPT_compare()
         "tfin" => 0.0,
         "timestep" => 0.25,
         "TEdim" => 64,
-        "stagetype" => ""
     )
 
     d1 = copy(dpt_baseline)
