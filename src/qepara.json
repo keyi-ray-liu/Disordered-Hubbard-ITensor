@@ -1,35 +1,36 @@
 {
-    "L" : 100,
-    "TEdim" : 128,
-    "QEmul" : 1.0,
-    "center_parameter": {
-        "center_ee" : 2.0,
-        "center_ne" : 1.0,
-        "center_t" : 0.0,
-        "center_range" : 5,
-        "center_dis" : 2.0,
-        "center_internal_t" : 0.0,
-        "center_slope" : 0.5
+    "L": 50,
+    "TEdim": 128,
+    "QEmul": 0.0,
+    "QEen": 0.183318,
+    "centerparameter": {
+        "center_ee": 2.0,
+        "center_ne": 1.0,
+        "center_t": 0.0,
+        "center_range": 5,
+        "center_dis": 2.0,
+        "center_internal_t": 0.0,
+        "center_slope": 0.5
     },
-    "confine_parameters" :[
+    "confineparameters": [
         {
-            "confine_start" : 1,
-            "confine_range" : 12,
-            "confine_potential" : 10.0
+            "confine_start": 25,
+            "confine_range": 1,
+            "confine_potential": -5.0
         },
         {
-            "confine_start" : 1,
-            "confine_range" : 1e10,
-            "confine_potential" : 0.0
+            "confine_start": 1,
+            "confine_range": 10000000000.0,
+            "confine_potential": 0.0
         }
     ],
-    "range" : 100,
-    "_start" : 200.0,
-    "timestep" : 0.5,
-    "fin" : 200.0,
-    "adiabatic" : 0,
-    "tswitch" : 50.0,
-    "mode" : "regular",
-    "v" : 0.1,
-    "w" : 1.0
+    "range": 100,
+    "mode": "regular",
+    "v": 0.1,
+    "w": 1.0,
+    "sweepcnt": 20,
+    "statemod": "none",
+    "perturbsites": [
+        3
+    ]
 }
