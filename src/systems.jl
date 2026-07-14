@@ -345,6 +345,7 @@ struct NF_square <: Systems
     U :: Float64
     t :: Vector{Number}
     bias :: Union{Float64, Int}
+    flux :: Float64
 
     function NF_square(;
         L = 3,
@@ -353,6 +354,7 @@ struct NF_square <: Systems
         U = 4.0,
         t = 0.001,
         bias = 0.0,
+        flux = 0.0, 
         kwargs...
         )
     
@@ -366,7 +368,8 @@ struct NF_square <: Systems
             [L^2 - Nup - Ndn, Nup, Ndn, 0],
             U,
             t,
-            bias
+            bias,
+            flux
         )
     
     
@@ -379,8 +382,60 @@ L(sys::NF_square) = sys.L
 t(sys::NF_square) = sys.t
 U(sys::NF_square) = sys.U
 bias(sys::NF_square) = sys.bias
+flux(sys::NF_square) = sys.flux
 N(sys::NF_square) = sys.N
 systype(sys::NF_square) = "Electron"
+
+struct NF_rect <: Systems
+
+    Lx :: Int
+    Ly :: Int
+    N :: Vector{Int}
+    U :: Float64
+    V :: Float64
+    t :: Vector{Number}
+    bias :: Union{Float64, Int}
+    flux :: Float64
+
+    function NF_rect(;
+        Lx = 3,
+        Ly = 4,
+        Nup = 4,
+        Ndn = 4,
+        U = 4.0,
+        V = 0.25,
+        t = 0.001,
+        bias = 0.0,
+        flux = 0.0, 
+        kwargs...
+        )
+    
+        t = FermionCondition("Electron", t)
+    
+        new(Lx, Ly, 
+            [Lx*Ly - Nup - Ndn, Nup, Ndn, 0],
+            U,
+            V,
+            t,
+            bias,
+            flux
+        )
+    
+    
+    end 
+
+end 
+
+get_systotal(sys::NF_rect) = sys.Lx*sys.Ly
+Lx(sys::NF_rect) = sys.Lx
+Ly(sys::NF_rect) = sys.Ly
+t(sys::NF_rect) = sys.t
+U(sys::NF_rect) = sys.U
+V(sys::NF_rect) = sys.V
+bias(sys::NF_rect) = sys.bias
+flux(sys::NF_rect) = sys.flux
+N(sys::NF_rect) = sys.N
+systype(sys::NF_rect) = "Electron"
 
 
 

@@ -162,7 +162,7 @@ function Onsite(sys::NF_square, j::Int) :: Float64
     row = div(j - 1, L(sys)) + 1
     col = j % L(sys)
 
-    # println("row ", row)
+    println("row ", row)
     if 1 < row < L(sys)  && 1 < col < L(sys)
         onsite = bias(sys)
 
@@ -198,7 +198,28 @@ end
 #     return onsite
 # end
 
+# """For NF NxN, we add disorder onsite energy for each site """
+# function Onsite(sys::NF_square, j::Int) :: Float64
+#         onsite = (2rand() - 1) * bias(sys)
+#         println("j = ", j, " E = ", onsite)
+#         return onsite
+# end
 
+# """For NF NxN, we add disorder onsite energy for each site """
+# function Onsite(sys::NF_square, j::Int) :: Float64
+#         workdir = getworkdir()
+#         onsite = readdlm(workdir * "on_bias")[j, 1]
+#         println("j = ", j, " E = ", onsite)
+#         return onsite
+# end
+
+"""For rectangle, we add disorder onsite energy for each site """
+function Onsite(sys::NF_rect, j::Int) :: Float64
+workdir = getworkdir()
+        onsite = readdlm(workdir * "on_bias")[j, 1]
+        println("j = ", j, " E = ", onsite)
+        return onsite
+end
 
 #Onsite(sys::DPT, j) = j < L(sys) ? bias_L(sys) : j < L(sys) + 1 ? bias_doubledot(sys)[1] : j < L(sys) + 2 ? bias_doubledot(sys)[2] : bias_R(sys)
 

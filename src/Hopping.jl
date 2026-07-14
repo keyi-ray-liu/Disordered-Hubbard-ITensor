@@ -101,14 +101,22 @@ function HoppingNeighbor(sys::Sq_chain, j::Int;)
     # find the location of the site
     loc = (j - 1) % 3
     
+    # row = div(j - 1, 3)
+    flux = 0.2
+    Y = [0,1,0,1,2,1,2,3,2,3,4,3,4,5,4,5]
+
+    row = Y[j]
+
+    phase = exp(-1im * 2 * π * flux * row )
+
     if loc == 0 # site A
         # Aₖ: has Bₖ = j+1  and  Cₖ = j+2
         if j+1 <= get_systotal(sys); append!(hop, [[t(sys)..., j + 1]]); end
-        if j+2 <= get_systotal(sys); append!(hop, [[t(sys)..., j + 2]]); end
+        if j+2 <= get_systotal(sys); append!(hop, [[t(sys)*phase..., j + 2]]); end
 
     elseif loc == 1 # site B
         # Bₖ: has Dₖ = j+2
-        if j+2 <= get_systotal(sys); append!(hop, [[t(sys)..., j + 2]]); end
+        if j+2 <= get_systotal(sys); append!(hop, [[t(sys)*phase..., j + 2]]); end
 
     elseif loc == 2 # site C
         # Cₖ: has Dₖ = j+1
@@ -118,6 +126,41 @@ function HoppingNeighbor(sys::Sq_chain, j::Int;)
     return hop
 
 end 
+
+# function HoppingNeighbor(sys::Sq_chain, j::Int;)
+
+#     hop = []
+#     adj_j = j - 1
+
+#     loc = adj_j % 6 
+
+#     if adj_j == 0
+#         append!(hop, [[t(sys)..., j+3]])
+
+#     elseif adj_j == 3*L(sys)
+#         append!(hop, [[t(sys)..., j-1]])
+
+#     elseif loc == 0 
+#         append!(hop, [[t(sys)..., j-1]])
+#         append!(hop, [[t(sys)..., j+3]])
+    
+#     elseif loc == 3
+#         append!(hop, [[t(sys)..., j+1]])
+#         append!(hop, [[t(sys)..., j+3]])
+
+#     elseif loc == 1 
+#         append!(hop, [[t(sys)..., j-1]])
+#         append!(hop, [[t(sys)..., j+1]])
+    
+#     elseif loc == 2 || loc == 4
+#         append!(hop, [[t(sys)..., j+1]])
+#     end
+
+#     println("j: ", j)
+#     println("hopping : ", hop)
+#     return hop
+
+# end 
 
 
 
@@ -131,10 +174,10 @@ function HoppingNeighbor(sys::NF_square, j::Int; left_offset=0)
     # col = (j - 1) % L(sys) + 1
     row = div(j - 1, L(sys)) + 1
 
-    flux = 0.1
+    B = sys.flux
     # calculate Peierls phase, default is Landau Gauge, only exist on vertical bond
     # phase = exp(1im * 2 * π * flux * col )
-    phase = exp(-1im * 2 * π * flux * row )
+    phase = exp(-1im * 2 * π * B * row )
 
     # # not at end of col
     # if adj_j % L(sys) != 0
@@ -162,6 +205,62 @@ function HoppingNeighbor(sys::NF_square, j::Int; left_offset=0)
 end 
 
 
+function HoppingNeighbor(sys::NF_rect, j::Int; left_offset::Int=0)
+
+    hop = []
+
+    adj_j = j - left_offset
+
+    Lx_ = Lx(sys)
+    Ly_ = Ly(sys)
+
+    # row-major indexing: col changes fastest
+    col = (adj_j - 1) % Lx_ + 1
+    row = div(adj_j - 1, Lx_) + 1
+
+    B = sys.flux
+
+    # Landau gauge: phase on horizontal (x) bonds depends on row (y)
+    phase_x = exp(-1im * 2 * π * B * row)
+
+    # +x neighbor (right)
+    if col < Lx_
+        append!(hop, [[t(sys) * phase_x..., j + 1]])
+    end
+    # println(t(sys))
+    # +y neighbor (up)
+    if row < Ly_
+        append!(hop, [[t(sys)..., j + Lx_]])
+    end
+    # println(hop)
+    return hop
+end
+
+# # periodic boundary condition 
+# function HoppingNeighbor(sys::NF_rect, j::Int; left_offset::Int=0)
+
+#     hop = []
+
+#     adj_j = j - left_offset
+
+#     Lx_ = Lx(sys)
+#     Ly_ = Ly(sys)
+
+#     # row-major indexing: x changes fastest
+#     col = (adj_j - 1) % Lx_ + 1
+#     row = div(adj_j - 1, Lx_) + 1
+
+#     # +x neighbor with PBC
+#     jx = (col < Lx_) ? (j + 1) : (j - (Lx_ - 1))
+#     append!(hop, [[t(sys)..., jx]])
+
+#     # +y neighbor with PBC
+#     jy = (row < Ly_) ? (j + Lx_) : (j - (Ly_ - 1) * Lx_)
+#     append!(hop, [[t(sys)..., jy]])
+
+#     return hop
+# end
+
 
 function HoppingNeighbor(sys::Rectangular, j::Int; left_offset=0)
 
@@ -171,7 +270,7 @@ function HoppingNeighbor(sys::Rectangular, j::Int; left_offset=0)
     # column and row number 
     col = (j - 1) % L(sys) + 1
 
-    flux = 0.1
+    flux = 0.0
     # calculate Peierls phase, default is Landau Gauge, only exist on vertical bond
     phase = exp(1im * 2 * π * flux * col )
 
@@ -400,7 +499,7 @@ function add_hop!(sys::Systems, res::OpSum)
                 if v[i] != 0
                     op1, op2 = operator
                     
-                
+
                     res += v[i], op1, sitemap(sys, j), op2, sitemap(sys, k)
                     res += conj(v[i]), op1, sitemap(sys, k), op2, sitemap(sys, j)
                 end 

@@ -97,15 +97,21 @@ include("basis.jl")
 include("QEutil.jl")
 include("test.jl")
 include("SqChain.jl")
+include("rectangle.jl")
 #include("ed.jl")
 
 
-const DISABLE_BLAS = true
+# const DISABLE_BLAS = true
 
-if DISABLE_BLAS
-  BLAS.set_num_threads(1)
-  ITensors.Strided.set_num_threads(1)
-end 
+# if DISABLE_BLAS
+#   BLAS.set_num_threads(1)
+#   ITensors.Strided.set_num_threads(1)
+# end 
+
+BLAS.set_num_threads(1)
+ITensors.Strided.disable_threads()
+ITensors.disable_threaded_blocksparse()
+
 
 if ARGS != []
     test = false
@@ -165,6 +171,10 @@ else
     
     elseif ARG == "SQ_chain"
         SQ_wrapper()
+
+    elseif ARG == "NF_rect"
+        rect_wrapper()
+        
     # elseif ARG == "QE_SIAM"
     #     QE_SIAM_wrapper()
 

@@ -4,9 +4,10 @@ function run_SqChain(L, Nup, Ndn, t;  U=4.0, bias=0.0, kwargs...)
 
     sys = Sq_chain(; L=L, Nup=Nup, Ndn=Ndn, t=t, U=U, bias=bias, kwargs...)
 
-    simulation = StaticSimulation(; sweepcnt=300, sweepdim = 100, kwargs...)
+    simulation = StaticSimulation(; sweepcnt=15, sweepdim = 100, kwargs...)
     ψ = gen_state(sys)
 
+    # ψ = load_ψ("wf.h5")
     run_static_simulation(sys, simulation, ψ, Identity())
 
 end 

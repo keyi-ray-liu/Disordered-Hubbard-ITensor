@@ -114,7 +114,7 @@ function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation)
         append!(prev_state, [ψ])
         append!(allvars, real(var))
         append!(prev_var, real(var))
-
+    
     end 
     
     # save results

@@ -1,11 +1,13 @@
 
-function run_NF(L, Nup, Ndn, t;  U=4.0, bias=0.0, kwargs...)
+function run_NF(L, Nup, Ndn, t;  U=4.0, bias=0.0, flux=0.0, kwargs...)
 
 
-    sys = NF_square(; L=L, Nup=Nup, Ndn=Ndn, t=t, U=U, bias=bias, kwargs...)
+    sys = NF_square(; L=L, Nup=Nup, Ndn=Ndn, t=t, U=U, bias=bias, flux=flux, kwargs...)
 
-    simulation = StaticSimulation(; sweepcnt=100, sweepdim = 100, kwargs...)
+    simulation = StaticSimulation(ex=1; sweepcnt=30, sweepdim = 300, kwargs...)
     ψ = gen_state(sys)
+    # ψ = load_ψ("wf.h5")
+
 
     run_static_simulation(sys, simulation, ψ, Identity())
 
@@ -23,9 +25,16 @@ function NF_wrapper()
     Ndn = get(NF_in, "Ndn", 4)
     t = get(NF_in, "t", 0.001)
     bias = get(NF_in, "bias", 0.0)
+    bool_rand = get(NF_in, "random_bool", false)
+    flux = get(NF_in, "flux", 0.0)
     
-    
-    run_NF(L, Nup, Ndn, t; U=U, bias=bias)
+    if bool_rand 
+        random_onsite = (2 .* rand(L^2) .- 1) .* bias
+        workdir = getworkdir()
+        writedlm(workdir * "on_bias", random_onsite)
+    end
+
+    run_NF(L, Nup, Ndn, t; U=U, bias=bias, flux=flux)
 
     # dyna_occ()
     # dyna_EE()

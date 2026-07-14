@@ -1,6 +1,13 @@
 """we completely decoupled the code logic of static SimulationParameters, it is required that one provides an initial state
 Returns: return of solve function. Array of MPS's
 """
+
+function log_rss(tag="")
+    rss = Sys.maxrss() / 1024^2
+    @info "MEM" tag rss_MB=rss 
+end
+
+
 function run_static_simulation(sys::Systems, simulation::StaticSimulation, ψ::MPS, process :: StateModifier; message = "Static")
 
     @info message
@@ -10,9 +17,14 @@ function run_static_simulation(sys::Systems, simulation::StaticSimulation, ψ::M
     #@show h 
     saveham(message, h)
 
-    H = MPO(h, siteinds(ψ))
+    # H = MPO(h, siteinds(ψ))
+    H = MPO(h, siteinds(ψ); splitblocks=true) # add splitblocks
 
+
+    log_rss("before solve") # get memory used 
     state = solve(H, ψ, simulation)
+    log_rss("after solve")
+
     state = [modifystate(st, process, sys) for st in state]
     return state
 end 

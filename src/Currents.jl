@@ -35,7 +35,7 @@ include("test.jl")
 
 
 filename = "wf.h5"
-using HDF5
+# using HDF5
 # print(HDF5.ishdf5(filename))
 ψ = load_ψ(filename)
 
@@ -202,7 +202,7 @@ end
 
 # println("test first")
 # total_num = 9
-sites = siteinds("Electron", 9) # N = Lx*Ly
+sites = siteinds("Electron", 16) # N = Lx*Ly
 # println("test second")
 
 tij = -1.0
@@ -214,17 +214,17 @@ tij = -1.0
 # 4) compute the weighted correlator
 # T = weighted_corr(ψ, sites; t=tij, L=3, N=9, flux=0.1)
 # println(T[1,:])
-Jx, Jy = weighted_corr_test(ψ; t=-1.0, L=3, N=9, flux=0.1)
-println(Jx)
-println(Jy)
+# Jx, Jy = weighted_corr_test(ψ; t=-1.0, L=4, N=16, flux=0.2)
+# println(Jx)
+# println(Jy)
 # total = up + dn
 # println(total[1,:])
-JX =[-0.10012813996613934, -0.20025627993227746, 0.1001281399661381, 
-3.3133218391157016e-16, 4.597017211338539e-16, -1.2836953722228372e-16,
- 0.1001281399661401, 0.20025627993227818, -0.10012813996613808]
-JY =[0.10012813996614034, 2.0469737016526324e-16, -0.10012813996613856, 
-0.20025627993228018, 1.3964523981613297e-16, -0.20025627993227602, 
--0.10012813996613984, 6.505213034913027e-17, 0.10012813996613744]
+# JX =[-0.10012813996613934, -0.20025627993227746, 0.1001281399661381, 
+# 3.3133218391157016e-16, 4.597017211338539e-16, -1.2836953722228372e-16,
+#  0.1001281399661401, 0.20025627993227818, -0.10012813996613808]
+# JY =[0.10012813996614034, 2.0469737016526324e-16, -0.10012813996613856, 
+# 0.20025627993228018, 1.3964523981613297e-16, -0.20025627993227602, 
+# -0.10012813996613984, 6.505213034913027e-17, 0.10012813996613744]
 
 # current_up = correlation_matrix(ψ, "Cdagup", "Cup")
 # current_dn = correlation_matrix(ψ, "Cdagdn", "Cdn")
@@ -234,3 +234,17 @@ JY =[0.10012813996614034, 2.0469737016526324e-16, -0.10012813996613856,
 #     println("dn = ", current_dn[i,:])
 #     println(" ", )
 # end
+
+
+"""
+    bond_current(i, j, t, current_up, current_dn)
+
+Compute the bond current between site i and j for spin ↑ and ↓:
+    J_ij = i ( t ⟨c†_i c_j⟩ – t* ⟨c†_j c_i⟩ )
+
+Inputs:
+    i, j        :: Int      # site indices (ITensor ordering)
+    t           :: Complex  # hopping amplitude (can include Peierls phase)
+    current_up  :: Matrix   # correlation matrix  ⟨c†_i c_j⟩ for ↑
+    current_dn  :: Matrix   # correlation matrix  ⟨c†_i c_j⟩ for ↓
+"""

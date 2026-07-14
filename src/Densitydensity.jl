@@ -198,6 +198,114 @@ function DenDenNeighbor(sys::SD_array, j::Int)
 end 
 
 
+# """
+# Nearest-neighbor density-density couplings for an open-boundary Lx×Ly rectangle.
+
+# Returns an iterable of tuples (U..., k) so that:
+#     for (U..., k) in DenDenNeighbor(sys, j)
+#         res += U[i], op1, j, op2, k
+#     end
+
+# We include only +x and +y neighbors (right and up) to avoid double counting.
+# """
+# function DenDenNeighbor(sys::NF_rect, j::Int)
+#     Lx_ = Lx(sys)
+#     Ly_ = Ly(sys)
+
+#     # row-major indexing: col changes fastest
+#     col = (j - 1) % Lx_ + 1
+#     row = div(j - 1, Lx_) + 1
+
+#     # Allow V(sys) to be either a scalar or a tuple (like t(sys)...)
+#     Vval = V(sys)
+#     Vtup = Vval isa Tuple ? Vval : (Vval,)
+
+#     neigh = Tuple[]  # tuples of the form (V..., k)
+
+#     # +x neighbor
+#     if col < Lx_
+#         push!(neigh, (Vtup..., j + 1))
+#     end
+
+#     # +y neighbor
+#     if row < Ly_
+#         push!(neigh, (Vtup..., j + Lx_))
+#     end
+
+#     return neigh
+# end
+
+# # periodic boundary condition 
+
+# function DenDenNeighbor(sys::NF_rect, j::Int)
+#     Lx_ = Lx(sys)
+#     Ly_ = Ly(sys)
+
+#     # row-major indexing: x changes fastest
+#     col = (j - 1) % Lx_ + 1
+#     row = div(j - 1, Lx_) + 1
+
+#     Vval = V(sys)
+#     Vtup = Vval isa Tuple ? Vval : (Vval,)
+
+#     neigh = Tuple[]  # tuples of the form (V..., k)
+
+#     # +x neighbor with PBC
+#     jx = (col < Lx_) ? (j + 1) : (j - (Lx_ - 1))
+#     push!(neigh, (Vtup..., jx))
+
+#     # +y neighbor with PBC
+#     jy = (row < Ly_) ? (j + Lx_) : (j - (Ly_ - 1) * Lx_)
+#     push!(neigh, (Vtup..., jy))
+
+#     return neigh
+# end
+
+# Row-major coords consistent with your hopping code
+@inline function site_xy(sys::NF_rect, j::Int)
+    Lx_ = Lx(sys)
+    col = (j - 1) % Lx_ + 1
+    row = div(j - 1, Lx_) + 1
+    return col, row
+end
+
+"""
+Long-range 1/r density-density couplings.
+
+V(sys) is interpreted as the nearest-neighbor coupling V_nn.
+Then U(j,k) = V_nn / dist(j,k) with dist computed from lattice coordinates.
+
+Returns tuples (U..., k) so add_DensityDensity! works unchanged.
+"""
+function DenDenNeighbor(sys::NF_rect, j::Int)
+    N = get_systotal(sys)
+
+    xj, yj = site_xy(sys, j)
+
+    Vnn = V(sys)
+    Vtup = Vnn isa Tuple ? Vnn : (Vnn,)
+
+    neigh = Tuple[]  # will store (U..., k)
+
+    # Only k>j to avoid double counting (since add_DensityDensity! loops over all j)
+    for k in (j+1):N
+        xk, yk = site_xy(sys, k)
+
+        dx = xk - xj
+        dy = yk - yj
+        r = sqrt(dx*dx + dy*dy)
+
+        # exclude self (won't happen since k>j) and any numerical weirdness
+        if r > 0
+            U = (Vtup[1] / r,)  # make it a tuple so (U..., k) destructuring works
+            push!(neigh, (U..., k))
+        end
+    end
+
+    return neigh
+end
+
+
 function DenDenNeighbor(sys::DPT_avg, j::Int)
 
     DenDenNeighbor(sys.dpt, j)
@@ -225,7 +333,7 @@ function add_DensityDensity!(sys::Systems, res::OpSum)
                 
                 op1, op2 = operators
                 res += U[i], op1, sitemap(sys, j), op2, sitemap(sys, k)
-
+                # println(j, k, U[i])
             end 
 
         end
