@@ -4,7 +4,7 @@
 gen_obs(mixed, QPCmixed) = [dyna_EE, dyna_occ, (mixed && QPCmixed) ? dyna_dptcurrent_mix : dyna_dptcurrent,
 #, dyna_corr, dyna_SRDM 
 dyna_coherence,
-dyna_SVD
+#dyna_SVD
 ]
 
 
@@ -37,6 +37,17 @@ function run_DPT_many_body(U, L, R,  t_fin :: Float64; tswitch = 0.0, bias_L = B
         vsinit = 1e-14
 
         DPT_INIT_BIAS = [-100, 0]
+
+    elseif mode == "full"
+
+        μ1 = 0.0
+
+        @info "Full initial state: U = $(U)"
+
+        Uinit = U
+        vsinit = vs
+
+        DPT_INIT_BIAS = [0, 0]
 
     elseif mode == "connectDD"
 
@@ -165,9 +176,10 @@ function get_d1QPC(workflag, L, ddsite)
         close(wf)
     end 
     
+    start = max(1, size(occ, 1) - 16)
 
-    nd1 = sum(mean(occ[(end - 16):end , ddsite], dims = 1))
-    nQPC = sum(mean(occ[(end - 16):end, (L - 1):(L + 2)], dims = 1))
+    nd1 = sum(mean(occ[start:end , ddsite], dims = 1))
+    nQPC = sum(mean(occ[start:end, (L - 1):(L + 2)], dims = 1))
 
     @show workflag, nd1, nQPC
     return nd1, nQPC
@@ -262,6 +274,65 @@ function DPT_wrapper(; dpt_in = nothing)
     end 
 
     return ψ, ψinit
+end 
+
+
+
+
+
+function DPT_GS(; dpt_in = nothing)
+
+    # overriding L
+
+    if isnothing(dpt_in)
+
+        @warn "Loading external json"
+        dpt_in = load_JSON( pwd() * "/dptpara.json")
+    end 
+    
+    U = get(dpt_in, "U", 0.1)
+    #L = get(dpt_in, "L", 34)
+    #R = get(dpt_in, "R", L)
+    τ = get(dpt_in, "timestep", 0.25)
+    TEdim = get(dpt_in, "TEdim", 64)
+    biasLR = get(dpt_in, "biasLR", 0.0)
+    mixed = get(dpt_in, "mixed", true)
+    ordering = get(dpt_in, "ordering", "SORTED")
+    sweepcnt = get(dpt_in, "max2", 10)
+    vs = get(dpt_in, "vs", 0.25)
+    TLS = get(dpt_in, "TLS", false)
+    ddposition = get(dpt_in, "ddposition", "M")
+    QN = get(dpt_in, "QN", true)
+
+    TEcutoff = get(dpt_in, "TEcutoff", 1e-12)
+    ifshuffle = get(dpt_in, "ifshuffle", false)
+    #initlinkdim = get(dpt_in, "initlinkdim", 1)
+
+
+    avg = ddposition == "avg" ? true : false
+
+    for L in [66, 130, 258, 514, 1026, 2050]
+
+
+        workflag = "GS$(L - 2)"
+
+        if isfile(getworkdir(workflag) * "n1")
+            @info "result exists"
+            continue
+        end 
+
+        R = L
+        _, init, _ = run_DPT_many_body(U, L, R,  0.0; tswitch = 0.0, bias_L = biasLR/2, bias_R  = - biasLR/2, τ=τ, mixed=mixed,  ddposition=ddposition,  avg=avg,   TEdim = TEdim, sweepcnt = sweepcnt, mode = "full", vs = vs, ordering = ordering, workflag = workflag,  TLS = TLS, QN = QN, ifshuffle = ifshuffle, stagetype = "uniform", write_state = false)
+        
+
+        n1, _ = get_d1QPC(workflag, L, dd_lower(init))
+
+        open(getworkdir(workflag) * "n1", "w" ) do io
+            writedlm(io, n1)
+        end 
+    end 
+
+    #return ψ, ψinit
 end 
 
 

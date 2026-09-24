@@ -1,18 +1,18 @@
 """we completely decoupled the code logic of static SimulationParameters, it is required that one provides an initial state
 Returns: return of solve function. Array of MPS's
 """
-function run_static_simulation(sys::Systems, simulation::StaticSimulation, ψ::MPS, process :: StateModifier, workflag :: String; message = "Static", )
+function run_static_simulation(sys::Systems, simulation::StaticSimulation, ψ::MPS, process :: StateModifier, workflag :: String; message = "Static", write_state = true)
 
     @info message
     #@show sys
     h = gen_hamiltonian(sys)
 
     #@show h 
-    saveham(message, h, workflag)
+    #saveham(message, h, workflag)
 
     H = MPO(h, siteinds(ψ))
 
-    state = solve(H, ψ, simulation, workflag)
+    state = solve(H, ψ, simulation, workflag; write_state = write_state)
     state = [modifystate(st, process, sys) for st in state]
     return state
 end 
@@ -71,7 +71,7 @@ end
 
 
 """Wrapper function to automatically load last checkpoint, and run simulations according to the given parameters and system configurations"""
-function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys::Systems, obs; random=true, process :: StateModifier = Identity(), sites = nothing, workflag = "", kwargs...)
+function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys::Systems, obs; random=true, process :: StateModifier = Identity(), sites = nothing, workflag = "", write_state = true, kwargs...)
 
     τ = timecontrol.τ
     fin = timecontrol.fin
@@ -90,7 +90,7 @@ function run_gs_dyna(timecontrol :: OneStage, init::Union{Nothing, Systems}, sys
         Static = StaticSimulation(; output=EQINIT_STR, sweepdim=get(kwargs, :TEdim, 256) , sweepcnt=get(kwargs, :sweepcnt, 200), ex=1, kwargs...)
 
         # GS calculation
-        ψ0 :: MPS =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR, workflag) ? load_ψ(EQINIT_STR, workflag) : run_static_simulation(init, Static, ψ, process, workflag; message = "Init")[1]
+        ψ0 :: MPS =  last_time > -Inf ? last_state : check_ψ(EQINIT_STR, workflag) ? load_ψ(EQINIT_STR, workflag) : run_static_simulation(init, Static, ψ, process, workflag; message = "Init", write_state = write_state )[1]
 
     end 
 

@@ -2,7 +2,7 @@
 """ DMRG routine that solves for the states given H and initial guess.
 
 Returns: array of MPS's"""
-function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation, workflag :: String ) 
+function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation, workflag :: String ; write_state = true) 
 
     ex, prev_state, prev_energy, prev_var, sweepcnt, sweepdim, noise, TEcutoff, krylovdim, weight = SimulationParameters(simulation)
 
@@ -96,9 +96,12 @@ function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation, workflag :: String
         #println(expect(ψ, "N"))
             
         # save temp results
-        wf = h5open( workdir * TEMP_tag * out * string((cur_ex - 1)) * ".h5", "w")
-        write(wf, "psi", ψ)
-        close(wf)
+
+        if write_state
+            wf = h5open( workdir * TEMP_tag * out * string((cur_ex - 1)) * ".h5", "w")
+            write(wf, "psi", ψ)
+            close(wf)
+        end 
 
         # shift and invert block
 
@@ -130,11 +133,13 @@ function solve(H::MPO, ϕ::MPS, simulation::StaticSimulation, workflag :: String
   
     # write wf
     
-    h5open(workdir * out * ".h5", "w") do io
-        for (i, psi) in enumerate(prev_state)
-            write(io, "psi" * string(i), psi)
-        end
-    end 
+    if write_state
+        h5open(workdir * out * ".h5", "w") do io
+            for (i, psi) in enumerate(prev_state)
+                write(io, "psi" * string(i), psi)
+            end
+        end 
+    end
 
     # open(workdir * "staticocc", "w") do io
     #     for psi in prev_state

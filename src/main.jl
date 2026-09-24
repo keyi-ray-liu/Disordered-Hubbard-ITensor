@@ -7,9 +7,9 @@ keyi.liu@nist.gov
 ALL RIGHTS RESERVED
 """
 
-# using Pkg
+using Pkg
 
-# 
+
 
 # for strs in ["Lazy", 
 #     "DelimitedFiles",
@@ -138,8 +138,9 @@ if test
     #test_rotation_electron_gate()
     #ITensors.compile()
     #test_exp(10; nsteps = 100, order = 2)
-    SD_wrapper()
+    #SD_wrapper()
     #DPT_compare()
+    DPT_GS()
     #argtest()
     
     return nothing
