@@ -13,11 +13,11 @@ end
 
 function gen_state_str(sys::DPT; ifshuffle = false, kwargs...)
 
-
-    f(x) = ifshuffle ? shuffle(x) : reverse(x)
-
-    Lres = f([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
-    Rres = f([ get_type_dict(systype(sys))[i] for i=1:4 for _ in 1:N(sys)[i]])
+    # Spread the fixed particle count throughout each spatial reservoir.
+    labels = get_type_dict(systype(sys))
+    f(x) = ifshuffle ? shuffle(x) : x
+    Lres = f([labels[isodd(j) ? 1 : 2] for j in 1:L(sys)])
+    Rres = f([labels[isodd(j) ? 1 : 2] for j in 1:R(sys)])
 
     return gen_state_str(sys, Lres, Rres; kwargs...)
 
@@ -413,6 +413,29 @@ end
 
 
 
+function gen_state(sys::DPT; QN=true, sites=nothing, kwargs...)
+
+    if QN == false
+        @warn "NO QN"
+    end
+
+    if isnothing(sites)
+        sites = gen_site_inds(sys; QN = QN)
+    else
+        @info "using predefined sites"
+    end
+
+
+    # Full + empty reservoirs do not contain the half-filled sector, even
+    # though their superposition can have mean occupation 1/2 on every site.
+    @show state_str = gen_state_str(sys; kwargs...)
+    ψ = randomMPS(sites, state_str; linkdims=get(kwargs, :initlinkdim, 10))
+    @show linkdims(ψ)
+    @show expect(ψ, "N")
+
+    return ψ
+
+end
 
 
 

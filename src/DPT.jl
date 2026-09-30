@@ -311,7 +311,8 @@ function DPT_GS(; dpt_in = nothing)
 
     avg = ddposition == "avg" ? true : false
 
-    for L in [66, 130, 258, 514, 1026, 2050]
+    #for L in [66, 130, 258, 514, 1026, 2050]
+    for L in [130]
 
 
         workflag = "GS$(L - 2)"

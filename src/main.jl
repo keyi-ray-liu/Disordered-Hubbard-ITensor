@@ -110,7 +110,7 @@ include("penalty.jl")
 #include("ed.jl")
 
 
-const DISABLE_BLAS = true
+const DISABLE_BLAS = false
 
 
 if DISABLE_BLAS
