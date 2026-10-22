@@ -110,7 +110,7 @@ include("penalty.jl")
 #include("ed.jl")
 
 
-const DISABLE_BLAS = true
+const DISABLE_BLAS = false
 
 
 if DISABLE_BLAS
@@ -138,8 +138,9 @@ if test
     #test_rotation_electron_gate()
     #ITensors.compile()
     #test_exp(10; nsteps = 100, order = 2)
-    SD_wrapper()
+    #SD_wrapper()
     #DPT_compare()
+    DPT_GS()
     #argtest()
     
     return nothing
